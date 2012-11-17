@@ -11,6 +11,7 @@ project( vrlt )
 
 set( BUILD_MULTIVIEW TRUE CACHE BOOL "Build MultiView module" )
 set( BUILD_FEATURE_EXTRACTION TRUE CACHE BOOL "Build FeatureExtraction module" )
+set( BUILD_FEATURE_MATCHER TRUE CACHE BOOL "Build FeatureMatcher module" )
 
 find_package( CVD REQUIRED )
 
@@ -24,4 +25,9 @@ endif()
 if( BUILD_FEATURE_EXTRACTION )
 include_directories( $(vrlt)/FeatureExtraction )
 add_subdirectory( FeatureExtraction )
+endif()
+
+if( BUILD_FEATURE_MATCHER )
+include_directories( $(vrlt)/FeatureMatcher )
+add_subdirectory( FeatureMatcher )
 endif()
