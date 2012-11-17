@@ -9,9 +9,19 @@ endif()
 
 project( vrlt )
 
+set( BUILD_MULTIVIEW TRUE CACHE BOOL "Build MultiView module" )
+set( BUILD_FEATURE_EXTRACTION TRUE CACHE BOOL "Build FeatureExtraction module" )
+
 find_package( CVD REQUIRED )
 
 include_directories( ${CVD_INCLUDE_DIR} )
 
+if( BUILD_MULTIVIEW )
 include_directories( $(vrlt)/MultiView )
 add_subdirectory( MultiView )
+endif()
+
+if( BUILD_FEATURE_EXTRACTION )
+include_directories( $(vrlt)/FeatureExtraction )
+add_subdirectory( FeatureExtraction )
+endif()
