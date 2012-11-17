@@ -1,0 +1,67 @@
+# For CVD, see
+#
+# The following are set after configuration is done: 
+#  CVD_FOUND
+#  CVD_INCLUDE_DIR
+#  CVD_LIBRARIES
+#  CVD_DEBUG_LIBRARIES
+#
+
+MACRO( DBG_MSG _MSG )
+#  MESSAGE( STATUS "${CMAKE_CURRENT_LIST_FILE}(${CMAKE_CURRENT_LIST_LINE}):\n${_MSG}" )
+ENDMACRO( DBG_MSG )
+
+# typical root dirs of installations, exactly one of them is used
+SET( CVD_POSSIBLE_ROOT_DIRS
+  "${CVD_ROOT_DIR}"
+  "$ENV{CVD_ROOT_DIR}"  
+  "$ENV{CVD_DIR}"  
+  "$ENV{CVD_HOME}" 
+  /usr/local
+  /usr
+  )
+
+FIND_PATH( CVD_INCLUDE_DIR
+  NAMES 
+  cvd/image.h
+  PATHS ${CVD_POSSIBLE_ROOT_DIRS} 
+  )
+
+DBG_MSG( "CVD_INCLUDE_DIR=${CVD_INCLUDE_DIR}" )
+
+FIND_LIBRARY( CVD_LIBRARIES
+  NAMES cvd
+  PATHS ${CVD_POSSIBLE_ROOT_DIRS}  
+  )
+
+FIND_LIBRARY( CVD_DEBUG_LIBRARIES
+  NAMES cvd_debug
+  PATHS ${CVD_POSSIBLE_ROOT_DIRS}  
+  )
+
+IF( CVD_LIBRARIES )
+  SET( CVD_FOUND ON )
+ENDIF( CVD_LIBRARIES )
+
+DBG_MSG( "CVD_LIBRARIES=${CVD_LIBRARIES}" )
+DBG_MSG( "CVD_DEBUG_LIBRARIES=${CVD_DEBUG_LIBRARIES}" )
+
+IF( NOT CVD_FOUND )
+  IF( NOT CVD_FIND_QUIETLY )
+    IF( CVD_FIND_REQUIRED )
+      MESSAGE( FATAL_ERROR
+        "CVD required but some headers or libs not found. Please specify it's location by setting CVD_ROOT_DIR")
+    ELSE( CVD_FIND_REQUIRED )
+      MESSAGE( STATUS 
+        "ERROR: CVD was not found.")
+    ENDIF( CVD_FIND_REQUIRED )
+  ENDIF( NOT CVD_FIND_QUIETLY )
+ELSE( NOT CVD_FOUND )
+  DBG_MSG( "Success" )
+  MARK_AS_ADVANCED(
+    CVD_ROOT_DIR
+    CVD_INCLUDE_DIR
+    CVD_LIBRARIES
+    CVD_DEBUG_LIBRARIES
+    )
+ENDIF( NOT CVD_FOUND )
