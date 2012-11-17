@@ -259,8 +259,6 @@ namespace MultiView {
     void removeCameraFeatures( Reconstruction &r, Camera *camera );
     Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const CVD::BasicImage<CVD::byte> &image, const TooN::SE3<> &pose );
     
-    TooN::Matrix<3> computeCovariance( Node *root, Point *point );
-    
     /** @}
      */
 }
