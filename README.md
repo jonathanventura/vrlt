@@ -1,4 +1,4 @@
 vrlt
 ====
 
-Visual Reconstruction and Localization Toolkit
+Visual Reconstruction Localization and Tracking
