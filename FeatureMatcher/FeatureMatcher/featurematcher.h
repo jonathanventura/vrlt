@@ -16,7 +16,7 @@
 
 #include <FeatureMatcher/nn.h>
 
-namespace MultiView {
+namespace vrlt {
 
 /** \addtogroup FeatureMatcher
  * \brief Feature matching

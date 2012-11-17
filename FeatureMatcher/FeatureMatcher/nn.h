@@ -12,6 +12,7 @@
 #ifndef NN_H
 #define NN_H
 
+namespace vrlt {
 /**
  * \addtogroup FeatureMatcher
  * @{
@@ -33,5 +34,6 @@ public:
 /**
  * @}
  */
+}
 
 #endif

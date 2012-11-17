@@ -14,7 +14,7 @@
 #include <cvd/image_io.h>
 #include <cvd/vision.h>
 
-namespace MultiView {
+namespace vrlt {
     
     using namespace CVD;
     

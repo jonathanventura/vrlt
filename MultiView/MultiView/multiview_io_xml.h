@@ -14,7 +14,7 @@
 
 #include <MultiView/multiview.h>
 
-namespace MultiView {
+namespace vrlt {
 	namespace XML {
 /** \addtogroup MultiViewXMLIO MultiView XML I/O
  * \brief Reading and writing of MultiView data to an XML file.

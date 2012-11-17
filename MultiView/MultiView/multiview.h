@@ -24,7 +24,7 @@
 #include <cvd/rgb.h>
 #include <cvd/byte.h>
 
-namespace MultiView {
+namespace vrlt {
 /** \addtogroup MultiView
  * \brief Classes to manage, store, and load structure from motion data.
  * @{

@@ -16,6 +16,8 @@
 
 //#define BUFFERED
 
+namespace vrlt {
+
 static const char *distanceKernel =
 "__kernel void\n"
 "distanceKernel(\n"
@@ -575,4 +577,6 @@ void BruteForceNN::findknn( int num_queries, unsigned char *queries, int k, int 
     }
     
     delete [] stored_distsqs;
+}
+    
 }

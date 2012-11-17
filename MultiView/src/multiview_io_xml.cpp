@@ -13,7 +13,7 @@
 
 #include <TinyXML/tinyxml.h>
 
-namespace MultiView {
+namespace vrlt {
 	namespace XML {
     
 		using namespace std;

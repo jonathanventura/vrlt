@@ -17,7 +17,7 @@
 
 #define NLEVELS 4
 
-namespace MultiView {
+namespace vrlt {
     /** \addtogroup MultiView
      * @{
      */

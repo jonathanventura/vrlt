@@ -21,7 +21,7 @@ extern "C" {
 #include <vl/sift.h>
 }
 
-namespace MultiView {
+namespace vrlt {
 	
 	using namespace TooN;
 	using namespace CVD;

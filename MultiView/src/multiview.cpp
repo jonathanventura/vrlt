@@ -11,7 +11,7 @@
 
 #include <MultiView/multiview.h>
 
-namespace MultiView
+namespace vrlt
 {
     using namespace std;
     using namespace TooN;

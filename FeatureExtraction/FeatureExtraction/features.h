@@ -15,7 +15,7 @@
 #include <MultiView/multiview.h>
 #include <cvd/rgb.h>
 
-namespace MultiView {
+namespace vrlt {
 
 /** \addtogroup FeatureExtraction
  * \brief Feature extraction

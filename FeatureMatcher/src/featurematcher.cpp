@@ -16,7 +16,7 @@
 
 #include <cvd/timer.h>
 
-namespace MultiView {
+namespace vrlt {
     
     using namespace std;
 
