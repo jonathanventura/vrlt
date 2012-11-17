@@ -12,6 +12,20 @@ project( vrlt )
 set( BUILD_MULTIVIEW TRUE CACHE BOOL "Build MultiView module" )
 set( BUILD_FEATURE_EXTRACTION TRUE CACHE BOOL "Build FeatureExtraction module" )
 set( BUILD_FEATURE_MATCHER TRUE CACHE BOOL "Build FeatureMatcher module" )
+set( BUILD_ESTIMATOR TRUE CACHE BOOL "Build Estimator module" )
+
+set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
+set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
+
+if( USE_ACCELERATE )
+find_library( ACCELERATE Accelerate REQUIRED )
+add_definitions( -DUSE_ACCELERATE )
+endif()
+
+if( USE_DISPATCH )
+add_definitions( -DUSE_DISPATCH )
+endif()
+
 
 find_package( CVD REQUIRED )
 
@@ -30,4 +44,9 @@ endif()
 if( BUILD_FEATURE_MATCHER )
 include_directories( $(vrlt)/FeatureMatcher )
 add_subdirectory( FeatureMatcher )
+endif()
+
+if( BUILD_ESTIMATOR )
+include_directories( $(vrlt)/Estimator )
+add_subdirectory( Estimator )
 endif()
