@@ -326,29 +326,6 @@ namespace vrlt
             count = newcount;
             if ( verbose ) cout << "after templates: count at level " << level << ": " << count << "\n";
 
-#if ( TARGET_OS_IPHONE == 0 )
-            if ( verbose && level == firstlevel )
-            {
-                Image<byte> imageout( mycamera->image.size(), 0 );
-                
-                int ndrawn = 0;
-                for ( int i = 0; i < count; i++ )
-                {
-                    Patch *sourcepatch = searchPatches[i];
-                    bool good = sourcepatch->copyTemplate( imageout );
-                    if ( good ) ndrawn++;
-                }
-                stringstream path;
-                static int mycounter = 0;
-                path << "Output/pyramid_" << camera_in->name << ".jpg";
-                img_save( imageout, path.str(), ImageType::JPEG );
-                
-                stringstream path2;
-                path2 << "Output/original_" << camera_in->name << ".jpg";
-                img_save( camera_in->pyramid.levels[level].image, path2.str(), ImageType::JPEG );
-            }
-#endif
-
             patchSearcher->begin = searchPatches.begin();
             newcount = patchSearcher->doSearch( count );
             sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );

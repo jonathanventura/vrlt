@@ -21,6 +21,8 @@ set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
 set( USE_VL TRUE CACHE BOOL "Use VLFeat library" )
 
+find_library( TOONTAG toontag REQUIRED )
+
 if( USE_ACCELERATE )
 find_library( ACCELERATE Accelerate REQUIRED )
 add_definitions( -DUSE_ACCELERATE )
@@ -71,6 +73,10 @@ endif()
 
 if( BUILD_LOCALIZER )
 include_directories( $(vrlt)/Localizer )
+include_directories( $(vrlt)/LocalizerClient )
+include_directories( $(vrlt)/LocalizerServer )
 add_subdirectory( Localizer )
+add_subdirectory( LocalizerClient )
+add_subdirectory( LocalizerServer )
 endif()
 
