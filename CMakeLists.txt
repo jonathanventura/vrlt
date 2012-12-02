@@ -14,6 +14,7 @@ set( BUILD_FEATURE_EXTRACTION TRUE CACHE BOOL "Build FeatureExtraction module" )
 set( BUILD_FEATURE_MATCHER TRUE CACHE BOOL "Build FeatureMatcher module" )
 set( BUILD_ESTIMATOR TRUE CACHE BOOL "Build Estimator module" )
 set( BUILD_GLUTILS TRUE CACHE BOOL "Build GLUtils module" )
+set( BUILD_PATCHTRACKER TRUE CACHE BOOL "Build PatchTracker module" )
 
 set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
@@ -56,3 +57,9 @@ if( BUILD_GLUTILS )
 include_directories( $(vrlt)/GLUtils )
 add_subdirectory( GLUtils )
 endif()
+
+if( BUILD_PATCHTRACKER )
+include_directories( $(vrlt)/PatchTracker )
+add_subdirectory( PatchTracker )
+endif()
+

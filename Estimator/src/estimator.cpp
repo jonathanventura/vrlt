@@ -6,7 +6,7 @@
  *
  * File: estimator.cpp
  * Author: Jonathan Ventura
- * Last Modified: 2.12.2012
+ * Last Modified: 12.2.2012
  */
 
 #include <Estimator/estimator.h>
