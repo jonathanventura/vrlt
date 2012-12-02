@@ -6,7 +6,7 @@
  *
  * File: estimator.h
  * Author: Jonathan Ventura
- * Last Modified: 11.17.2012
+ * Last Modified: 2.12.2012
  */
 
 #ifndef __ESTIMATOR_H
@@ -171,35 +171,6 @@ namespace vrlt {
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
         TooN::Matrix<3> H;
-    };
-    
-    struct OnePointScale : public Estimator
-    {
-        int sampleSize();
-        int compute( PointPairList::iterator begin, PointPairList::iterator end );
-        double score( PointPairList::iterator it );
-        TooN::SE3<> pose;
-        double scale;
-        bool canRefine();
-    };
-    
-    struct TwoPointTranslation : public Estimator
-    {
-        int sampleSize();
-        int compute( PointPairList::iterator begin, PointPairList::iterator end );
-        double score( PointPairList::iterator it );
-        TooN::Vector<3> t;
-        bool canRefine();
-    };
-    
-    struct OnePointSimilarity : public Estimator
-    {
-        int sampleSize();
-        int compute( PointPairList::iterator begin, PointPairList::iterator end );
-        double score( PointPairList::iterator it );
-        TooN::Vector<2> uv;
-        double s;
-        TooN::SE3<> getPose( PointPairList::iterator begin, PointPairList::iterator end );
     };
     
     /** \brief Vertical vanishing point

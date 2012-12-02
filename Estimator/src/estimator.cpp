@@ -6,7 +6,7 @@
  *
  * File: estimator.cpp
  * Author: Jonathan Ventura
- * Last Modified: 11.17.2012
+ * Last Modified: 2.12.2012
  */
 
 #include <Estimator/estimator.h>
@@ -211,8 +211,6 @@ namespace vrlt {
         Vector<3> x1 = it->first;
         Vector<3> x2 = it->second;
         
-//        pair<double,double> scores = tag::essential_reprojection_errors_squared( E, x1, x2 );
-//        return scores.first;
         x2 /= x2[2];
         Vector<3> line = E * x1;
         double d = x2 * line;
@@ -227,7 +225,6 @@ namespace vrlt {
         int bestcount = 0;
         for ( int i = 0; i < poses.size(); i++ ) {
             SE3<> pose = poses[i];
-            //cout << "pose " << pose << "\n";
             
             Vector<3> newup = pose.get_rotation() * makeVector( 0, 1, 0 );
             if ( newup[1] < 0 ) continue;
@@ -243,7 +240,6 @@ namespace vrlt {
                 Vector<4> X = triangulate( pose, *it );
                 Vector<3> Xproj = project(X);
                 
-                //if ( Xproj[2] > 0 ) count++;
                 if ( Xproj * it->first > 0 ) count++;
             }
             
@@ -272,24 +268,6 @@ namespace vrlt {
     
     int UprightEssential::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-//        function E = relpose(x1,x2)
-//        % x1 and x2 are Nx3
-//        % solves x2 * E * x1' = 0
-//        % using upright constraint
-//        % min num correspondences: 5
-//        
-//        % solution vector: [E11 E12 E13 E21 E23 E32]'
-//        
-//        A = [ x1(:,3).*x2(:,3)+x1(:,1).*x2(:,1) x2(:,1).*x1(:,2) x2(:,1).*x1(:,3)-x1(:,1).*x2(:,3) x1(:,1).*x2(:,2) x2(:,2).*x1(:,3) x1(:,2).*x2(:,3) ];
-//        [U,S,V] = svd(A,0);
-//        
-//        sol = V(:,end);
-//        
-//        E = [ sol(1) sol(2) sol(3) ; sol(4) 0 sol(5) ; -sol(3) sol(6) sol(1) ];
-//        
-//        [U,S,V] = svd(E,0);
-//        E = U*diag([1,1,0])*V';
-        
         int N = (int) distance( begin, end );
         Matrix<> A( N, 6 );
         int n = 0;
@@ -303,7 +281,7 @@ namespace vrlt {
         }
         
         SVD<> svdA( A );
-        //cout << "num rows: " << svdA.get_VT().num_rows() << "\n";
+
         Vector<6> sol = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
         
         E[0] = makeVector( sol[0],  sol[1], sol[2] );
@@ -337,7 +315,6 @@ namespace vrlt {
                 Vector<3> line = E * x1;
                 double angle = asin( x2 * line / norm(x2) / norm(line) ) * 180. / M_PI;
                 scoresq = angle*angle;
-                //scoresq = fabs( x2 * line / norm(x2) / norm(line) );
                 break;
             }
         }
@@ -353,7 +330,6 @@ namespace vrlt {
         int bestcount = 0;
         for ( int i = 0; i < poses.size(); i++ ) {
             SE3<> pose = poses[i];
-            //cout << pose << "\n";
             
             Vector<3> newup = pose.get_rotation() * makeVector( 0, 1, 0 );
             if ( newup[1] < 0 ) continue;
@@ -369,7 +345,6 @@ namespace vrlt {
                 Vector<4> X = triangulate( pose, *it );
                 Vector<3> Xproj = project(X);
                 
-                //if ( Xproj[2] > 0 ) count++;
                 if ( Xproj * it->first > 0 ) count++;
             }
             
@@ -378,19 +353,8 @@ namespace vrlt {
                 bestpose = pose;
             }
             
-            //cout << count << " ";
         }
-        //cout << "\n";
-        
-        //PointPairList mylist( begin, end );
-        
-        //cout << "chose:\n" << bestpose << "\n";
-        //cout << bestpose.get_rotation() * makeVector( 0, 1, 0 ) << "\n";
-        
-        //bestpose = tag::optimize_epipolar( mylist, bestpose );
-        
-        //cout << "after optimizing:\n" << bestpose << "\n";
-        
+
         return bestpose;
     }
     
@@ -401,44 +365,6 @@ namespace vrlt {
     
     int UprightPose::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-//        function P = abspose(X,x)
-//        % X is [N,4] vector of 3d points
-//        % x is [N,3] vector 2d observations
-//        % solves x = projection of X in camera P
-//        % min num correspondences: 3 (really 2.5)
-//        
-//        % solution vector: [P11 P13 P14 P22 P24 P34]'
-//        
-//        N = size(X,1);
-//        
-//        M = [ -x(:,3).*X(:,1)+X(:,3).*x(:,1) -x(:,3).*X(:,3)-X(:,1).*x(:,1) -x(:,3).*X(:,4) zeros(N,1) zeros(N,1) X(:,4).*x(:,1)
-//        X(:,3).*x(:,2) -X(:,1).*x(:,2) zeros(N,1) -x(:,3).*X(:,2) -x(:,3).*X(:,4) X(:,4).*x(:,2) ];
-//        
-//        if N == 3,
-//        M = M(1:5,:);
-//        end
-//        
-//        [U,S,V] = svd(M,0);
-//        
-//        % calculate rank (from doc(rank))
-//        s = diag(S);
-//        tol = max(size(M))*eps(max(s));
-//        r = sum(s > tol);
-//        if r < 5,
-//        P = [];
-//        return
-//        end
-//        
-//        sol = V(:,end);
-//        sol = sol / sol(4);
-//        
-//        P = [ sol(1) 0 sol(2) sol(3) ; 0 sol(4) 0 sol(5) ; -sol(2) 0 sol(1) sol(6) ];
-//        
-//        R = P(1:3,1:3);
-//        [U,S,V] = svd(R);
-//        R = U*diag([1 1 1])*V';
-//        P(1:3,1:3) = R;
-        
         int N = (int) distance( begin, end );
         int numrows = 2 * N;
         if ( N == 3 ) numrows = 5;
@@ -468,10 +394,6 @@ namespace vrlt {
         R[0] = makeVector( sol[0], 0, sol[1] );
         R[1] = makeVector( 0, sol[3], 0 );
         R[2] = makeVector( -sol[1], 0, sol[0] );
-        
-        //SVD<3> svdR( R );
-        //cout << "diagonal: " << svdR.get_diagonal() << "\n";
-        //R = svdR.get_U() * DiagonalMatrix<3>( makeVector( 1, 1, 1 ) ) * svdR.get_VT();
         
         pose.get_rotation() = SO3<>( R );
         pose.get_translation() = makeVector( sol[2], sol[4], sol[5] );
@@ -668,13 +590,10 @@ namespace vrlt {
         for ( it = begin; n < 3; it++,n++ ) {
             x[n] = it->first;
             z[n] = it->second.slice<0,2>();
-            
-//            cout << x[n] << " -> " << z[n] << "\n";
         }
         
         poses.clear();
         int nposes = tag::three_point_pose( x, z, poses );
-//        for ( int i = 0; i < nposes; i++ ) cout << "pose " << i << ":\n" << poses[i] << "\n";
         
         return nposes;
     }
@@ -843,170 +762,7 @@ namespace vrlt {
     
     
 
-    
-    
-    int OnePointScale::sampleSize()
-    {
-        return 1;
-    }
-    
-    int OnePointScale::compute( PointPairList::iterator begin, PointPairList::iterator end )
-    {
-        // find s such that
-        // x = project( R * X + s * t )
-        // this is useful when we know the relative pose but not the scale
         
-        int N = (int) distance( begin, end );
-        
-        SO3<> R( pose.get_rotation() );
-        Vector<3> t( pose.get_translation() );
-        
-        Matrix<> A( 2*N, 2 );
-        int n = 0;
-        PointPairList::iterator it;
-        for ( it = begin; it != end; it++ )
-        {
-            Vector<3> X = it->first;
-            Vector<3> x = it->second;
-            
-            Vector<3> RX = R * X;
-            
-            A[n++] = makeVector( x[0] * RX[2] - x[2] * RX[0], x[0] * t[2] - x[2] * t[0] );
-            A[n++] = makeVector( x[1] * RX[2] - x[2] * RX[1], x[1] * t[2] - x[2] * t[1] );
-        }
-        
-        SVD<> svdA( A );
-        Vector<2> soln = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
-        
-        scale = soln[1] / soln[0];
-        
-        cout << "scale: " << scale << " from " << N << " points\n";
-        for ( it = begin; it != end; it++ )
-        {
-            Vector<3> X = it->first;
-            Vector<3> x = it->second;
-            
-            cout << project( x ) - project( R * X + scale * t ) << "\n";
-        }
-        
-        return 1;
-    }
-    
-    double OnePointScale::score( PointPairList::iterator it )
-    {
-        Vector<3> X = it->first;
-        Vector<2> x = project( it->second );
-        
-        Vector<2> xproj = project( pose.get_rotation() * X + scale * pose.get_translation() );
-        Vector<2> diff = xproj - x;
-        return diff*diff;
-    }
-    
-    bool OnePointScale::canRefine()
-    {
-        return true;
-    }
-    
-    
-    
-    int TwoPointTranslation::sampleSize()
-    {
-        return 2;
-    }
-    
-    int TwoPointTranslation::compute( PointPairList::iterator begin, PointPairList::iterator end )
-    {
-        int N = (int) distance( begin, end );
-        
-        Matrix<> A( 2*N, 4 );
-        int n = 0;
-        PointPairList::iterator it;
-        for ( it = begin; it != end; it++ )
-        {
-            Vector<3> X = it->first;
-            Vector<2> x = project( it->second );
-            
-            A[n++] = makeVector( -1, 0, x[0], x[0]*X[2]-X[0] );
-            A[n++] = makeVector( 0, -1, x[1], x[1]*X[2]-X[1] );
-        }
-        
-        SVD<> svdA( A );
-        Vector<4> soln = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
-        soln = soln / soln[3];
-        
-        t = soln.slice<0,3>();
-        
-        return 1;
-    }
-    
-    double TwoPointTranslation::score( PointPairList::iterator it )
-    {
-        Vector<3> X = it->first;
-        Vector<2> x = project( it->second );
-        Vector<2> diff = x - project( X + t );
-        return diff * diff;
-    }
-
-    bool TwoPointTranslation::canRefine()
-    {
-        return true;
-    }
-
-    
-    
-    
-    int OnePointSimilarity::sampleSize()
-    {
-        return 1;
-    }
-    
-    int OnePointSimilarity::compute( PointPairList::iterator begin, PointPairList::iterator end )
-    {
-        Vector<2> x1 = begin->first.slice<0,2>();
-        Vector<2> x2 = begin->second.slice<0,2>();
-        double s1 = begin->first[2];
-        double s2 = begin->second[2];
-        s = s2 / s1;
-        uv = x2 - s * x1;
-        
-        //cout << "s: " << s << "\tuv: " << uv << "\n";
-        
-        return 1;
-    }
-    
-    double OnePointSimilarity::score( PointPairList::iterator it )
-    {
-        Vector<2> x1 = it->first.slice<0,2>();
-        Vector<2> x2 = it->second.slice<0,2>();
-        Vector<2> diff = x2 - ( s * x1 + uv );
-        //cout << "score: " << norm(diff) << "\n";
-        return diff * diff;
-    }
-    
-    SE3<> OnePointSimilarity::getPose( PointPairList::iterator begin, PointPairList::iterator end )
-    {
-        PointPairList mylist;
-        PointPairList::iterator it;
-        for ( it = begin; it != end; it++ )
-        {
-            Vector<3> X = unproject( it->first.slice<0,2>() );
-            Vector<3> x = unproject( it->second.slice<0,2>() );
-            mylist.push_back( make_pair( X, x ) );
-        }
-        
-        TwoPointTranslation estimator;
-        estimator.compute( mylist.begin(), mylist.end() );
-        
-        SE3<> pose;
-        pose.get_translation() = estimator.t;
-        
-        return pose;
-    }
-    
-    
-    
-    
-    
     
     PROSAC::PROSAC() :
     num_trials( 20000 ),
