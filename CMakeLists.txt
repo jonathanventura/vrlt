@@ -16,6 +16,7 @@ set( BUILD_ESTIMATOR TRUE CACHE BOOL "Build Estimator module" )
 set( BUILD_GLUTILS TRUE CACHE BOOL "Build GLUtils module" )
 set( BUILD_PATCHTRACKER TRUE CACHE BOOL "Build PatchTracker module" )
 set( BUILD_LOCALIZER TRUE CACHE BOOL "Build Localizer module" )
+set( BUILD_IMAGECACHE TRUE CACHE BOOL "Build ImageCache module" )
 
 set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
@@ -78,5 +79,10 @@ include_directories( $(vrlt)/LocalizerServer )
 add_subdirectory( Localizer )
 add_subdirectory( LocalizerClient )
 add_subdirectory( LocalizerServer )
+endif()
+
+if ( BUILD_IMAGECACHE )
+include_directories( $(vrlt)/ImageCache )
+add_subdirectory( ImageCache )
 endif()
 
