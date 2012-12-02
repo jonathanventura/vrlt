@@ -17,9 +17,11 @@
 #include <cvd/image_convert.h>
 #include <cvd/image_interpolate.h>
 
+#ifdef USE_VL
 extern "C" { 
 #include <vl/sift.h>
 }
+#endif
 
 namespace vrlt {
 	
@@ -201,7 +203,7 @@ namespace vrlt {
     }
     
 
-	
+#ifdef USE_VL
     void normalizeFloats( float *floatdata )
     {
         float norm = 0;
@@ -515,5 +517,6 @@ namespace vrlt {
         
         return count;
     }
+#endif
 }
 

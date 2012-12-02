@@ -18,6 +18,7 @@ set( BUILD_PATCHTRACKER TRUE CACHE BOOL "Build PatchTracker module" )
 
 set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
+set( USE_VL TRUE CACHE BOOL "Use VLFeat library" )
 
 if( USE_ACCELERATE )
 find_library( ACCELERATE Accelerate REQUIRED )
@@ -28,6 +29,10 @@ if( USE_DISPATCH )
 add_definitions( -DUSE_DISPATCH )
 endif()
 
+if ( USE_VL )
+find_library( VL vl REQUIRED )
+add_definitions( -DUSE_VL )
+endif()
 
 find_package( CVD REQUIRED )
 

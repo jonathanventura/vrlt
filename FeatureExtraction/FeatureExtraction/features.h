@@ -29,10 +29,12 @@ namespace vrlt {
     
     int extractPatchDescriptors( CVD::BasicImage< CVD::Rgb<CVD::byte> > &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
     
+#ifdef USE_VL
     int extractSIFTdescriptors( CVD::BasicImage< CVD::byte > &image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
     int extractSIFTdescriptors( CVD::BasicImage< CVD::Rgb<CVD::byte> > &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
     int extractSIFT( CVD::BasicImage<CVD::byte> &image, std::vector<Feature*> &features, int o_min = 0, bool upright = false, float peak_thresh = 0.5f );
     int extractSIFT( CVD::BasicImage< CVD::Rgb<CVD::byte> > &color_image, std::vector<Feature*> &features, int o_min = 0, bool upright = false, float peak_thresh = 0.5f );
+#endif
 /**
  * @}
  */
