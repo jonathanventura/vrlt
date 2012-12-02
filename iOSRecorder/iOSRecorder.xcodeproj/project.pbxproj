@@ -1,0 +1,314 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		602DEF4514DF86EF00F53443 /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 602DEF4414DF86EF00F53443 /* CoreLocation.framework */; };
+		602DEF5114DF92FA00F53443 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 602DEF5014DF92FA00F53443 /* MainWindow.xib */; };
+		60F93A0F1474958500A0CFDC /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A0E1474958500A0CFDC /* UIKit.framework */; };
+		60F93A111474958500A0CFDC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A101474958500A0CFDC /* Foundation.framework */; };
+		60F93A131474958500A0CFDC /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A121474958500A0CFDC /* CoreGraphics.framework */; };
+		60F93A191474958500A0CFDC /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 60F93A171474958500A0CFDC /* InfoPlist.strings */; };
+		60F93A1B1474958500A0CFDC /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 60F93A1A1474958500A0CFDC /* main.m */; };
+		60F93A1F1474958500A0CFDC /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 60F93A1E1474958500A0CFDC /* AppDelegate.m */; };
+		60F93A2B1474960D00A0CFDC /* MainViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 60F93A261474960D00A0CFDC /* MainViewController.m */; };
+		60F93A2C1474960D00A0CFDC /* VideoHandler.m in Sources */ = {isa = PBXBuildFile; fileRef = 60F93A281474960D00A0CFDC /* VideoHandler.m */; };
+		60F93A3F14749DCF00A0CFDC /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A3E14749DCF00A0CFDC /* AVFoundation.framework */; };
+		60F93A4114749DDF00A0CFDC /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A4014749DDF00A0CFDC /* CoreVideo.framework */; };
+		60F93A4314749DEC00A0CFDC /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A4214749DEC00A0CFDC /* CoreMotion.framework */; };
+		60F93A4914749E0F00A0CFDC /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A4814749E0F00A0CFDC /* QuartzCore.framework */; };
+		60F93A4B14749E3F00A0CFDC /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60F93A4A14749E3F00A0CFDC /* CoreMedia.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		602DEF4414DF86EF00F53443 /* CoreLocation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreLocation.framework; path = System/Library/Frameworks/CoreLocation.framework; sourceTree = SDKROOT; };
+		602DEF5014DF92FA00F53443 /* MainWindow.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = MainWindow.xib; sourceTree = "<group>"; };
+		60F93A0A1474958500A0CFDC /* iOSRecorder.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iOSRecorder.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		60F93A0E1474958500A0CFDC /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		60F93A101474958500A0CFDC /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		60F93A121474958500A0CFDC /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		60F93A161474958500A0CFDC /* iOSRecorder-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "iOSRecorder-Info.plist"; sourceTree = "<group>"; };
+		60F93A181474958500A0CFDC /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		60F93A1A1474958500A0CFDC /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		60F93A1C1474958500A0CFDC /* iOSRecorder-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "iOSRecorder-Prefix.pch"; sourceTree = "<group>"; };
+		60F93A1D1474958500A0CFDC /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		60F93A1E1474958500A0CFDC /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		60F93A251474960D00A0CFDC /* MainViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
+		60F93A261474960D00A0CFDC /* MainViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MainViewController.m; sourceTree = "<group>"; };
+		60F93A271474960D00A0CFDC /* VideoHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoHandler.h; sourceTree = "<group>"; };
+		60F93A281474960D00A0CFDC /* VideoHandler.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VideoHandler.m; sourceTree = "<group>"; };
+		60F93A3E14749DCF00A0CFDC /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		60F93A4014749DDF00A0CFDC /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		60F93A4214749DEC00A0CFDC /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
+		60F93A4814749E0F00A0CFDC /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		60F93A4A14749E3F00A0CFDC /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		60F93A071474958500A0CFDC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				602DEF4514DF86EF00F53443 /* CoreLocation.framework in Frameworks */,
+				60F93A4B14749E3F00A0CFDC /* CoreMedia.framework in Frameworks */,
+				60F93A4914749E0F00A0CFDC /* QuartzCore.framework in Frameworks */,
+				60F93A4314749DEC00A0CFDC /* CoreMotion.framework in Frameworks */,
+				60F93A4114749DDF00A0CFDC /* CoreVideo.framework in Frameworks */,
+				60F93A3F14749DCF00A0CFDC /* AVFoundation.framework in Frameworks */,
+				60F93A0F1474958500A0CFDC /* UIKit.framework in Frameworks */,
+				60F93A111474958500A0CFDC /* Foundation.framework in Frameworks */,
+				60F93A131474958500A0CFDC /* CoreGraphics.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		60F939FF1474958500A0CFDC = {
+			isa = PBXGroup;
+			children = (
+				602DEF5014DF92FA00F53443 /* MainWindow.xib */,
+				60F93A141474958500A0CFDC /* iOSRecorder */,
+				60F93A0D1474958500A0CFDC /* Frameworks */,
+				60F93A0B1474958500A0CFDC /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		60F93A0B1474958500A0CFDC /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				60F93A0A1474958500A0CFDC /* iOSRecorder.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		60F93A0D1474958500A0CFDC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				602DEF4414DF86EF00F53443 /* CoreLocation.framework */,
+				60F93A4A14749E3F00A0CFDC /* CoreMedia.framework */,
+				60F93A4814749E0F00A0CFDC /* QuartzCore.framework */,
+				60F93A4214749DEC00A0CFDC /* CoreMotion.framework */,
+				60F93A4014749DDF00A0CFDC /* CoreVideo.framework */,
+				60F93A3E14749DCF00A0CFDC /* AVFoundation.framework */,
+				60F93A0E1474958500A0CFDC /* UIKit.framework */,
+				60F93A101474958500A0CFDC /* Foundation.framework */,
+				60F93A121474958500A0CFDC /* CoreGraphics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		60F93A141474958500A0CFDC /* iOSRecorder */ = {
+			isa = PBXGroup;
+			children = (
+				60F93A1D1474958500A0CFDC /* AppDelegate.h */,
+				60F93A1E1474958500A0CFDC /* AppDelegate.m */,
+				60F93A251474960D00A0CFDC /* MainViewController.h */,
+				60F93A261474960D00A0CFDC /* MainViewController.m */,
+				60F93A271474960D00A0CFDC /* VideoHandler.h */,
+				60F93A281474960D00A0CFDC /* VideoHandler.m */,
+				60F93A151474958500A0CFDC /* Supporting Files */,
+			);
+			path = iOSRecorder;
+			sourceTree = "<group>";
+		};
+		60F93A151474958500A0CFDC /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				60F93A161474958500A0CFDC /* iOSRecorder-Info.plist */,
+				60F93A171474958500A0CFDC /* InfoPlist.strings */,
+				60F93A1A1474958500A0CFDC /* main.m */,
+				60F93A1C1474958500A0CFDC /* iOSRecorder-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		60F93A091474958500A0CFDC /* iOSRecorder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 60F93A221474958500A0CFDC /* Build configuration list for PBXNativeTarget "iOSRecorder" */;
+			buildPhases = (
+				60F93A061474958500A0CFDC /* Sources */,
+				60F93A071474958500A0CFDC /* Frameworks */,
+				60F93A081474958500A0CFDC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = iOSRecorder;
+			productName = iOSRecorder;
+			productReference = 60F93A0A1474958500A0CFDC /* iOSRecorder.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		60F93A011474958500A0CFDC /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0420;
+			};
+			buildConfigurationList = 60F93A041474958500A0CFDC /* Build configuration list for PBXProject "iOSRecorder" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 60F939FF1474958500A0CFDC;
+			productRefGroup = 60F93A0B1474958500A0CFDC /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				60F93A091474958500A0CFDC /* iOSRecorder */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		60F93A081474958500A0CFDC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60F93A191474958500A0CFDC /* InfoPlist.strings in Resources */,
+				602DEF5114DF92FA00F53443 /* MainWindow.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		60F93A061474958500A0CFDC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60F93A1B1474958500A0CFDC /* main.m in Sources */,
+				60F93A1F1474958500A0CFDC /* AppDelegate.m in Sources */,
+				60F93A2B1474960D00A0CFDC /* MainViewController.m in Sources */,
+				60F93A2C1474960D00A0CFDC /* VideoHandler.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		60F93A171474958500A0CFDC /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				60F93A181474958500A0CFDC /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		60F93A201474958500A0CFDC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				PROVISIONING_PROFILE = "";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+		60F93A211474958500A0CFDC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				COPY_PHASE_STRIP = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_MISSING_PROTOTYPES = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				PROVISIONING_PROFILE = "";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 2;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		60F93A231474958500A0CFDC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "iOSRecorder/iOSRecorder-Prefix.pch";
+				INFOPLIST_FILE = "iOSRecorder/iOSRecorder-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		60F93A241474958500A0CFDC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "iOSRecorder/iOSRecorder-Prefix.pch";
+				INFOPLIST_FILE = "iOSRecorder/iOSRecorder-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
+				TARGETED_DEVICE_FAMILY = "1,2";
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		60F93A041474958500A0CFDC /* Build configuration list for PBXProject "iOSRecorder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60F93A201474958500A0CFDC /* Debug */,
+				60F93A211474958500A0CFDC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		60F93A221474958500A0CFDC /* Build configuration list for PBXNativeTarget "iOSRecorder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				60F93A231474958500A0CFDC /* Debug */,
+				60F93A241474958500A0CFDC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 60F93A011474958500A0CFDC /* Project object */;
+}

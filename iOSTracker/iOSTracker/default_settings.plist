@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>trackingModelPath</key>
+	<string>demotable1.short-3d</string>
+	<key>displayModelPath</key>
+	<string>arcde</string>
+	<key>displayModelFilename</key>
+	<string>ArcDeTriomphe.obj</string>
+	<key>adjustmentScale</key>
+	<integer>1</integer>
+	<key>adjustmentShift</key>
+	<integer>0</integer>
+	<key>modelScale</key>
+	<string>.025 .025 .025</string>
+	<key>modelTranslation</key>
+	<string>0 0 0</string>
+	<key>modelRotation</key>
+	<string>3.14159 0 0</string>
+	<key>lightDirection</key>
+	<string>.5 -1 -.5</string>
+	<key>plane</key>
+	<string>0 -1 0 0</string>
+</dict>
+</plist>

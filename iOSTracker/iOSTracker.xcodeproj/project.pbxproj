@@ -1,0 +1,724 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		600BB96F1418181D00362575 /* iOSTrackerAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 603BA63613FEDE3300A34C59 /* iOSTrackerAppDelegate.m */; };
+		600BB9701418181D00362575 /* MainViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 603BA63C13FEDE3400A34C59 /* MainViewController.mm */; };
+		600BB9711418181D00362575 /* VideoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6051781C140032D3003E225D /* VideoView.m */; };
+		600BB9721418181D00362575 /* VideoHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60A8B6AF13FF5E500006C541 /* VideoHandler.mm */; };
+		600BB9731418181D00362575 /* TrackerHandler.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60A8B6B413FF62F10006C541 /* TrackerHandler.mm */; };
+		600BB9741418181D00362575 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 603BA63313FEDE3300A34C59 /* main.m */; };
+		600BB97A1418181D00362575 /* CoreMotion.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60DA312D140AA04000134ED6 /* CoreMotion.framework */; };
+		600BB97B1418181D00362575 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 602313ED140575B700623A92 /* OpenGLES.framework */; };
+		600BB97C1418181D00362575 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60A8B6AC13FF5D890006C541 /* CoreMedia.framework */; };
+		600BB97D1418181D00362575 /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60A8B6A913FF5D750006C541 /* CoreVideo.framework */; };
+		600BB97F1418181D00362575 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA8B613FEE19F00A34C59 /* Accelerate.framework */; };
+		600BB9801418181D00362575 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62613FEDE3300A34C59 /* UIKit.framework */; };
+		600BB9811418181D00362575 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62813FEDE3300A34C59 /* Foundation.framework */; };
+		600BB9821418181D00362575 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62A13FEDE3300A34C59 /* CoreGraphics.framework */; };
+		600BB9831418181D00362575 /* libcvd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA77F13FEDE6400A34C59 /* libcvd.a */; };
+		600BB9EE1418182A00362575 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 600BB9EA1418182A00362575 /* MainWindow.xib */; };
+		600BB9EF1418182A00362575 /* MainViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 600BB9EC1418182A00362575 /* MainViewController.xib */; };
+		605F797116416FA000378D68 /* imagecache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 605F796F16416FA000378D68 /* imagecache.cpp */; };
+		605F797416416FE200378D68 /* ssd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 605F797316416FE200378D68 /* ssd.cpp */; };
+		606B0132166BD3C500B3C25E /* nccsearch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 606B0131166BD3C500B3C25E /* nccsearch.cpp */; };
+		6071406115E833F30071C29D /* ARDisplay.mm in Sources */ = {isa = PBXBuildFile; fileRef = 6071406015E833EF0071C29D /* ARDisplay.mm */; };
+		607140BC15E836380071C29D /* CheckGL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071408C15E836380071C29D /* CheckGL.cpp */; };
+		607140BF15E836380071C29D /* GLGenericDrawable.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071408F15E836380071C29D /* GLGenericDrawable.cpp */; };
+		607140C015E836380071C29D /* GLModel.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409015E836380071C29D /* GLModel.cpp */; };
+		607140C115E836380071C29D /* GLShadow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409115E836380071C29D /* GLShadow.cpp */; };
+		607140C215E836380071C29D /* GLSL.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409215E836380071C29D /* GLSL.cpp */; };
+		607140C315E836380071C29D /* GLSLHelpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409315E836380071C29D /* GLSLHelpers.cpp */; };
+		607140C415E836380071C29D /* GLSLPrograms.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409415E836380071C29D /* GLSLPrograms.cpp */; };
+		607140C515E836380071C29D /* LoadImage.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409515E836380071C29D /* LoadImage.cpp */; };
+		607140C615E836380071C29D /* LoadOBJ.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409615E836380071C29D /* LoadOBJ.cpp */; };
+		607140C715E836380071C29D /* TexturePacker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6071409715E836380071C29D /* TexturePacker.cpp */; };
+		607140C915E836380071C29D /* multiview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140A215E836380071C29D /* multiview.cpp */; };
+		607140CB15E836380071C29D /* multiview_io_xml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140A415E836380071C29D /* multiview_io_xml.cpp */; };
+		607140CC15E836380071C29D /* pyramid.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140A515E836380071C29D /* pyramid.cpp */; };
+		607140CD15E836380071C29D /* tinystr.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140A715E836380071C29D /* tinystr.cpp */; };
+		607140CE15E836380071C29D /* tinyxml.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140A915E836380071C29D /* tinyxml.cpp */; };
+		607140CF15E836380071C29D /* tinyxmlerror.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140AB15E836380071C29D /* tinyxmlerror.cpp */; };
+		607140D015E836380071C29D /* tinyxmlparser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140AC15E836380071C29D /* tinyxmlparser.cpp */; };
+		607140D215E836380071C29D /* ncc.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140B615E836380071C29D /* ncc.cpp */; };
+		607140D315E836380071C29D /* patch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140B715E836380071C29D /* patch.cpp */; };
+		607140D415E836380071C29D /* sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140B815E836380071C29D /* sampler.cpp */; };
+		607140D615E836380071C29D /* tracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140BA15E836380071C29D /* tracker.cpp */; };
+		607140E815E837B20071C29D /* client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140E515E837B20071C29D /* client.cpp */; };
+		60830B2F15D5C512001E2E64 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA8C013FEE78F00A34C59 /* AVFoundation.framework */; };
+		608C8D4816415007004CE002 /* robustlsq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 608C8D4716415007004CE002 /* robustlsq.cpp */; };
+		60BB6A07164B210B000219A7 /* default_settings.plist in Resources */ = {isa = PBXBuildFile; fileRef = 60BB6A06164B210B000219A7 /* default_settings.plist */; };
+		60E840D61422C050002CEEF2 /* EAGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = 60E840D41422C050002CEEF2 /* EAGLView.m */; };
+		60E840E11422C173002CEEF2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60E840E01422C173002CEEF2 /* QuartzCore.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		600BB98B1418181D00362575 /* iOSTracker-iPad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "iOSTracker-iPad.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		600BB9EB1418182A00362575 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = "Resources-iPad/iOSTracker/en.lproj/MainWindow.xib"; sourceTree = "<group>"; };
+		600BB9ED1418182A00362575 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = "Resources-iPad/iOSTracker/en.lproj/MainViewController.xib"; sourceTree = "<group>"; };
+		602313ED140575B700623A92 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		603BA62613FEDE3300A34C59 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		603BA62813FEDE3300A34C59 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		603BA62A13FEDE3300A34C59 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		603BA62E13FEDE3300A34C59 /* iOSTracker-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "iOSTracker-Info.plist"; sourceTree = "<group>"; };
+		603BA63013FEDE3300A34C59 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		603BA63213FEDE3300A34C59 /* iOSTracker-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "iOSTracker-Prefix.pch"; sourceTree = "<group>"; };
+		603BA63313FEDE3300A34C59 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		603BA63513FEDE3300A34C59 /* iOSTrackerAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = iOSTrackerAppDelegate.h; sourceTree = "<group>"; };
+		603BA63613FEDE3300A34C59 /* iOSTrackerAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iOSTrackerAppDelegate.m; sourceTree = "<group>"; };
+		603BA63B13FEDE3400A34C59 /* MainViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
+		603BA63C13FEDE3400A34C59 /* MainViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MainViewController.mm; sourceTree = "<group>"; };
+		603BA77F13FEDE6400A34C59 /* libcvd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcvd.a; path = ../iOSLibs/libcvd/libcvd.a; sourceTree = "<group>"; };
+		603BA8B613FEE19F00A34C59 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		603BA8C013FEE78F00A34C59 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		6051781B140032D2003E225D /* VideoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoView.h; sourceTree = "<group>"; };
+		6051781C140032D3003E225D /* VideoView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VideoView.m; sourceTree = "<group>"; };
+		605F796D16416FA000378D68 /* imagecache.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = imagecache.h; sourceTree = "<group>"; };
+		605F796F16416FA000378D68 /* imagecache.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = imagecache.cpp; sourceTree = "<group>"; };
+		605F797216416FDE00378D68 /* ssd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ssd.h; sourceTree = "<group>"; };
+		605F797316416FE200378D68 /* ssd.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ssd.cpp; sourceTree = "<group>"; };
+		606B012F166BD3C100B3C25E /* nccsearch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = nccsearch.h; sourceTree = "<group>"; };
+		606B0130166BD3C100B3C25E /* search.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = search.h; sourceTree = "<group>"; };
+		606B0131166BD3C500B3C25E /* nccsearch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = nccsearch.cpp; sourceTree = "<group>"; };
+		6071405F15E833EF0071C29D /* ARDisplay.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ARDisplay.h; sourceTree = "<group>"; };
+		6071406015E833EF0071C29D /* ARDisplay.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ARDisplay.mm; sourceTree = "<group>"; };
+		6071407F15E836380071C29D /* CheckGL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CheckGL.h; sourceTree = "<group>"; };
+		6071408015E836380071C29D /* GLContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLContext.h; sourceTree = "<group>"; };
+		6071408115E836380071C29D /* GLDrawable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLDrawable.h; sourceTree = "<group>"; };
+		6071408215E836380071C29D /* GLGenericDrawable.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLGenericDrawable.h; sourceTree = "<group>"; };
+		6071408315E836380071C29D /* GLModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLModel.h; sourceTree = "<group>"; };
+		6071408415E836380071C29D /* GLShadow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLShadow.h; sourceTree = "<group>"; };
+		6071408515E836380071C29D /* GLSL.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLSL.h; sourceTree = "<group>"; };
+		6071408615E836380071C29D /* GLSLHelpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLSLHelpers.h; sourceTree = "<group>"; };
+		6071408715E836380071C29D /* GLSLPrograms.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GLSLPrograms.h; sourceTree = "<group>"; };
+		6071408815E836380071C29D /* LoadImage.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LoadImage.h; sourceTree = "<group>"; };
+		6071408915E836380071C29D /* LoadOBJ.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LoadOBJ.h; sourceTree = "<group>"; };
+		6071408A15E836380071C29D /* TexturePacker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TexturePacker.h; sourceTree = "<group>"; };
+		6071408C15E836380071C29D /* CheckGL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CheckGL.cpp; sourceTree = "<group>"; };
+		6071408F15E836380071C29D /* GLGenericDrawable.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLGenericDrawable.cpp; sourceTree = "<group>"; };
+		6071409015E836380071C29D /* GLModel.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLModel.cpp; sourceTree = "<group>"; };
+		6071409115E836380071C29D /* GLShadow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLShadow.cpp; sourceTree = "<group>"; };
+		6071409215E836380071C29D /* GLSL.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLSL.cpp; sourceTree = "<group>"; };
+		6071409315E836380071C29D /* GLSLHelpers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLSLHelpers.cpp; sourceTree = "<group>"; };
+		6071409415E836380071C29D /* GLSLPrograms.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GLSLPrograms.cpp; sourceTree = "<group>"; };
+		6071409515E836380071C29D /* LoadImage.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadImage.cpp; sourceTree = "<group>"; };
+		6071409615E836380071C29D /* LoadOBJ.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = LoadOBJ.cpp; sourceTree = "<group>"; };
+		6071409715E836380071C29D /* TexturePacker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TexturePacker.cpp; sourceTree = "<group>"; };
+		6071409D15E836380071C29D /* multiview.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = multiview.h; sourceTree = "<group>"; };
+		6071409F15E836380071C29D /* multiview_io_xml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = multiview_io_xml.h; sourceTree = "<group>"; };
+		607140A015E836380071C29D /* pyramid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pyramid.h; sourceTree = "<group>"; };
+		607140A215E836380071C29D /* multiview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiview.cpp; sourceTree = "<group>"; };
+		607140A415E836380071C29D /* multiview_io_xml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = multiview_io_xml.cpp; sourceTree = "<group>"; };
+		607140A515E836380071C29D /* pyramid.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = pyramid.cpp; sourceTree = "<group>"; };
+		607140A715E836380071C29D /* tinystr.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinystr.cpp; sourceTree = "<group>"; };
+		607140A815E836380071C29D /* tinystr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tinystr.h; sourceTree = "<group>"; };
+		607140A915E836380071C29D /* tinyxml.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxml.cpp; sourceTree = "<group>"; };
+		607140AA15E836380071C29D /* tinyxml.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tinyxml.h; sourceTree = "<group>"; };
+		607140AB15E836380071C29D /* tinyxmlerror.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxmlerror.cpp; sourceTree = "<group>"; };
+		607140AC15E836380071C29D /* tinyxmlparser.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tinyxmlparser.cpp; sourceTree = "<group>"; };
+		607140B015E836380071C29D /* ncc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ncc.h; sourceTree = "<group>"; };
+		607140B115E836380071C29D /* patch.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = patch.h; sourceTree = "<group>"; };
+		607140B215E836380071C29D /* sampler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sampler.h; sourceTree = "<group>"; };
+		607140B415E836380071C29D /* tracker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tracker.h; sourceTree = "<group>"; };
+		607140B615E836380071C29D /* ncc.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ncc.cpp; sourceTree = "<group>"; };
+		607140B715E836380071C29D /* patch.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = patch.cpp; sourceTree = "<group>"; };
+		607140B815E836380071C29D /* sampler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sampler.cpp; sourceTree = "<group>"; };
+		607140BA15E836380071C29D /* tracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tracker.cpp; sourceTree = "<group>"; };
+		607140E315E837B20071C29D /* client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = client.h; sourceTree = "<group>"; };
+		607140E515E837B20071C29D /* client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = client.cpp; sourceTree = "<group>"; };
+		608C8D4616414FFF004CE002 /* robustlsq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = robustlsq.h; sourceTree = "<group>"; };
+		608C8D4716415007004CE002 /* robustlsq.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = robustlsq.cpp; sourceTree = "<group>"; };
+		60A8B6A913FF5D750006C541 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		60A8B6AC13FF5D890006C541 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		60A8B6AE13FF5E500006C541 /* VideoHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoHandler.h; sourceTree = "<group>"; };
+		60A8B6AF13FF5E500006C541 /* VideoHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = VideoHandler.mm; sourceTree = "<group>"; };
+		60A8B6B413FF62F10006C541 /* TrackerHandler.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = TrackerHandler.mm; sourceTree = "<group>"; };
+		60A8B6B513FF62F10006C541 /* TrackerHandler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TrackerHandler.h; sourceTree = "<group>"; };
+		60BB6A06164B210B000219A7 /* default_settings.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = default_settings.plist; sourceTree = "<group>"; };
+		60DA312D140AA04000134ED6 /* CoreMotion.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMotion.framework; path = System/Library/Frameworks/CoreMotion.framework; sourceTree = SDKROOT; };
+		60E840D31422C050002CEEF2 /* EAGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EAGLView.h; sourceTree = "<group>"; };
+		60E840D41422C050002CEEF2 /* EAGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EAGLView.m; sourceTree = "<group>"; };
+		60E840E01422C173002CEEF2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		600BB9791418181D00362575 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				60E840E11422C173002CEEF2 /* QuartzCore.framework in Frameworks */,
+				600BB97A1418181D00362575 /* CoreMotion.framework in Frameworks */,
+				600BB97B1418181D00362575 /* OpenGLES.framework in Frameworks */,
+				600BB97C1418181D00362575 /* CoreMedia.framework in Frameworks */,
+				600BB97D1418181D00362575 /* CoreVideo.framework in Frameworks */,
+				600BB97F1418181D00362575 /* Accelerate.framework in Frameworks */,
+				600BB9801418181D00362575 /* UIKit.framework in Frameworks */,
+				600BB9811418181D00362575 /* Foundation.framework in Frameworks */,
+				600BB9821418181D00362575 /* CoreGraphics.framework in Frameworks */,
+				600BB9831418181D00362575 /* libcvd.a in Frameworks */,
+				60830B2F15D5C512001E2E64 /* AVFoundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		600BB9E91418181D00362575 /* Resources-iPad */ = {
+			isa = PBXGroup;
+			children = (
+				600BB9EA1418182A00362575 /* MainWindow.xib */,
+				600BB9EC1418182A00362575 /* MainViewController.xib */,
+			);
+			name = "Resources-iPad";
+			sourceTree = "<group>";
+		};
+		603BA61713FEDE3300A34C59 = {
+			isa = PBXGroup;
+			children = (
+				605F796A16416FA000378D68 /* ImageCache */,
+				607140DF15E837B20071C29D /* LocalizerClient */,
+				6071407C15E836380071C29D /* GLUtils */,
+				6071409A15E836380071C29D /* MultiView */,
+				607140AD15E836380071C29D /* PatchTracker */,
+				600BB9E91418181D00362575 /* Resources-iPad */,
+				603BA62C13FEDE3300A34C59 /* iOSTracker */,
+				603BA77E13FEDE5500A34C59 /* Libraries */,
+				603BA62513FEDE3300A34C59 /* Frameworks */,
+				603BA62313FEDE3300A34C59 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		603BA62313FEDE3300A34C59 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				600BB98B1418181D00362575 /* iOSTracker-iPad.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		603BA62513FEDE3300A34C59 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				60E840E01422C173002CEEF2 /* QuartzCore.framework */,
+				60DA312D140AA04000134ED6 /* CoreMotion.framework */,
+				602313ED140575B700623A92 /* OpenGLES.framework */,
+				60A8B6AC13FF5D890006C541 /* CoreMedia.framework */,
+				60A8B6A913FF5D750006C541 /* CoreVideo.framework */,
+				603BA8C013FEE78F00A34C59 /* AVFoundation.framework */,
+				603BA8B613FEE19F00A34C59 /* Accelerate.framework */,
+				603BA62613FEDE3300A34C59 /* UIKit.framework */,
+				603BA62813FEDE3300A34C59 /* Foundation.framework */,
+				603BA62A13FEDE3300A34C59 /* CoreGraphics.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		603BA62C13FEDE3300A34C59 /* iOSTracker */ = {
+			isa = PBXGroup;
+			children = (
+				603BA63513FEDE3300A34C59 /* iOSTrackerAppDelegate.h */,
+				603BA63613FEDE3300A34C59 /* iOSTrackerAppDelegate.m */,
+				603BA63B13FEDE3400A34C59 /* MainViewController.h */,
+				603BA63C13FEDE3400A34C59 /* MainViewController.mm */,
+				60E840D31422C050002CEEF2 /* EAGLView.h */,
+				60E840D41422C050002CEEF2 /* EAGLView.m */,
+				6051781B140032D2003E225D /* VideoView.h */,
+				6051781C140032D3003E225D /* VideoView.m */,
+				60A8B6AE13FF5E500006C541 /* VideoHandler.h */,
+				60A8B6AF13FF5E500006C541 /* VideoHandler.mm */,
+				60A8B6B513FF62F10006C541 /* TrackerHandler.h */,
+				60A8B6B413FF62F10006C541 /* TrackerHandler.mm */,
+				6071405F15E833EF0071C29D /* ARDisplay.h */,
+				6071406015E833EF0071C29D /* ARDisplay.mm */,
+				603BA62D13FEDE3300A34C59 /* Supporting Files */,
+			);
+			path = iOSTracker;
+			sourceTree = "<group>";
+		};
+		603BA62D13FEDE3300A34C59 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				603BA62E13FEDE3300A34C59 /* iOSTracker-Info.plist */,
+				603BA62F13FEDE3300A34C59 /* InfoPlist.strings */,
+				603BA63213FEDE3300A34C59 /* iOSTracker-Prefix.pch */,
+				603BA63313FEDE3300A34C59 /* main.m */,
+				60BB6A06164B210B000219A7 /* default_settings.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		603BA77E13FEDE5500A34C59 /* Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				603BA77F13FEDE6400A34C59 /* libcvd.a */,
+			);
+			name = Libraries;
+			sourceTree = "<group>";
+		};
+		605F796A16416FA000378D68 /* ImageCache */ = {
+			isa = PBXGroup;
+			children = (
+				605F796C16416FA000378D68 /* ImageCache */,
+				605F796E16416FA000378D68 /* src */,
+			);
+			name = ImageCache;
+			path = ../ImageCache;
+			sourceTree = "<group>";
+		};
+		605F796C16416FA000378D68 /* ImageCache */ = {
+			isa = PBXGroup;
+			children = (
+				605F796D16416FA000378D68 /* imagecache.h */,
+			);
+			path = ImageCache;
+			sourceTree = "<group>";
+		};
+		605F796E16416FA000378D68 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				605F796F16416FA000378D68 /* imagecache.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		6071407C15E836380071C29D /* GLUtils */ = {
+			isa = PBXGroup;
+			children = (
+				6071407E15E836380071C29D /* GLUtils */,
+				6071408B15E836380071C29D /* src */,
+			);
+			name = GLUtils;
+			path = ../GLUtils;
+			sourceTree = "<group>";
+		};
+		6071407E15E836380071C29D /* GLUtils */ = {
+			isa = PBXGroup;
+			children = (
+				6071407F15E836380071C29D /* CheckGL.h */,
+				6071408015E836380071C29D /* GLContext.h */,
+				6071408115E836380071C29D /* GLDrawable.h */,
+				6071408215E836380071C29D /* GLGenericDrawable.h */,
+				6071408315E836380071C29D /* GLModel.h */,
+				6071408415E836380071C29D /* GLShadow.h */,
+				6071408515E836380071C29D /* GLSL.h */,
+				6071408615E836380071C29D /* GLSLHelpers.h */,
+				6071408715E836380071C29D /* GLSLPrograms.h */,
+				6071408815E836380071C29D /* LoadImage.h */,
+				6071408915E836380071C29D /* LoadOBJ.h */,
+				6071408A15E836380071C29D /* TexturePacker.h */,
+			);
+			path = GLUtils;
+			sourceTree = "<group>";
+		};
+		6071408B15E836380071C29D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				6071408C15E836380071C29D /* CheckGL.cpp */,
+				6071408F15E836380071C29D /* GLGenericDrawable.cpp */,
+				6071409015E836380071C29D /* GLModel.cpp */,
+				6071409115E836380071C29D /* GLShadow.cpp */,
+				6071409215E836380071C29D /* GLSL.cpp */,
+				6071409315E836380071C29D /* GLSLHelpers.cpp */,
+				6071409415E836380071C29D /* GLSLPrograms.cpp */,
+				6071409515E836380071C29D /* LoadImage.cpp */,
+				6071409615E836380071C29D /* LoadOBJ.cpp */,
+				6071409715E836380071C29D /* TexturePacker.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		6071409A15E836380071C29D /* MultiView */ = {
+			isa = PBXGroup;
+			children = (
+				6071409C15E836380071C29D /* MultiView */,
+				607140A115E836380071C29D /* src */,
+				607140A615E836380071C29D /* TinyXML */,
+			);
+			name = MultiView;
+			path = ../MultiView;
+			sourceTree = "<group>";
+		};
+		6071409C15E836380071C29D /* MultiView */ = {
+			isa = PBXGroup;
+			children = (
+				6071409D15E836380071C29D /* multiview.h */,
+				6071409F15E836380071C29D /* multiview_io_xml.h */,
+				607140A015E836380071C29D /* pyramid.h */,
+			);
+			path = MultiView;
+			sourceTree = "<group>";
+		};
+		607140A115E836380071C29D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				607140A215E836380071C29D /* multiview.cpp */,
+				607140A415E836380071C29D /* multiview_io_xml.cpp */,
+				607140A515E836380071C29D /* pyramid.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		607140A615E836380071C29D /* TinyXML */ = {
+			isa = PBXGroup;
+			children = (
+				607140A715E836380071C29D /* tinystr.cpp */,
+				607140A815E836380071C29D /* tinystr.h */,
+				607140A915E836380071C29D /* tinyxml.cpp */,
+				607140AA15E836380071C29D /* tinyxml.h */,
+				607140AB15E836380071C29D /* tinyxmlerror.cpp */,
+				607140AC15E836380071C29D /* tinyxmlparser.cpp */,
+			);
+			path = TinyXML;
+			sourceTree = "<group>";
+		};
+		607140AD15E836380071C29D /* PatchTracker */ = {
+			isa = PBXGroup;
+			children = (
+				607140AF15E836380071C29D /* PatchTracker */,
+				607140B515E836380071C29D /* src */,
+			);
+			name = PatchTracker;
+			path = ../PatchTracker;
+			sourceTree = "<group>";
+		};
+		607140AF15E836380071C29D /* PatchTracker */ = {
+			isa = PBXGroup;
+			children = (
+				606B012F166BD3C100B3C25E /* nccsearch.h */,
+				606B0130166BD3C100B3C25E /* search.h */,
+				605F797216416FDE00378D68 /* ssd.h */,
+				608C8D4616414FFF004CE002 /* robustlsq.h */,
+				607140B015E836380071C29D /* ncc.h */,
+				607140B115E836380071C29D /* patch.h */,
+				607140B215E836380071C29D /* sampler.h */,
+				607140B415E836380071C29D /* tracker.h */,
+			);
+			path = PatchTracker;
+			sourceTree = "<group>";
+		};
+		607140B515E836380071C29D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				606B0131166BD3C500B3C25E /* nccsearch.cpp */,
+				605F797316416FE200378D68 /* ssd.cpp */,
+				608C8D4716415007004CE002 /* robustlsq.cpp */,
+				607140B615E836380071C29D /* ncc.cpp */,
+				607140B715E836380071C29D /* patch.cpp */,
+				607140B815E836380071C29D /* sampler.cpp */,
+				607140BA15E836380071C29D /* tracker.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		607140DF15E837B20071C29D /* LocalizerClient */ = {
+			isa = PBXGroup;
+			children = (
+				607140E215E837B20071C29D /* LocalizerClient */,
+				607140E415E837B20071C29D /* src */,
+			);
+			name = LocalizerClient;
+			path = ../LocalizerClient;
+			sourceTree = "<group>";
+		};
+		607140E215E837B20071C29D /* LocalizerClient */ = {
+			isa = PBXGroup;
+			children = (
+				607140E315E837B20071C29D /* client.h */,
+			);
+			path = LocalizerClient;
+			sourceTree = "<group>";
+		};
+		607140E415E837B20071C29D /* src */ = {
+			isa = PBXGroup;
+			children = (
+				607140E515E837B20071C29D /* client.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		600BB9611418181D00362575 /* iOSTracker-iPad */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 600BB9881418181D00362575 /* Build configuration list for PBXNativeTarget "iOSTracker-iPad" */;
+			buildPhases = (
+				600BB9621418181D00362575 /* Sources */,
+				600BB9791418181D00362575 /* Frameworks */,
+				600BB9841418181D00362575 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "iOSTracker-iPad";
+			productName = iOSTracker;
+			productReference = 600BB98B1418181D00362575 /* iOSTracker-iPad.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		603BA61913FEDE3300A34C59 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = 603BA61C13FEDE3300A34C59 /* Build configuration list for PBXProject "iOSTracker" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 603BA61713FEDE3300A34C59;
+			productRefGroup = 603BA62313FEDE3300A34C59 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				600BB9611418181D00362575 /* iOSTracker-iPad */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		600BB9841418181D00362575 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				600BB9EE1418182A00362575 /* MainWindow.xib in Resources */,
+				600BB9EF1418182A00362575 /* MainViewController.xib in Resources */,
+				60BB6A07164B210B000219A7 /* default_settings.plist in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		600BB9621418181D00362575 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				600BB96F1418181D00362575 /* iOSTrackerAppDelegate.m in Sources */,
+				600BB9701418181D00362575 /* MainViewController.mm in Sources */,
+				600BB9711418181D00362575 /* VideoView.m in Sources */,
+				600BB9721418181D00362575 /* VideoHandler.mm in Sources */,
+				600BB9731418181D00362575 /* TrackerHandler.mm in Sources */,
+				600BB9741418181D00362575 /* main.m in Sources */,
+				60E840D61422C050002CEEF2 /* EAGLView.m in Sources */,
+				6071406115E833F30071C29D /* ARDisplay.mm in Sources */,
+				607140BC15E836380071C29D /* CheckGL.cpp in Sources */,
+				607140BF15E836380071C29D /* GLGenericDrawable.cpp in Sources */,
+				607140C015E836380071C29D /* GLModel.cpp in Sources */,
+				607140C115E836380071C29D /* GLShadow.cpp in Sources */,
+				607140C215E836380071C29D /* GLSL.cpp in Sources */,
+				607140C315E836380071C29D /* GLSLHelpers.cpp in Sources */,
+				607140C415E836380071C29D /* GLSLPrograms.cpp in Sources */,
+				607140C515E836380071C29D /* LoadImage.cpp in Sources */,
+				607140C615E836380071C29D /* LoadOBJ.cpp in Sources */,
+				607140C715E836380071C29D /* TexturePacker.cpp in Sources */,
+				607140C915E836380071C29D /* multiview.cpp in Sources */,
+				607140CB15E836380071C29D /* multiview_io_xml.cpp in Sources */,
+				607140CC15E836380071C29D /* pyramid.cpp in Sources */,
+				607140CD15E836380071C29D /* tinystr.cpp in Sources */,
+				607140CE15E836380071C29D /* tinyxml.cpp in Sources */,
+				607140CF15E836380071C29D /* tinyxmlerror.cpp in Sources */,
+				607140D015E836380071C29D /* tinyxmlparser.cpp in Sources */,
+				607140D215E836380071C29D /* ncc.cpp in Sources */,
+				607140D315E836380071C29D /* patch.cpp in Sources */,
+				607140D415E836380071C29D /* sampler.cpp in Sources */,
+				607140D615E836380071C29D /* tracker.cpp in Sources */,
+				607140E815E837B20071C29D /* client.cpp in Sources */,
+				608C8D4816415007004CE002 /* robustlsq.cpp in Sources */,
+				605F797116416FA000378D68 /* imagecache.cpp in Sources */,
+				605F797416416FE200378D68 /* ssd.cpp in Sources */,
+				606B0132166BD3C500B3C25E /* nccsearch.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		600BB9EA1418182A00362575 /* MainWindow.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				600BB9EB1418182A00362575 /* en */,
+			);
+			name = MainWindow.xib;
+			sourceTree = "<group>";
+		};
+		600BB9EC1418182A00362575 /* MainViewController.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				600BB9ED1418182A00362575 /* en */,
+			);
+			name = MainViewController.xib;
+			sourceTree = "<group>";
+		};
+		603BA62F13FEDE3300A34C59 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				603BA63013FEDE3300A34C59 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		600BB9891418181D00362575 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SDKROOT)$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks\"",
+					"\"$(SRCROOT)\"",
+				);
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
+				INFOPLIST_FILE = "iOSTracker/iOSTracker-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../iOSLibs/libcvd",
+				);
+				PRODUCT_NAME = "iOSTracker-iPad";
+				TARGETED_DEVICE_FAMILY = 2;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Debug;
+		};
+		600BB98A1418181D00362575 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				COPY_PHASE_STRIP = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"$(SDKROOT)$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks\"",
+					"\"$(SRCROOT)\"",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
+				INFOPLIST_FILE = "iOSTracker/iOSTracker-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SRCROOT)/../iOSLibs/libcvd",
+				);
+				PRODUCT_NAME = "iOSTracker-iPad";
+				TARGETED_DEVICE_FAMILY = 2;
+				VALIDATE_PRODUCT = YES;
+				WRAPPER_EXTENSION = app;
+			};
+			name = Release;
+		};
+		603BA64113FEDE3400A34C59 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_UNIVERSAL_IPHONE_OS)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					__IPHONE__,
+					DEBUG,
+					VL_DISABLE_SSE2,
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					../iOSLibs,
+					../iOSLibs/libcvd,
+					.,
+					../GLUtils,
+					../MultiView,
+					../ImageCache,
+					../PatchTracker,
+					../LocalizerClient,
+					../iOSLibs/tag,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				OTHER_LDFLAGS = (
+					"-framework",
+					OpenCL,
+				);
+				PROVISIONING_PROFILE = "";
+				SDKROOT = iphoneos;
+				USER_HEADER_SEARCH_PATHS = "../iOSLibs ../iOSLibs/libcvd . .. ../MultiView ../PatchTracker ../LocalizerClient";
+				VALID_ARCHS = armv7;
+			};
+			name = Debug;
+		};
+		603BA64213FEDE3400A34C59 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_UNIVERSAL_IPHONE_OS)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					VL_DISABLE_SSE2,
+					__IPHONE__,
+				);
+				GCC_UNROLL_LOOPS = YES;
+				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					../iOSLibs,
+					../iOSLibs/libcvd,
+					.,
+					../GLUtils,
+					../MultiView,
+					../ImageCache,
+					../PatchTracker,
+					../LocalizerClient,
+					../iOSLibs/tag,
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
+				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
+				OTHER_LDFLAGS = (
+					"-framework",
+					OpenCL,
+				);
+				PROVISIONING_PROFILE = "";
+				SDKROOT = iphoneos;
+				USER_HEADER_SEARCH_PATHS = "../iOSLibs ../iOSLibs/libcvd . .. ../MultiView ../PatchTracker ../LocalizerClient";
+				VALID_ARCHS = armv7;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		600BB9881418181D00362575 /* Build configuration list for PBXNativeTarget "iOSTracker-iPad" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				600BB9891418181D00362575 /* Debug */,
+				600BB98A1418181D00362575 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		603BA61C13FEDE3300A34C59 /* Build configuration list for PBXProject "iOSTracker" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				603BA64113FEDE3400A34C59 /* Debug */,
+				603BA64213FEDE3400A34C59 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 603BA61913FEDE3300A34C59 /* Project object */;
+}
