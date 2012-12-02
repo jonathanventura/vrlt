@@ -15,6 +15,7 @@ set( BUILD_FEATURE_MATCHER TRUE CACHE BOOL "Build FeatureMatcher module" )
 set( BUILD_ESTIMATOR TRUE CACHE BOOL "Build Estimator module" )
 set( BUILD_GLUTILS TRUE CACHE BOOL "Build GLUtils module" )
 set( BUILD_PATCHTRACKER TRUE CACHE BOOL "Build PatchTracker module" )
+set( BUILD_LOCALIZER TRUE CACHE BOOL "Build Localizer module" )
 
 set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
@@ -66,5 +67,10 @@ endif()
 if( BUILD_PATCHTRACKER )
 include_directories( $(vrlt)/PatchTracker )
 add_subdirectory( PatchTracker )
+endif()
+
+if( BUILD_LOCALIZER )
+include_directories( $(vrlt)/Localizer )
+add_subdirectory( Localizer )
 endif()
 
