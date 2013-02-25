@@ -17,6 +17,7 @@ set( BUILD_GLUTILS TRUE CACHE BOOL "Build GLUtils module" )
 set( BUILD_PATCHTRACKER TRUE CACHE BOOL "Build PatchTracker module" )
 set( BUILD_LOCALIZER TRUE CACHE BOOL "Build Localizer module" )
 set( BUILD_IMAGECACHE TRUE CACHE BOOL "Build ImageCache module" )
+set( BUILD_TEST TRUE CACHE BOOL "Build test programs" )
 
 set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
@@ -84,5 +85,10 @@ endif()
 if ( BUILD_IMAGECACHE )
 include_directories( $(vrlt)/ImageCache )
 add_subdirectory( ImageCache )
+endif()
+
+if ( BUILD_TEST )
+include_directories( $(vrlt)/Test )
+add_subdirectory( Test )
 endif()
 
