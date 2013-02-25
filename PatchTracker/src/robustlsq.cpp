@@ -43,6 +43,12 @@ namespace vrlt {
         float val = 1.f - (residsq/ksq);
         return val*val;
     }
+  
+    static double computeTukeyObjectiveFunction( double ksq, double residsq )
+    {
+      if ( residsq > ksq ) return ksq / 6.;
+      return ( ksq / 6. ) * ( 1. - pow( 1. - (residsq/ksq), 3. ) );
+    }
 
     bool RobustLeastSq::updatePose( Camera *camera_in, int count, int iter, float eps )
     {
@@ -52,8 +58,6 @@ namespace vrlt {
         SE3<> pose( camera_in->node->pose );
         float f = camera_in->calibration->focal;
         Vector<2,float> center = camera_in->calibration->center;
-
-        float e_scale = 0.5f;
 
         ElementList::iterator it;
 
@@ -69,7 +73,6 @@ namespace vrlt {
 
                 Vector<2,float> x = f * project(PX) + center;
                 Vector<2,float> e = point->location - x;
-                e = e_scale * e;
 
                 residualsqs.push_back( sqrtf(e*e) );
             }
@@ -109,15 +112,14 @@ namespace vrlt {
             Vector<2,float> pos = point->location;
             Vector<2,float> e = pos - x;
 
-            Vector<2,float> scaled_e = e_scale*e;
-            float residsq = scaled_e*scaled_e;
+            float residsq = e*e;
             float w = computeTukeyWeight( ksq, residsq );
             weights[i] = w;
 
             FtF += Fn.T() * ( weights[i] * Fn );
             Fte += Fn.T() * ( weights[i] * e );
 
-            toterr += (weights[i]*e)*(weights[i]*e);
+            toterr += computeTukeyObjectiveFunction( ksq, residsq );
         }
 
         float avg_diag = 0;
@@ -153,7 +155,8 @@ namespace vrlt {
                 point->tracked = false;
             }
 
-            newerr += (weights[i]*e)*(weights[i]*e);
+            float residsq = e*e;
+            newerr += computeTukeyObjectiveFunction( ksq, residsq );
 
             if ( iter == niter-1 ) {
                 point->tracked = ( weights[i] > 0 );
