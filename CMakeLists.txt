@@ -24,7 +24,6 @@ set( BUILD_TEST TRUE CACHE BOOL "Build test programs" )
 
 set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
-set( USE_VL TRUE CACHE BOOL "Use VLFeat library" )
 
 find_package( Eigen3 REQUIRED )
 include_directories( ${EIGEN3_INCLUDE_DIR} )
@@ -42,11 +41,6 @@ endif()
 
 if( USE_DISPATCH )
 add_definitions( -DUSE_DISPATCH )
-endif()
-
-if ( USE_VL )
-find_library( VL vl REQUIRED )
-add_definitions( -DUSE_VL )
 endif()
 
 if( BUILD_MULTIVIEW )
