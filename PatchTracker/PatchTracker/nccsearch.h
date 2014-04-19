@@ -29,8 +29,8 @@ namespace vrlt
         virtual int makeTemplates( int count );
         virtual int doSearch( int count );
         
-        CVD::byte *templates;
-        CVD::byte *targets;
+        uchar *templates;
+        uchar *targets;
         float *templateA;
         float *templateC;
     };

@@ -11,41 +11,39 @@
 #ifndef SSD_H
 #define SSD_H
 
-#include <cvd/image.h>
-#include <cvd/byte.h>
-#include <TooN/TooN.h>
+#include <opencv2/highgui.hpp>
+#include <Eigen/Core>
 
 namespace vrlt {
+    /*
+    void adjustMinMax( cv::Mat &patch );
+    void copyPatch( const cv::Mat &from, const cv::Point2i &loc, cv::Mat &to );
     
-    void adjustMinMax( CVD::BasicImage<CVD::byte> &patch );
-    void copyPatch( const CVD::BasicImage<CVD::byte> &from, const CVD::ImageRef &loc, CVD::BasicImage<CVD::byte> &to );
-    
-    bool samplePatch( CVD::BasicImage<CVD::byte> &sourceImage, const TooN::Vector<2> &center, CVD::BasicImage<float> &templatePatch );
-    bool samplePatch( CVD::BasicImage<CVD::byte> &sourceImage, const TooN::Vector<2> &center, CVD::BasicImage<CVD::byte> &templatePatch );
-    bool samplePatch( CVD::BasicImage<CVD::byte> &sourceImage, const TooN::Vector<2> &center, const TooN::Matrix<3> &warp, CVD::BasicImage<float> &templatePatch );
-    bool samplePatch( CVD::BasicImage<CVD::byte> &sourceImage, const TooN::Vector<2,float> &center, const TooN::Matrix<3,3,float> &warp, float scale, CVD::BasicImage<CVD::byte> &templatePatch );
-    void removeMean( CVD::BasicImage<float> &patch );
-    void copyPatch( CVD::BasicImage<CVD::byte> &from, const CVD::ImageRef &loc, CVD::BasicImage<float> &to );
-    float calcVariance( CVD::BasicImage<float> &zero_mean_patch );
-    void normalize( CVD::BasicImage<float> &patch );
+    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
+    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
+    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, const Eigen::Matrix3d &warp, cv::Mat &templatePatch );
+    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, const Eigen::Matrix3f &warp, float scale, cv::Mat &templatePatch );
+    void removeMean( cv::Mat &patch );
+    void copyPatch( cv::Mat &from, const cv::Point2i &loc, cv::Mat &to );
+    float calcVariance( cv::Mat &zero_mean_patch );
+    void normalize( cv::Mat &patch );
     
     class SSDCalculator
     {
     public:
-        SSDCalculator( CVD::ImageRef _sz );
-        float getSSD( CVD::BasicImage<float> &templatePatch, CVD::BasicImage<float> &targetPatch, float matchThreshold );
+        SSDCalculator( cv::Point2i _sz );
+        float getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch, float matchThreshold );
     private:
-        CVD::ImageRef sz;
-        int N;
-        CVD::Image<float> tempData;
+        cv::Size sz;
+        cv::Mat tempData;
     };
     
     // warning: this is destructive to targetPatch
-    float getSSD( CVD::BasicImage<float> &templatePatch, CVD::BasicImage<float> &targetPatch, float matchThreshold );
+    float getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch, float matchThreshold );
 
-    unsigned int getSSD( CVD::BasicImage<CVD::byte> &templatePatch, CVD::BasicImage<CVD::byte> &targetPatch );
-    
-    float getCorr( CVD::BasicImage<float> &im1, CVD::BasicImage<float> &im2 );
+    unsigned int getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch );
+    */
+    float getCorr( cv::Mat &im1, cv::Mat &im2 );
 }
 
 #endif

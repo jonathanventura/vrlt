@@ -11,9 +11,8 @@
 #ifndef SAMPLER_H
 #define SAMPLER_H
 
-#include <TooN/TooN.h>
-#include <cvd/image.h>
-#include <cvd/byte.h>
+#include <Eigen/Core>
+#include <opencv2/highgui.hpp>
 
 namespace vrlt {
     
@@ -24,8 +23,8 @@ namespace vrlt {
 
     struct Sampler
     {
-        virtual bool samplePatch( CVD::BasicImage<CVD::byte> &sourceImage, const TooN::Vector<2> &center, CVD::BasicImage<CVD::byte> &templatePatch );
-        virtual bool samplePatch( CVD::BasicImage<CVD::byte> &sourceImage, const TooN::Vector<2,float> &center, const TooN::Matrix<3,3,float> &warp, float scale, CVD::BasicImage<CVD::byte> &templatePatch );
+        virtual bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
+        virtual bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, const Eigen::Matrix3f &warp, float scale, cv::Mat &templatePatch );
     };
 
 /**

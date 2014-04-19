@@ -10,9 +10,8 @@
 
 #include <PatchTracker/ssd.h>
 
-#include <cvd/image_interpolate.h>
-#include <cvd/image_convert.h>
-#include <cvd/vision.h>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <iostream>
 
@@ -25,21 +24,18 @@
 #endif
 
 namespace vrlt {
-    using namespace CVD;
-    using namespace TooN;
-    using namespace std;
-    
-    unsigned int getSSD( BasicImage<byte> &templatePatch, BasicImage<byte> &targetPatch )
+    /*
+    unsigned int getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch )
     {
         unsigned int score = 0;
         
-        byte *ptr1 = templatePatch.data();
-        byte *ptr2 = targetPatch.data();
+        uchar *ptr1 = templatePatch.data();
+        uchar *ptr2 = targetPatch.data();
         
         for ( int i = 0; i < 64; i++,ptr1++,ptr2++ )
         {
-            byte val1 = *ptr1;
-            byte val2 = *ptr2;
+            uchar val1 = *ptr1;
+            uchar val2 = *ptr2;
             unsigned int diff = (val2>val1)?(val2-val1):(val1-val2);
             score += diff * diff;
         }
@@ -100,7 +96,7 @@ namespace vrlt {
         return true;
     }
     
-    bool samplePatch( BasicImage<byte> &sourceImage, const Vector<2,float> &center, const Matrix<3,3,float> &warp, float scale, BasicImage<byte> &templatePatch )
+    bool samplePatch( BasicImage<byte> &sourceImage, const Eigen::Vector2f &center, const Matrix<3,3,float> &warp, float scale, BasicImage<byte> &templatePatch )
     {
         image_interpolate<Interpolate::Bilinear, byte> interpolate( sourceImage );
         double offset = ( templatePatch.size().x - 1. ) / 2.;
@@ -213,18 +209,22 @@ namespace vrlt {
         return score;
 #endif
     }
-    
-    float getCorr( BasicImage<float> &im1, BasicImage<float> &im2 )
+    */
+    float getCorr( cv::Mat &im1, cv::Mat &im2 )
     {
 #ifdef USE_ACCELERATE
+        float *ptr1 = (float*)im1.ptr();
+        float *ptr2 = (float*)im2.ptr();
         float corr;
-        int N = im1.size().x * im1.size().y;
-        vDSP_dotpr( im1.data(), 1, im2.data(), 1, &corr, N );
+        int N = im1.size().width * im1.size().height;
+        vDSP_dotpr( ptr1, 1, ptr2, 1, &corr, N );
         return corr;
 #else
+        float *ptr1 = (float*)im1.ptr();
+        float *ptr2 = (float*)im2.ptr();
         float corr = 0;
-        int N = im1.size().x * im1.size().y;
-        for ( int n = 0; n < N; n++ ) corr += im1.data()[n] * im2.data()[n];
+        int N = im1.size().width * im1.size().width;
+        for ( int n = 0; n < N; n++ ) corr += ptr1[n] * ptr2[n];
         return corr;
 #endif
     }

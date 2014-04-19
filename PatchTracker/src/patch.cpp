@@ -11,12 +11,8 @@
 #include <PatchTracker/patch.h>
 #include <PatchTracker/ncc.h>
 
-#include <cvd/image.h>
-#include <cvd/image_interpolate.h>
-#include <cvd/image_convert.h>
-#include <cvd/vision.h>
-
-#include <TooN/svd.h>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>
@@ -24,17 +20,13 @@
 
 namespace vrlt
 {
-    using namespace std;
-    using namespace TooN;
-    using namespace CVD;
-    
     Patch::Patch( Point *_point )
     : point( _point ), target( NULL ), source( NULL ), targetScore( INFINITY )
     {
         
     }
     
-    static inline float scaleFromWarp( const TooN::Matrix<3,3,float> &warp )
+    static inline float scaleFromWarp( const Eigen::Matrix3f &warp )
     { 
         float det = warp(0,0) * warp(1,1) - warp(0,1) * warp(1,0);
         return sqrtf(det);
@@ -44,14 +36,14 @@ namespace vrlt
     {
         target = camera;
         
-        SE3<> pose = target->node->pose;
-        PX = pose * project( point->position );
-        PN = pose.get_rotation() * point->normal;
-        center = camera->calibration->project( project( PX ) );
+        Sophus::SE3d pose = target->node->pose;
+        PX = (pose * project( point->position )).cast<float>();
+        PN = (pose.so3() * point->normal).cast<float>();
+        center = (camera->calibration->project( project( PX ).cast<double>() )).cast<float>();
         warpcenter = center;
         
-        D = -(PN * PX);
-        vTKinv[0] = camera->calibration->postMultiplyKinv( -(PN / D) );
+        D = -(PN.dot( PX ));
+        vTKinv.transpose() = camera->calibration->postMultiplyKinv( -(PN / D) );
         
         if ( source != NULL ) {
             calcWarp( source_feature );
@@ -64,7 +56,7 @@ namespace vrlt
     {
         target = camera;
         
-        vTKinv[0] = camera->calibration->postMultiplyKinv( -(PN / D) );
+        vTKinv.transpose() = camera->calibration->postMultiplyKinv( -(PN / D) );
         
         if ( source != NULL ) {
             calcWarp( source_feature );
@@ -79,14 +71,14 @@ namespace vrlt
 #ifdef USE_ACCELERATE
         // make a * v.T() (the DSP call is really slow for some reason)
         //vDSP_mmul( camera->Ka.get_data_ptr(), 1, vTKinv.get_data_ptr(), 1, tempWarp.get_data_ptr(), 1, 3, 3, 1 );
-        float *vTKinvptr = vTKinv.get_data_ptr();
-        float *Kaptr = camera->Ka.get_data_ptr();
-        float *tempWarpPtr = tempWarp.get_data_ptr();
+        float *vTKinvptr = vTKinv.data();
+        float *Kaptr = camera->Ka.data();
+        float *tempWarpPtr = tempWarp.data();
         vDSP_vsmul( vTKinvptr, 1, Kaptr  , tempWarpPtr  , 1, 3 );
         vDSP_vsmul( vTKinvptr, 1, Kaptr+1, tempWarpPtr+3, 1, 3 );
         vDSP_vsmul( vTKinvptr, 1, Kaptr+2, tempWarpPtr+6, 1, 3 );
         // add K * A * target->Kinv
-        vDSP_vadd( camera->KAKinv.get_data_ptr(), 1, tempWarpPtr, 1, tempWarpPtr, 1, 9 );
+        vDSP_vadd( camera->KAKinv.data(), 1, tempWarpPtr, 1, tempWarpPtr, 1, 9 );
 #else
         tempWarp = camera->KAKinv + camera->Ka * vTKinv;
 #endif
@@ -97,7 +89,7 @@ namespace vrlt
         if ( target == NULL ) return false;
         
         source = NULL;
-        warp = Identity;
+        warp = Eigen::Matrix3f::Identity();
         float bestDet = 0;
         
         ElementList::iterator it;

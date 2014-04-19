@@ -11,12 +11,10 @@
 #include <PatchTracker/nccsearch.h>
 #include <PatchTracker/ncc.h>
 
-#include <cvd/image.h>
-#include <cvd/image_interpolate.h>
-#include <cvd/image_convert.h>
-#include <cvd/vision.h>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
-#include <TooN/svd.h>
+#include <Eigen/Eigen>
 
 #ifdef USE_DISPATCH
 #include <dispatch/dispatch.h>
@@ -24,15 +22,16 @@
 
 namespace vrlt
 {
-    using namespace std;
-    using namespace TooN;
-    using namespace CVD;
-        
+    static bool in_image( const cv::Size &size, const cv::Point2i &loc )
+    {
+        return ( loc.x >= 0 && loc.x < size.width && loc.y >= 0 && loc.y < size.height );
+    }
+    
     PatchSearchNCC::PatchSearchNCC( int maxnumpoints )
     {
         lowThreshold = highThreshold = 0.7;
-        templates = new byte[8 * 8 * maxnumpoints];
-        targets = new byte[8 * 8 * maxnumpoints];
+        templates = new uchar[8 * 8 * maxnumpoints];
+        targets = new uchar[8 * 8 * maxnumpoints];
         templateA = new float[maxnumpoints];
         templateC = new float[maxnumpoints];
     }
@@ -50,11 +49,11 @@ namespace vrlt
         PatchSearchNCC *searcher = (PatchSearchNCC*)context;
         Patch *patch = *(searcher->begin+i);
         
-        byte *templatePtr = searcher->templates + i*64;
+        uchar *templatePtr = searcher->templates + i*64;
         float *Aptr = searcher->templateA + i;
         float *Cptr = searcher->templateC + i;
         
-        BasicImage<byte> templatePatch( templatePtr, ImageRef(8,8) );
+        cv::Mat templatePatch( cv::Size(8,8), CV_8UC1, templatePtr );
         
         int level = 0;
         float myscale = patch->scale;
@@ -108,7 +107,7 @@ namespace vrlt
         return newcount;
     }
     
-    static inline float getNCC( byte *targetPtr, byte *templatePtr, float templateA, float templateC )
+    static inline float getNCC( uchar *targetPtr, uchar *templatePtr, float templateA, float templateC )
     {
         unsigned int A = computeSum( targetPtr );
         unsigned int B = computeSumSq( targetPtr );
@@ -122,7 +121,7 @@ namespace vrlt
         return score;
     }
     
-    static inline float getNCC( byte *targetPtr, int targetRowStep, byte *templatePtr, float templateA, float templateC )
+    static inline float getNCC( uchar *targetPtr, int targetRowStep, uchar *templatePtr, float templateA, float templateC )
     {
         unsigned int A = computeSum( targetPtr, targetRowStep );
         unsigned int B = computeSumSq( targetPtr, targetRowStep );
@@ -143,13 +142,13 @@ namespace vrlt
         
         size_t index = patch->index;
         
-        const int w = patch->target->image.size().x;
+        const int w = patch->target->image.size().width;
         
-        byte *templatePtr = searcher->templates + index*64;
+        uchar *templatePtr = searcher->templates + index*64;
         float *Aptr = searcher->templateA + index;
         float *Cptr = searcher->templateC + index;
         
-        byte *targetPtr;
+        uchar *targetPtr;
         int targetRowStep;
         
         if ( searcher->subsample ) {
@@ -160,21 +159,22 @@ namespace vrlt
             targetRowStep = w;
         }
         
-        BasicImage<byte> templatePatch( templatePtr, ImageRef(8,8) );
-        BasicImage<byte> targetPatch( targetPtr, ImageRef(8,8) );
+        cv::Mat templatePatch( cv::Size(8,8), CV_8UC1, templatePtr );
+        cv::Mat targetPatch( cv::Size(8,8), CV_8UC1, targetPtr );
         
-        ImageRef bestLoc(0,0);
+        cv::Point2i bestLoc(0,0);
         float nextBestScore = -INFINITY;
         float bestScore = 0;
         int num_inliers = 0;
         
-        Vector<2,float> offset = makeVector<float>( 3.5, 3.5 );
-        Vector<2,float> center = patch->center - offset;
+        Eigen::Vector2f offset;
+        offset << 3.5, 3.5;
+        Eigen::Vector2f center = patch->center - offset;
         
-        ImageRef ir_offset( 4, 4 );
-        ImageRef ir_origin = ImageRef( (int) round( center[0] ), (int) round( center[1] ) ) - ir_offset;
+        cv::Point2i ir_offset( 4, 4 );
+        cv::Point2i ir_origin = cv::Point2i( (int) round( center[0] ), (int) round( center[1] ) ) - ir_offset;
         
-        Matrix<8,8,float> scores = Zeros;
+        Eigen::Matrix<float,8,8> scores = Eigen::Matrix<float,8,8>::Zero();
         
         int lower = 0;
         int upper = 8;
@@ -182,20 +182,22 @@ namespace vrlt
         for ( int y = lower; y < upper; y++ ) {
             for ( int x = lower; x < upper; x++ ) {
                 if ( searcher->subsample ) {
-                    Vector<2> pt = center + makeVector( x, y );
+                    Eigen::Vector2d pt;
+                    pt[0] = center[0] + x;
+                    pt[1] = center[1] + y;
                     bool good = patch->sampler.samplePatch( patch->target->image, pt, targetPatch );
                     if ( !good ) continue;
                 } else {
-                    ImageRef my_origin = ir_origin + ImageRef(x,y);
-                    if ( !patch->target->image.in_image( my_origin ) ) continue;
-                    if ( !patch->target->image.in_image( my_origin + targetPatch.size() ) ) continue;
+                    cv::Point2i my_origin = ir_origin + cv::Point2i(x,y);
+                    if ( !in_image( patch->target->image.size(), my_origin ) ) continue;
+                    if ( !in_image( patch->target->image.size(), my_origin + cv::Point2i(targetPatch.size().width,targetPatch.size().height) ) ) continue;
                     
-                    targetPtr = patch->target->image.data() + my_origin.y * w + my_origin.x;
+                    targetPtr = patch->target->image.ptr( my_origin.y ) + my_origin.x;
                 }
                 
                 float score = getNCC( targetPtr, targetRowStep, templatePtr, (*Aptr), (*Cptr) );
                 
-                if ( isnan( score ) ) score = 0.f;
+                if ( std::isnan( score ) ) score = 0.f;
                 scores(y,x) = score;
                 
                 if ( score >= searcher->lowThreshold )
@@ -204,7 +206,7 @@ namespace vrlt
                 }
                 if ( score > bestScore )
                 {
-                    bestLoc = ImageRef(x,y);
+                    bestLoc = cv::Point2i(x,y);
                     nextBestScore = bestScore;
                     bestScore = score;
                 }
@@ -219,9 +221,11 @@ namespace vrlt
         patch->bestLevel = searcher->level;
         
         if ( searcher->subsample ) {
-            patch->targetPos = center + makeVector<float>( bestLoc.x, bestLoc.y );
+            patch->targetPos[0] = center[0] + bestLoc.x;
+            patch->targetPos[1] = center[1] + bestLoc.y;
         } else {
-            patch->targetPos = makeVector<float>( ir_origin.x + ir_offset.x, ir_origin.y + ir_offset.y ) + makeVector<float>( bestLoc.x, bestLoc.y );
+            patch->targetPos[0] = (ir_origin.x + ir_offset.x) + bestLoc.x;
+            patch->targetPos[1] = (ir_origin.y + ir_offset.y) + bestLoc.y;
         }
         
         

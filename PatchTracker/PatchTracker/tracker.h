@@ -13,8 +13,6 @@
 
 #include <MultiView/multiview.h>
 
-#include <cvd/thread.h>
-
 namespace vrlt {
     class Patch;
     class PatchSearch;
@@ -46,8 +44,8 @@ namespace vrlt {
         int nattempted;
         float minratio;
         
-        CVD::Image<bool> grid;
-        CVD::ImageRef gridstep;
+        cv::Mat grid;
+        cv::Size gridstep;
         
 //        CVD::Image<bool> grid8;
 //        CVD::ImageRef gridstep8;
@@ -67,12 +65,12 @@ namespace vrlt {
         Camera *mycamera;
         Calibration *mycalibration;
         
-        TooN::Matrix<6,6,float> cov;
+        Eigen::Matrix<float,6,6> cov;
         bool recompute_sigmasq;
         float sigmasq;
         
         Camera *prev_camera;
-        TooN::SE3<> prev_pose;
+        Sophus::SE3d prev_pose;
         
         void precomputeGlobalPoses( Node *node );
         void updateMatrices( Camera *source, Camera *target );
@@ -86,14 +84,14 @@ namespace vrlt {
         
         void setCurrentCamera( Camera *c );
         Camera *current_camera;
-        TooN::Matrix<3,4,float> poseMatrix;
+        Eigen::Matrix<float,3,4> poseMatrix;
         float f, u, v, k1, k2;
         friend void checkPoint( void *context, size_t i );
         friend void preparePatch( void *context, size_t i );
         friend void updatePatch( void *context, size_t i );
         
-        std::vector< TooN::Vector<2> > prev_features;
-        std::vector< TooN::Vector<2> > next_features;
+        std::vector< Eigen::Vector2d > prev_features;
+        std::vector< Eigen::Vector2d > next_features;
     };
     
 /**

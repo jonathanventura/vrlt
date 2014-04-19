@@ -31,8 +31,7 @@ namespace vrlt
         
         void setTarget( Camera *camera );
 
-        bool getDepth( CVD::Image<float> &templateDepth );
-        bool copyTemplate( CVD::Image<CVD::byte> &output );
+        bool copyTemplate( cv::Mat &output );
         
         void updateTarget( Camera *camera );
         bool chooseSource( bool use_new_cameras = true );
@@ -47,25 +46,25 @@ namespace vrlt
         size_t index;
         
         // best search location in target image
-        TooN::Vector<2,float> targetPos;
+        Eigen::Vector2f targetPos;
         float targetScore;
         
         // from target to source
-        TooN::Matrix<3,3,float> warp;
-        TooN::Vector<2,float> warpcenter;
+        Eigen::Matrix3f warp;
+        Eigen::Vector2f warpcenter;
         float scale;
         
         // pre-computed values for speed-up
-        TooN::Vector<3,float> PX;
-        TooN::Vector<3,float> PN;
+        Eigen::Vector3f PX;
+        Eigen::Vector3f PN;
         float D;
-        TooN::Vector<2,float> center;
-        TooN::Matrix<1,3,float> vTKinv;
-        TooN::Matrix<3,3,float> tempMat;
-        TooN::Matrix<3,3,float> tempWarp;
+        Eigen::Vector2f center;
+        Eigen::RowVector3f vTKinv;
+        Eigen::Matrix3f tempMat;
+        Eigen::Matrix3f tempWarp;
         
-        TooN::Vector<3,float> right;
-        TooN::Vector<3,float> down;
+        Eigen::Vector3f right;
+        Eigen::Vector3f down;
     };
     
 /**

@@ -10,22 +10,18 @@
 
 #include <PatchTracker/robustlsq.h>
 
-#include <TooN/Lapack_Cholesky.h>
-#include <TooN/Cholesky.h>
+#include <Eigen/Eigen>
 
-namespace vrlt {
-
-    using namespace std;
-    using namespace TooN;
-
+namespace vrlt
+{
     // m-estimator reference: "Robust Regression" by John Fox
     // NB: this will re-order the vector
-    static float computeRobustStdDev( vector<float> &residualsqs )
+    static float computeRobustStdDev( std::vector<float> &residualsqs )
     {
-        vector<float>::iterator begin = residualsqs.begin();
-        vector<float>::iterator end = residualsqs.end();
-        vector<float>::iterator middle = begin + (end-begin)/2;
-        partial_sort( begin, middle, end );
+        std::vector<float>::iterator begin = residualsqs.begin();
+        std::vector<float>::iterator end = residualsqs.end();
+        std::vector<float>::iterator middle = begin + (end-begin)/2;
+        std::partial_sort( begin, middle, end );
         float median = *middle;
         
         return ( median / ( 0.6745 * 0.6745 ) );
@@ -52,29 +48,29 @@ namespace vrlt {
 
     bool RobustLeastSq::updatePose( Camera *camera_in, int count, int iter, float eps )
     {
-        Matrix<6> FtF = Zeros;
-        Vector<6> Fte = Zeros;
+        Eigen::Matrix<double,6,6> FtF = Eigen::Matrix<double,6,6>::Zero();
+        Eigen::Matrix<double,6,1> Fte = Eigen::Matrix<double,6,1>::Zero();
 
-        SE3<> pose( camera_in->node->pose );
+        Sophus::SE3d pose( camera_in->node->pose );
         float f = camera_in->calibration->focal;
-        Vector<2,float> center = camera_in->calibration->center;
+        Eigen::Vector2f center = camera_in->calibration->center;
 
         ElementList::iterator it;
 
         if ( iter < niter/2 )
         {
-            vector<float> residualsqs;
+            std::vector<float> residualsqs;
             for ( it = root->points.begin(); it != root->points.end(); it++ )
             {
                 Point *point = (Point*)it->second;
                 if ( !point->tracked ) continue;
 
-                Vector<3,float> PX = pose * project( point->position );
+                Eigen::Vector3f PX = pose * project( point->position );
 
-                Vector<2,float> x = f * project(PX) + center;
-                Vector<2,float> e = point->location - x;
+                Eigen::Vector2f x = f * project(PX) + center;
+                Eigen::Vector2f e = point->location - x;
 
-                residualsqs.push_back( sqrtf(e*e) );
+                residualsqs.push_back( e.dot(e) );
             }
             if ( residualsqs.size() > 0 ) {
                 float var = computeRobustStdDev( residualsqs );
@@ -84,7 +80,7 @@ namespace vrlt {
 
         float toterr = 0.f;
 
-        vector<float> weights( root->points.size() );
+        std::vector<float> weights( root->points.size() );
 
         int i = 0;
         for ( it = root->points.begin(); it != root->points.end(); it++,i++ )
@@ -92,25 +88,25 @@ namespace vrlt {
             Point *point = (Point*)it->second;
             if ( !point->tracked ) continue;
 
-            Vector<3,float> PX = pose * project( point->position );
+            Eigen::Vector3f PX = pose * project( point->position );
 
-            Matrix<2,3,float> A;
-            A[0] = makeVector<float>( PX[2], 0, -PX[0] );
-            A[1] = makeVector<float>( 0, PX[2], -PX[1] );
+            Eigen::Matrix<float,2,3> A;
+            A << PX[2], 0, -PX[0],
+                0, PX[2], -PX[1];
             A *= f / (PX[2] * PX[2]);
 
-            Matrix<3,6,float> J;
+            Eigen::Matrix<float,3,6> J;
 
             for ( int m = 0; m < 6; m++ ) {
                 J.T()[m] = SE3<float>::generator_field( m, unproject(PX) ).slice<0,3>();
             }
 
-            Matrix<2,6,float> Fn = A * J;
+            Eigen::Matrix<float,2,6> Fn = A * J;
 
-            Vector<2,float> x = f * project(PX) + center;
+            Eigen::Vector2f x = f * project(PX) + center;
 
-            Vector<2,float> pos = point->location;
-            Vector<2,float> e = pos - x;
+            Eigen::Vector2f pos = point->location;
+            Eigen::Vector2f e = pos - x;
 
             float residsq = e*e;
             float w = computeTukeyWeight( ksq, residsq );
@@ -134,7 +130,7 @@ namespace vrlt {
 
         Lapack_Cholesky<6,float> chol( FtF );
         Vector<6,float> soln = chol.backsub( Fte );
-        SE3<> newpose = SE3<>( soln ) * pose;
+        Sophus::SE3d newpose = Sophus::SE3d( soln ) * pose;
 
         // calculate new error
         float newerr = 0;
@@ -144,12 +140,12 @@ namespace vrlt {
             Point *point = (Point*)it->second;
             if ( !point->tracked ) continue;
 
-            Vector<3,float> PX = newpose * project( point->position );
+            Eigen::Vector3f PX = newpose * project( point->position );
 
-            Vector<2,float> x = f * project(PX) + center;
+            Eigen::Vector2f x = f * project(PX) + center;
 
-            Vector<2,float> pos = point->location;
-            Vector<2,float> e = pos - x;
+            Eigen::Vector2f pos = point->location;
+            Eigen::Vector2f e = pos - x;
 
             if ( weights[i] == 0 ) {
                 point->tracked = false;

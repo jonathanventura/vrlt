@@ -28,6 +28,7 @@ namespace vrlt
         float lowThreshold, highThreshold;
         std::vector<Patch*>::iterator begin;
         PatchSearch() : subsample( false ) { }
+        virtual ~PatchSearch() { }
         
         virtual int makeTemplates( int count ) { return 0; }
         virtual int doSearch( int count ) { return 0; }

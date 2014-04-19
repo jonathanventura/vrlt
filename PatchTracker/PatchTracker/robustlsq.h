@@ -23,7 +23,7 @@ namespace vrlt {
         float ksq;
         Node *root;
     
-        RobustLeastSq( Node *_root ) : root( _root ), niter( 10 ), ksq( 1.f )
+        RobustLeastSq( Node *_root ) : niter( 10 ), ksq( 1.f ), root( _root )
         {
         }
 

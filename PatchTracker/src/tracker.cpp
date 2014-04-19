@@ -12,13 +12,10 @@
 #include <PatchTracker/patch.h>
 #include <PatchTracker/nccsearch.h>
 
-#include <cvd/thread.h>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
-
-#include <TooN/Lapack_Cholesky.h>
-#include <TooN/wls.h>
+#include <Eigen/Eigen>
 
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>
@@ -33,11 +30,7 @@
 #endif
 
 namespace vrlt
-{
-    using namespace TooN;
-    using namespace CVD;
-    using namespace std;
-    
+{    
     struct SortPatches
     {
         bool operator()( const Patch *a, const Patch *b ) { return ( a->shouldTrack > b->shouldTrack ); }
@@ -56,8 +49,8 @@ namespace vrlt
         }   
     }
     
-    Tracker::Tracker( Node *_root, int _maxnumpoints, string method, double threshold )
-    : root( _root ), ntracked( 0 ), nattempted( 0 ), verbose( false ),
+    Tracker::Tracker( Node *_root, int _maxnumpoints, std::string method, double threshold )
+    : ntracked( 0 ), root( _root ), nattempted( 0 ), verbose( false ),
     maxnumpoints( _maxnumpoints ), firstlevel( 3 ), lastlevel( 1 ), niter( 10 ),
     recompute_sigmasq(true)
     {
@@ -113,18 +106,18 @@ namespace vrlt
     
     void Tracker::updateMatrices( Camera *source, Camera *target )
     {
-        SE3<> poseinv = mynode->pose.inverse();
-        SE3<> rel_pose = source->node->precomputedGlobalPose * poseinv;
-        source->KAKinv = source->calibration->K * rel_pose.get_rotation().get_matrix() * target->calibration->Kinv;
-        source->Ka.T()[0] = source->calibration->K * rel_pose.get_translation();
+        Sophus::SE3d poseinv = mynode->pose.inverse();
+        Sophus::SE3d rel_pose = source->node->precomputedGlobalPose * poseinv;
+        source->KAKinv = source->calibration->K * rel_pose.so3().matrix()).cast<float>() * target->calibration->Kinv;
+        source->Ka.col(0) = source->calibration->K * rel_pose.translation();
     }
     
     void Tracker::updateMatrices( Camera *target )
     {
-        SE3<> poseinv = mynode->pose.inverse();
+        Sophus::SE3d poseinv = mynode->pose.inverse();
         for ( int i = 0; i < cameras.size(); i++ )
         {
-            SE3<> rel_pose = cameras[i]->node->precomputedGlobalPose * poseinv;
+            Sophus::SE3d rel_pose = cameras[i]->node->precomputedGlobalPose * poseinv;
             cameras[i]->KAKinv = cameras[i]->calibration->K * rel_pose.get_rotation().get_matrix() * target->calibration->Kinv;
             cameras[i]->Ka.T()[0] = cameras[i]->calibration->K * rel_pose.get_translation();
         }
@@ -140,10 +133,10 @@ namespace vrlt
         tracker->searchPatches[i] = NULL;
 
         Vector<4,float> pointData;
-        Vector<3,float> PX;
-        Vector<2,float> proj;
-        Vector<3,float> normalData;
-        Vector<3,float> PN;
+        Eigen::Vector3f PX;
+        Eigen::Vector2f proj;
+        Eigen::Vector3f normalData;
+        Eigen::Vector3f PN;
 
         // check in front of camera
         pointData = point->position;
@@ -274,7 +267,7 @@ namespace vrlt
             }
         }
         
-        prev_pose = SE3<>();
+        prev_pose = Sophus::SE3d();
         
         vector<Point*> new_points;
         vector<Patch*> new_patches;
