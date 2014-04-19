@@ -13,8 +13,6 @@
 #include <vector>
 #include <set>
 
-#include <cvd/timer.h>
-
 namespace vrlt {
     
     static void addFeatures( Camera *camera, bool triangulated, std::vector<Feature*> &features )
@@ -48,7 +46,7 @@ namespace vrlt {
         }
     }
 
-    FeatureMatcher::FeatureMatcher( NN *nn, bool _deleteNN ) : index( nn ), deleteNN( _deleteNN ), data( NULL ), deleteFeatures( false )
+    FeatureMatcher::FeatureMatcher( NN *nn, bool _deleteNN ) : data( NULL ), index( nn ), deleteNN( _deleteNN ), deleteFeatures( false )
     {
     }
 
