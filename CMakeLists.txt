@@ -9,8 +9,8 @@ endif()
 
 project( vrlt )
 
-#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -stdlib=libstdc++" )
-#set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -stdlib=libstdc++" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -stdlib=libstdc++" )
+set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -stdlib=libstdc++" )
 
 set( BUILD_MULTIVIEW TRUE CACHE BOOL "Build MultiView module" )
 set( BUILD_FEATURE_EXTRACTION TRUE CACHE BOOL "Build FeatureExtraction module" )
