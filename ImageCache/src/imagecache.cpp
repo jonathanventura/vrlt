@@ -49,11 +49,11 @@ namespace vrlt
     
     bool ImageCache::test( Camera *camera )
     {
-        SE3<> inv_pose = camera->node->globalPose().inverse();
+        Sophus::SE3d inv_pose = camera->node->globalPose().inverse();
         
         for ( int i = 0; i < cache.size(); i++ )
         {
-            SE3<> rel_pose = cache[i]->node->globalPose() * inv_pose;
+            Sophus::SE3d rel_pose = cache[i]->node->globalPose() * inv_pose;
             double dist = norm( rel_pose.get_translation() );
             if ( dist < 0.1 ) {
                 double angle = norm( rel_pose.get_rotation().ln() ) * 180. / M_PI;
