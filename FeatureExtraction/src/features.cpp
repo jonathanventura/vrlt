@@ -201,11 +201,11 @@ namespace vrlt {
             if ( level > 3 ) level = 3;
 
             double scale = pow( 2., level );
-            Vector<2> center = feature_in->location;
+            Eigen::Vector2d center = feature_in->location;
             center[0] = ( center[0] + .5 ) / scale - .5;
             center[1] = ( center[1] + .5 ) / scale - .5;
             
-            Vector<2> origin = center - makeVector( 7.5, 7.5 );
+            Eigen::Vector2d origin = center - makeVector( 7.5, 7.5 );
             
             feature_out->descriptor = new unsigned char[128];
             bzero( feature_out->descriptor, 128 );
@@ -216,7 +216,7 @@ namespace vrlt {
             bool good = true;
             for ( int y = -5; y <= 5; y++ ) {
                 for ( int x = -5; x <= 5; x++,n++ ) {
-                    Vector<2> loc = origin + makeVector(x,y);
+                    Eigen::Vector2d loc = origin + makeVector(x,y);
                     if ( !interpolator.in_image(loc) ) {
                         good = false;
                         break;
