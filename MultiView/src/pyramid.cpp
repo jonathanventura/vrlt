@@ -10,49 +10,49 @@
 
 #include <MultiView/multiview.h>
 
-#include <cvd/image_io.h>
-#include <cvd/vision.h>
+#include <opencv2/imgproc/imgproc.hpp>
 
 namespace vrlt {
-    
-    using namespace CVD;
-    
+       
     ImagePyramid::ImagePyramid() : camera( NULL )
     {
         
     }
     
-    ImagePyramid::ImagePyramid( ImageRef size )
+    ImagePyramid::ImagePyramid( cv::Size size )
     {
         this->resize( size );
     }
     
     ImagePyramid::ImagePyramid( Camera *_camera ) : camera( _camera )
-    {   
+    {
         levels[0].image = camera->image;
         for ( int i = 1; i < NLEVELS; i++ ) {
-            levels[i].image = halfSample( levels[i-1].image );
+            cv::pyrDown( levels[i-1].image, levels[i].image );
         }
     }
     
-    void ImagePyramid::resize( CVD::ImageRef size )
+    void ImagePyramid::resize( cv::Size size )
     {
-        levels[0].image.resize( size );
+        cv::Size mysize = size;
+        levels[0].image.create( mysize, CV_8UC1 );
         for ( int i = 1; i < NLEVELS; i++ ) {
-            levels[i].image.resize( levels[i-1].image.size() / 2 );
+            mysize.width /= 2;
+            mysize.height /= 2;
+            levels[i].image.create( mysize, CV_8UC1 );
         }
     }
     
-    void ImagePyramid::copy_from( const CVD::BasicImage<CVD::byte> &image_in )
+    void ImagePyramid::copy_from( const cv::Mat &image_in )
     {
-        levels[0].image.copy_from( image_in );
+        image_in.copyTo( levels[0].image );
         remake();
     }
     
     void ImagePyramid::remake()
     {
         for ( int i = 1; i < NLEVELS; i++ ) {
-            halfSample( levels[i-1].image, levels[i].image );
+            cv::pyrDown( levels[i-1].image, levels[i].image );
         }
     }
     

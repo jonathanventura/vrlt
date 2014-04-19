@@ -15,13 +15,13 @@
 #include <map>
 #include <string>
 
-#include <TooN/TooN.h>
-#include <TooN/se3.h>
+#include <Eigen/Eigen>
+#include <sophus/so3.hpp>
+#include <sophus/se3.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <MultiView/pyramid.h>
 
-#include <cvd/image.h>
-#include <cvd/rgb.h>
-#include <cvd/byte.h>
 
 namespace vrlt {
 /** \addtogroup MultiView
@@ -58,27 +58,27 @@ namespace vrlt {
         } Type;
         Type type;
         double focal;
-        TooN::Vector<2> center;
+        Eigen::Vector2d center;
         double k1, k2;
         /** Projects a 3D point from object space to image space. */
-        TooN::Vector<2> project3( const TooN::Vector<3> &X );
+        Eigen::Vector2d project3( const Eigen::Vector3d &X );
         /** Projects a 2D point form normalized camera coordinates to image space. */
-        TooN::Vector<2> project( const TooN::Vector<2> &point );
+        Eigen::Vector2d project( const Eigen::Vector2d &point );
         /** Applies radial distortion in image space. */
-        TooN::Vector<2> distort( const TooN::Vector<2> &point );
+        Eigen::Vector2d distort( const Eigen::Vector2d &point );
         /** Unprojects a 2D point from image space to 3D object space. */
-        TooN::Vector<3> unproject( const TooN::Vector<2> &location );
+        Eigen::Vector3d unproject( const Eigen::Vector2d &location );
         Calibration() : type( Perspective ), k1( 0 ), k2( 0 ) { }
         
         /** Prepares the cached calibration matrix K. */
         void makeK();
         /** Prepares the cached inverse calibration matrix Kinv. */
         void makeKinverse();
-        TooN::Matrix<3,3,float> K;
-        TooN::Matrix<3,3,float> Kinv;
+        Eigen::Matrix3f K;
+        Eigen::Matrix3f Kinv;
         
         /** Returns the result of X * Kinv. */
-        TooN::Vector<3,float> postMultiplyKinv( const TooN::Vector<3,float> &X );
+        Eigen::Vector3f postMultiplyKinv( const Eigen::Vector3f &X );
     };
     
     struct Reconstruction;
@@ -94,19 +94,19 @@ namespace vrlt {
         // sensor data
         double timestamp;
         double heading;
-        TooN::SO3<> attitude;
-        TooN::Vector<6,float> velocity;
-        TooN::Vector<3> rotationRate;
+        Sophus::SO3d attitude;
+        Eigen::Matrix<float,6,1> velocity;
+        Eigen::Vector3d rotationRate;
         
-        CVD::Image< CVD::Rgb<CVD::byte> > color_image;
-        CVD::Image<CVD::byte> image;
+        cv::Mat color_image;
+        cv::Mat image;
         ImagePyramid pyramid;
-        CVD::Image<float> float_image;
-        CVD::Image<CVD::byte> small_byte_image;
-        CVD::Image<float> small_image;
+        cv::Mat float_image;
+        cv::Mat small_byte_image;
+        cv::Mat small_image;
         ElementList features;
         Node *node;
-        Camera() : calibration( NULL ), node( NULL ), velocity( TooN::Zeros ), rotationRate( TooN::Zeros ), timestamp( 0 ), isnew( false ) { }
+        Camera() : calibration( NULL ), timestamp( 0 ), velocity( Eigen::Matrix<float,6,1>::Zero() ), rotationRate( Eigen::Vector3d::Zero() ), node( NULL ), isnew( false ) { }
         
         unsigned int texID;
         
@@ -114,15 +114,38 @@ namespace vrlt {
         bool isnew;
         
         /** Cached matrix for perspective patch projection. */
-        TooN::Matrix<3,3,float> KAKinv;
+        Eigen::Matrix3f KAKinv;
         /** Cached matrix for perspective patch projection. */
-        TooN::Matrix<3,1,float> Ka;
+        Eigen::Matrix3f Ka;
     };
     
-    TooN::Vector<2> sphericalProject( const TooN::Vector<3> &X );
-    TooN::Vector<3> sphericalUnproject( const TooN::Vector<2> &pt );
-    TooN::Vector<2> cylindricalProject( const TooN::Vector<3> &X );
-    TooN::Vector<3> cylindricalUnproject( const TooN::Vector<2> &pt );
+    template<int d,typename T>
+    Eigen::Matrix<T,d-1,1> project( const Eigen::Matrix<T,d,1> &Xin )
+    {
+        return Xin.head(d-1)/Xin[d-1];
+    }
+
+//    Eigen::Vector2d project( const Eigen::Vector3d &Xin )
+//    {
+//        Eigen::Vector2d Xout;
+//        Xout[0] = Xin[0]/Xin[2];
+//        Xout[1] = Xin[1]/Xin[2];
+//        return Xout;
+//    }
+
+    template<int d,typename T>
+    Eigen::Matrix<T,d+1,1> unproject( const Eigen::Matrix<T,d,1> &Xin )
+    {
+        Eigen::Matrix<T,d+1,1> Xout;
+        Xout.head(d) = Xin;
+        Xout[d-1] = 1;
+    }
+    
+    Eigen::Vector2d sphericalProject( const Eigen::Vector3d &X );
+    Eigen::Vector3d sphericalUnproject( const Eigen::Vector2d &pt );
+    
+    Eigen::Vector2d cylindricalProject( const Eigen::Vector3d &X );
+    Eigen::Vector3d cylindricalUnproject( const Eigen::Vector2d &pt );
 
     struct Track;
     /** \brief An interest point
@@ -132,7 +155,7 @@ namespace vrlt {
     struct Feature : public Element {
         Track *track;
         Camera *camera;
-        TooN::Vector<2> location;
+        Eigen::Vector2d location;
         double orientation;
         double scale;
         unsigned char *descriptor;
@@ -140,8 +163,8 @@ namespace vrlt {
         unsigned char color[3];
         unsigned int word;
         ElementList matches;
-        TooN::Vector<3> unproject();
-        TooN::Vector<3> globalUnproject( Node *root = NULL );
+        Eigen::Vector3d unproject();
+        Eigen::Vector3d globalUnproject( Node *root = NULL );
         Feature() : track( NULL ), camera( NULL ), descriptor( NULL ) { }
         ~Feature() { delete [] descriptor; }
     };
@@ -163,7 +186,7 @@ namespace vrlt {
     struct Pair : public Element {
         Node *node1;
         Node *node2;
-        TooN::SE3<> pose;
+        Sophus::SE3d pose;
         int nmatches;
         Pair() : node1( NULL ), node2( NULL ) { }
     };
@@ -199,10 +222,10 @@ namespace vrlt {
         bool scaleFixed;
         Node *parent;
         Camera *camera;
-        TooN::SE3<> pose;
-        TooN::SE3<> precomputedGlobalPose;
-        TooN::SE3<> globalPose( Node *root = NULL );
-        TooN::SO3<> globalRotation( Node *root = NULL );
+        Sophus::SE3d pose;
+        Sophus::SE3d precomputedGlobalPose;
+        Sophus::SE3d globalPose( Node *root = NULL );
+        Sophus::SO3d globalRotation( Node *root = NULL );
         ElementList points;
         ElementList children;
         Node *root();
@@ -216,14 +239,14 @@ namespace vrlt {
     struct Point : public Element {
         Node *node;
         Track *track;
-        TooN::Vector<2,float> location;
-        TooN::Vector<4> position;
-        TooN::Vector<3> normal;
-        Point() : node( NULL ), track( NULL ), normal( TooN::Zeros ), cov( TooN::Identity ) { }
+        Eigen::Vector2f location;
+        Eigen::Matrix<double,4,1> position;
+        Eigen::Vector3d normal;
+        Point() : node( NULL ), track( NULL ), normal( Eigen::Vector3d::Zero() ), cov( Eigen::Matrix2f::Identity() ) { }
         bool tracked;
         int bestLevel;
-        TooN::Matrix<2,2,float> cov;
-        TooN::Matrix<2,2,float> invcov;
+        Eigen::Matrix2f cov;
+        Eigen::Matrix2f invcov;
     };
     
     /** \brief Container for all SfM data
@@ -251,12 +274,12 @@ namespace vrlt {
         void link( Track *track, Point *point );
         void unlink( Track *track, Feature *feature );
         void remove( Track *track );
-        void attach( Node *node, Node *root, const TooN::SE3<> &pose );
+        void attach( Node *node, Node *root, const Sophus::SE3d &pose );
         void clearPairs( Node *root );
     };
     
     void removeCameraFeatures( Reconstruction &r, Camera *camera );
-    Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const CVD::BasicImage<CVD::byte> &image, const TooN::SE3<> &pose );
+    Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const cv::Mat &image, const Sophus::SE3d &pose );
     
     /** @}
      */

@@ -13,54 +13,54 @@
 namespace vrlt
 {
     using namespace std;
-    using namespace TooN;
     
-    Vector<3> Feature::unproject()
+    Eigen::Vector3d Feature::unproject()
     {
         return camera->calibration->unproject( location );
     }
     
-    Vector<3> Feature::globalUnproject( Node *root )
+    Eigen::Vector3d Feature::globalUnproject( Node *root )
     {
         return this->camera->node->globalRotation( root ).inverse() * this->unproject();
     }
     
-    Vector<2> Calibration::project3( const TooN::Vector<3> &X )
+    Eigen::Vector2d Calibration::project3( const Eigen::Vector3d &X )
     {
         if ( type == Spherical ) return this->project( sphericalProject( X ) );
         else if ( type == Cylindrical ) return this->project( cylindricalProject( X ) );
-        return this->project( TooN::project( X ) );
+        Eigen::Vector2d x = vrlt::project(X);
+        return this->project( x );
     }
     
-    Vector<2> Calibration::project( const TooN::Vector<2> &point )
+    Eigen::Vector2d Calibration::project( const Eigen::Vector2d &point )
     {
-        Vector<2> location;
+        Eigen::Vector2d location;
         location[0] = focal * point[0] + center[0];
         location[1] = focal * point[1] + center[1];
         return location;
     }
     
-    Vector<2> Calibration::distort( const TooN::Vector<2> &point )
+    Eigen::Vector2d Calibration::distort( const Eigen::Vector2d &point )
     {
-        float r = point*point;
+        float r = point.dot(point);
         float rsq = r * r;
         float s = (1. + k1 * rsq + k2 * rsq * rsq );
         return s * point;
     }
     
-    Vector<3> Calibration::unproject( const Vector<2> &location )
+    Eigen::Vector3d Calibration::unproject( const Eigen::Vector2d &location )
     {
-        Vector<2> point;
+        Eigen::Vector2d point;
         point[0] = ( location[0] - center[0] ) / focal;
         point[1] = ( location[1] - center[1] ) / focal;
         if ( type == Spherical ) return sphericalUnproject( point );
         if ( type == Cylindrical ) return cylindricalUnproject( point );
-        return TooN::unproject( point );
+        return unproject( point );
     }
     
     void Calibration::makeK()
     {
-        K = Identity;
+        K = Eigen::Matrix3f::Identity();
         K(0,0) = K(1,1) = focal;
         K(0,2) = center[0];
         K(1,2) = center[1];
@@ -68,16 +68,16 @@ namespace vrlt
         
     void Calibration::makeKinverse()
     {
-        Kinv = Identity;
+        Kinv = Eigen::Matrix3f::Identity();
         float invf = 1.f / focal;
         Kinv(0,0) = Kinv(1,1) = invf;
         Kinv(0,2) = -center[0] * invf;
         Kinv(1,2) = -center[1] * invf;
     }
     
-    Vector<3,float> Calibration::postMultiplyKinv( const Vector<3,float> &X )
+    Eigen::Vector3f Calibration::postMultiplyKinv( const Eigen::Vector3f &X )
     {
-        Vector<3,float> out;
+        Eigen::Vector3f out;
         
         out[0] = Kinv(0,0) * X[0];
         out[1] = Kinv(1,1) * X[1];
@@ -86,20 +86,22 @@ namespace vrlt
         return out;
     }
     
-    Vector<2> sphericalProject( const TooN::Vector<3> &X )
+    Eigen::Vector2d sphericalProject( const Eigen::Vector3d &X )
     {
         double theta = atan2( X[0], X[2] );
-        double phi = asin( X[1] / norm(X) );
+        double phi = asin( X[1] / X.norm() );
         
-        return makeVector( theta, phi );
+        Eigen::Vector2d x;
+        x << theta, phi;
+        return x;
     }
     
-    Vector<3> sphericalUnproject( const TooN::Vector<2> &pt )
+    Eigen::Vector3d sphericalUnproject( const Eigen::Vector2d &pt )
     {
         double theta = pt[0];
         double phi = pt[1];
         
-        Vector<3> X;
+        Eigen::Vector3d X;
         X[0] = sin( theta ) * cos( phi );
         X[1] = sin( phi );
         X[2] = cos( theta ) * cos( phi );
@@ -107,20 +109,22 @@ namespace vrlt
         return X;
     }
     
-    Vector<2> cylindricalProject( const TooN::Vector<3> &X )
+    Eigen::Vector2d cylindricalProject( const Eigen::Vector3d &X )
     {
         double theta = atan2( X[0], X[2] );
         double h = X[1] / sqrt( X[0] * X[0] + X[2] * X[2] );
         
-        return makeVector( theta, h );
+        Eigen::Vector2d x;
+        x << theta, h;
+        return x;
     }
     
-    Vector<3> cylindricalUnproject( const TooN::Vector<2> &pt )
+    Eigen::Vector3d cylindricalUnproject( const Eigen::Vector2d &pt )
     {
         double theta = pt[0];
         double h = pt[1];
         
-        Vector<3> X;
+        Eigen::Vector3d X;
         X[0] = sin( theta );
         X[1] = h;
         X[2] = cos( theta );
@@ -135,9 +139,9 @@ namespace vrlt
         return myroot;
     }
     
-    SE3<> Node::globalPose( Node *root )
+    Sophus::SE3d Node::globalPose( Node *root )
     {
-        SE3<> globalpose;
+        Sophus::SE3d globalpose;
         Node *node = this;
         while ( node != root ) {
             globalpose = globalpose * node->pose;
@@ -146,12 +150,12 @@ namespace vrlt
         return globalpose;
     }
     
-    SO3<> Node::globalRotation( Node *root )
+    Sophus::SO3d Node::globalRotation( Node *root )
     {
-        SO3<> globalrot;
+        Sophus::SO3d globalrot;
         Node *node = this;
         while ( node != root ) {
-            globalrot = globalrot * node->pose.get_rotation();
+            globalrot = globalrot * node->pose.so3();
             node = node->parent;
         }
         return globalrot;
@@ -200,11 +204,11 @@ namespace vrlt
 //        delete track;
     }
     
-    void Reconstruction::attach( Node *node, Node *root, const TooN::SE3<> &pose )
+    void Reconstruction::attach( Node *node, Node *root, const Sophus::SE3d &pose )
     {
         // get this camera's root node
         Node *oldroot = node->root();
-        SE3<> oldpose = node->globalPose();
+        Sophus::SE3d oldpose = node->globalPose();
         
         // remove from top level list if necessary
         if ( nodes.count( oldroot->name ) > 0 ) {
@@ -257,7 +261,7 @@ namespace vrlt
         camera->features.clear();
     }
     
-    Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const CVD::BasicImage<CVD::byte> &image, const SE3<> &pose )
+    Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const cv::Mat &image, const Sophus::SE3d &pose )
     {
         char name[1024];
         
@@ -276,8 +280,7 @@ namespace vrlt
         //tracker.cameras.push_back( camera );
         
         // copy image
-        camera->image.resize( image.size() );
-        camera->image.copy_from( image );
+        image.copyTo( camera->image );
         camera->pyramid.resize( image.size() );
         camera->pyramid.copy_from( image );
         
@@ -332,7 +335,8 @@ namespace vrlt
                 r.features[ feature->name ] = feature;
                 
                 // set feature location
-                feature->location = point->location;
+                feature->location[0] = (double)point->location[0];
+                feature->location[1] = (double)point->location[1];
                 
                 // set feature color
                 feature->color[0] = 255;

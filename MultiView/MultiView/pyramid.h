@@ -11,8 +11,7 @@
 #ifndef __PYRAMID_H
 #define __PYRAMID_H
 
-#include <cvd/image.h>
-#include <cvd/byte.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #define NLEVELS 4
 
@@ -20,14 +19,14 @@ namespace vrlt {
     /** \addtogroup MultiView
      * @{
      */
-    class Camera;
+    struct Camera;
     
     /** \brief An image pyramid level
      *
      * One level of the image pyramid.
      */
     struct PyramidLevel {
-        CVD::Image<CVD::byte> image;
+        cv::Mat image;
     };
     
     /** \brief An image pyramid
@@ -38,11 +37,11 @@ namespace vrlt {
      */
     struct ImagePyramid {
         ImagePyramid();
-        ImagePyramid( CVD::ImageRef size );
+        ImagePyramid( cv::Size size );
         ImagePyramid( Camera *_camera );
         
-        void resize( CVD::ImageRef size );
-        void copy_from( const CVD::BasicImage<CVD::byte> &image_in );
+        void resize( cv::Size size );
+        void copy_from( const cv::Mat &image_in );
         
         /** Remake the pyramid level images.  Useful when the camera image changes, to avoid re-allocating space for the pyramid levels. */
         void remake();

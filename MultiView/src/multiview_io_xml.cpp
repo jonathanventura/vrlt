@@ -16,7 +16,6 @@ namespace vrlt {
 	namespace XML {
     
 		using namespace std;
-		using namespace TooN;
 		
 		static void readNodes( Reconstruction *r, TiXmlNode *root, ElementList &nodelist, Node *parent = NULL )
 		{
@@ -41,21 +40,21 @@ namespace vrlt {
 				if ( text != NULL ) {
 					double val[3];
 					sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
-					mynode->pose.get_rotation() = SO3<>( makeVector( val[0], val[1], val[2] ) );
+					mynode->pose.so3() = Sophus::SO3d::exp( Eigen::Map<Eigen::Vector3d>( val ) );
 				}
 				
 				text = elem->Attribute("translation");
 				if ( text != NULL ) {
 					double val[3];
 					sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
-					mynode->pose.get_translation() = makeVector( val[0], val[1], val[2] );
+					mynode->pose.translation() = Eigen::Map<Eigen::Vector3d>( val );
 				}
 				
 				text = elem->Attribute("center");
 				if ( text != NULL ) {
 					double val[3];
 					sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
-					mynode->pose.get_translation() = - ( mynode->pose.get_rotation() * makeVector( val[0], val[1], val[2] ) );
+					mynode->pose.translation() = - ( mynode->pose.so3() * Eigen::Map<Eigen::Vector3d>( val ) );
 				}
 				
 				text = elem->Attribute("image");
@@ -96,14 +95,14 @@ namespace vrlt {
 					if ( text != NULL ) {
 						double val[4];
 						sscanf( text, "%lf %lf %lf %lf", &val[0], &val[1], &val[2], &val[3] );
-						point->position = makeVector( val[0], val[1], val[2], val[3] );
+						point->position = Eigen::Map<Eigen::Vector4d>( val );
 					}
 					
 					text = childelem->Attribute("normal");
 					if ( text != NULL ) {
 						double val[3];
 						sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
-						point->normal = makeVector( val[0], val[1], val[2] );
+						point->normal = Eigen::Map<Eigen::Vector3d>( val );
 					}
 					
 					text = childelem->Attribute("track");
@@ -210,7 +209,7 @@ namespace vrlt {
 						} else if ( strcasecmp( child->Value(), "attitude" ) == 0 ) {
 							double attitude[9];
 							sscanf( text, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", attitude+0, attitude+1, attitude+2, attitude+3, attitude+4, attitude+5, attitude+6, attitude+7, attitude+8 );
-							camera->attitude = TooN::SO3<>( TooN::wrapMatrix<3,3>(attitude) );
+							camera->attitude = Sophus::SO3d( Eigen::Map< Eigen::Matrix<double,3,3,Eigen::RowMajor> >(attitude) );
 						} else if ( strcasecmp( child->Value(), "heading" ) == 0 ) {
 							double heading;
 							sscanf( text, "%lf", &heading );
@@ -222,7 +221,7 @@ namespace vrlt {
 						} else if ( strcasecmp( child->Value(), "rotationRate" ) == 0 ) {
 							double rate[3];
 							sscanf( text, "%lf %lf %lf", rate+0, rate+1, rate+2 );
-							camera->rotationRate = TooN::wrapVector<3>( rate );
+							camera->rotationRate = Eigen::Map<Eigen::Vector3d>( rate );
 						}
 					}
 				}
@@ -332,14 +331,14 @@ namespace vrlt {
 				if ( text != NULL ) {
 					double val[3];
 					sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
-					nodepair->pose.get_rotation() = SO3<>( makeVector( val[0], val[1], val[2] ) );
+					nodepair->pose.so3() = Sophus::SO3d::exp( Eigen::Map<Eigen::Vector3d>( val ) );
 				}
 				
 				text = elem->Attribute("translation");
 				if ( text != NULL ) {
 					double val[3];
 					sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
-					nodepair->pose.get_translation() = makeVector( val[0], val[1], val[2] );
+					nodepair->pose.translation() = Eigen::Map<Eigen::Vector3d>( val );
 				}
 				
 				text = elem->Attribute("nmatches");
@@ -367,13 +366,13 @@ namespace vrlt {
 				
 				char text[1024];
 				
-				Vector<3> vec;
+                Eigen::Vector3d vec;
 				
-				vec = node->pose.get_rotation().ln();
+				vec = node->pose.so3().log();
 				sprintf( text, "%lf %lf %lf", vec[0], vec[1], vec[2] );
 				elem->SetAttribute( "rotation", text );
 				
-				vec = node->pose.get_translation();
+				vec = node->pose.translation();
 				sprintf( text, "%lf %lf %lf", vec[0], vec[1], vec[2] );
 				elem->SetAttribute( "translation", text );
 				
@@ -474,9 +473,9 @@ namespace vrlt {
 				TiXmlText *text = NULL;
 				char vals[1024];
 				
-				if ( norm( camera->attitude.ln() ) != 0. ) {
+				if ( camera->attitude.log().norm() != 0. ) {
 					child = new TiXmlElement( "attitude" );
-					Matrix<3> rot = camera->attitude.get_matrix();
+                    Eigen::Matrix3d rot = camera->attitude.matrix();
 					sprintf( vals, "%.15lf %.15lf %.15lf    %.15lf %.15lf %.15lf    %.15lf %.15lf %.15lf", rot(0,0), rot(0,1), rot(0,2),    rot(1,0), rot(1,1), rot(1,2),   rot(2,0), rot(2,1), rot(2,2) );
 					text = new TiXmlText( vals );
 					child->LinkEndChild( text );
@@ -496,9 +495,9 @@ namespace vrlt {
 					elem->LinkEndChild( child );
 				}
 				
-				if ( norm( camera->rotationRate ) != 0 ) {
+				if ( camera->rotationRate.norm() != 0 ) {
 					child = new TiXmlElement( "rotationRate" );
-					Vector<3> rate = camera->rotationRate;
+                    Eigen::Vector3d rate = camera->rotationRate;
 					sprintf( vals, "%.15lf %.15lf %.15lf", rate[0], rate[1], rate[2] );
 					text = new TiXmlText( vals );
 					child->LinkEndChild( text );
@@ -569,13 +568,13 @@ namespace vrlt {
 				sprintf( text, "%d", nodepair->nmatches );
 				elem->SetAttribute( "nmatches", text );
 				
-				Vector<3> vec;
+                Eigen::Vector3d vec;
 				
-				vec = nodepair->pose.get_rotation().ln();
+				vec = nodepair->pose.so3().log();
 				sprintf( text, "%lf %lf %lf", vec[0], vec[1], vec[2] );
 				elem->SetAttribute( "rotation", text );
 				
-				vec = nodepair->pose.get_translation();
+				vec = nodepair->pose.translation();
 				sprintf( text, "%lf %lf %lf", vec[0], vec[1], vec[2] );
 				elem->SetAttribute( "translation", text );
 
