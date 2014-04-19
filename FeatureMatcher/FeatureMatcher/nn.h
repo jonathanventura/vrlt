@@ -20,6 +20,8 @@ namespace vrlt {
 class NN
 {
 public:
+    virtual ~NN() { }
+    
     virtual void setData( int _N, unsigned char *_data ) { }
     
     virtual void getDistances( int num_queries, unsigned char *queries, unsigned int *stored_distsqs ) { }

@@ -10,14 +10,8 @@
 
 #include <Estimator/estimator.h>
 
-#include <TooN/SVD.h>
-
 #include <algorithm>
 #include <ext/algorithm>
-
-#include <tag/threepointpose.h>
-#include <tag/five_point.h>
-#include <tag/ransac_estimators.h>
 
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>
@@ -28,10 +22,6 @@
 #endif
 
 namespace vrlt {
-    
-    using namespace std;
-    using namespace TooN;
-    
     
     Vector<2> computeReprojError( Feature *feature )
     {

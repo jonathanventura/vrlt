@@ -11,9 +11,6 @@
 #ifndef __ESTIMATOR_H
 #define __ESTIMATOR_H
 
-#include <TooN/TooN.h>
-#include <TooN/se3.h>
-
 #include <MultiView/multiview.h>
 
 namespace vrlt {

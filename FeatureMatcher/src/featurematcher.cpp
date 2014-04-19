@@ -17,9 +17,7 @@
 
 namespace vrlt {
     
-    using namespace std;
-
-    static void addFeatures( Camera *camera, bool triangulated, vector<Feature*> &features )
+    static void addFeatures( Camera *camera, bool triangulated, std::vector<Feature*> &features )
     {
         ElementList::iterator it;
         for ( it = camera->features.begin(); it != camera->features.end(); it++ )
@@ -34,7 +32,7 @@ namespace vrlt {
         }
     }
     
-    void addFeatures( Node *node, bool triangulated, vector<Feature*> &features )
+    void addFeatures( Node *node, bool triangulated, std::vector<Feature*> &features )
     {
         if ( node->camera != NULL )
         {
@@ -50,7 +48,7 @@ namespace vrlt {
         }
     }
 
-    FeatureMatcher::FeatureMatcher( NN *nn, bool _deleteNN ) : index( nn ), deleteNN( _deleteNN ), deleteFeatures( false ), data( NULL )
+    FeatureMatcher::FeatureMatcher( NN *nn, bool _deleteNN ) : index( nn ), deleteNN( _deleteNN ), data( NULL ), deleteFeatures( false )
     {
     }
 
@@ -73,10 +71,10 @@ namespace vrlt {
         
         if ( averageDescriptors )
         {
-            set<Point*> points;
+            std::set<Point*> points;
             for ( int i = 0; i < features.size(); i++ ) points.insert( features[i]->track->point );
-            vector<Feature*> newfeatures;
-            for ( set<Point*>::iterator it = points.begin(); it != points.end(); it++ )
+            std::vector<Feature*> newfeatures;
+            for ( std::set<Point*>::iterator it = points.begin(); it != points.end(); it++ )
             {
                 Point *point = *it;
                 Feature *feature = new Feature;
@@ -131,7 +129,7 @@ namespace vrlt {
         }
     }
     
-    void FeatureMatcher::search( vector<Feature*> &_features, int *neighbors, unsigned int *distances_sq )
+    void FeatureMatcher::search( std::vector<Feature*> &_features, int *neighbors, unsigned int *distances_sq )
     {
         int num_queries = _features.size();
         unsigned char *queries = new unsigned char[num_queries*128];
@@ -143,7 +141,7 @@ namespace vrlt {
         delete [] queries;
     }
     
-    void FeatureMatcher::searchconsistent( vector<Feature*> &_features, int *neighbors, unsigned int *distances_sq )
+    void FeatureMatcher::searchconsistent( std::vector<Feature*> &_features, int *neighbors, unsigned int *distances_sq )
     {
         int num_queries = _features.size();
         unsigned char *queries = new unsigned char[num_queries*128];
@@ -157,7 +155,7 @@ namespace vrlt {
         return;
     }
     
-    void FeatureMatcher::search( vector<Feature*> &_features, int k, int *neighbors, unsigned int *distances_sq )
+    void FeatureMatcher::search( std::vector<Feature*> &_features, int k, int *neighbors, unsigned int *distances_sq )
     {
         int num_queries = _features.size();
         unsigned char *queries = new unsigned char[num_queries*128];
@@ -174,7 +172,7 @@ namespace vrlt {
         bool operator()( Match *a, Match *b ) { return a->score < b->score; }
     };
     
-    void reverseMatches( vector<Match*> &matches )
+    void reverseMatches( std::vector<Match*> &matches )
     {
         for ( int i = 0; i < matches.size(); i++ )
         {
