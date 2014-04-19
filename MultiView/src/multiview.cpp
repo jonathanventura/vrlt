@@ -12,8 +12,6 @@
 
 namespace vrlt
 {
-    using namespace std;
-    
     Eigen::Vector3d Feature::unproject()
     {
         return camera->calibration->unproject( location );
@@ -225,7 +223,7 @@ namespace vrlt
 
     void Reconstruction::clearPairs( Node *root )
     {
-        vector<Pair*> pairsToRemove;
+        std::vector<Pair*> pairsToRemove;
         ElementList::iterator it;
         for ( it = pairs.begin(); it != pairs.end(); it++ )
         {

@@ -15,8 +15,6 @@
 namespace vrlt {
 	namespace XML {
     
-		using namespace std;
-		
 		static void readNodes( Reconstruction *r, TiXmlNode *root, ElementList &nodelist, Node *parent = NULL )
 		{
 			TiXmlNode *node;
@@ -33,7 +31,7 @@ namespace vrlt {
 				
 				text = elem->Attribute("name");
 				if ( text != NULL ) {
-					mynode->name = string(text);
+					mynode->name = std::string(text);
 				}
 					
 				text = elem->Attribute("rotation");
@@ -59,7 +57,7 @@ namespace vrlt {
 				
 				text = elem->Attribute("image");
 				if ( text != NULL ) {
-					mynode->camera = (Camera*) r->cameras[string(text)];
+					mynode->camera = (Camera*) r->cameras[std::string(text)];
 					mynode->camera->node = mynode;
 				} else {
 					mynode->camera = NULL;
@@ -88,7 +86,7 @@ namespace vrlt {
 					
 					text = childelem->Attribute("name");
 					if ( text != NULL ) {
-						point->name = string(text);
+						point->name = std::string(text);
 					}
 					
 					text = childelem->Attribute("position");
@@ -107,7 +105,7 @@ namespace vrlt {
 					
 					text = childelem->Attribute("track");
 					if ( text != NULL ) {
-						point->track = (Track*)r->tracks[string(text)];
+						point->track = (Track*)r->tracks[std::string(text)];
 						point->track->point = point;
 					}
 					
@@ -121,7 +119,7 @@ namespace vrlt {
 			}
 		}
 		
-		bool read( Reconstruction &r, const string &path, bool read_features )
+		bool read( Reconstruction &r, const std::string &path, bool read_features )
 		{
 			TiXmlDocument doc( path.c_str() );
 			
@@ -139,7 +137,7 @@ namespace vrlt {
 
 			text = root->ToElement()->Attribute("featureFileSuffix");
 			if ( text != NULL ) {
-				r.featureFileSuffix = string(text);
+				r.featureFileSuffix = std::string(text);
 			}
 
 			TiXmlNode *node;
@@ -155,7 +153,7 @@ namespace vrlt {
 				
 				text = elem->Attribute("name");
 				if ( text != NULL ) {
-					calibration->name = string(text);
+					calibration->name = std::string(text);
 				}
 				
 				text = elem->Attribute("type");
@@ -183,17 +181,17 @@ namespace vrlt {
 				
 				text = elem->Attribute("name");
 				if ( text != NULL ) {
-					camera->name = string(text);
+					camera->name = std::string(text);
 				}
 				
 				text = elem->Attribute("calibration");
 				if ( text != NULL ) {
-					camera->calibration = (Calibration*)r.calibrations[string(text)];
+					camera->calibration = (Calibration*)r.calibrations[std::string(text)];
 				}
 				
 				text = elem->GetText();
 				if ( text != NULL ) {
-					camera->path = string(text);
+					camera->path = std::string(text);
 				}
 				
 				TiXmlNode *child = NULL;
@@ -205,7 +203,7 @@ namespace vrlt {
 					text = childelem->GetText();
 					if ( text != NULL ) {
 						if ( strcasecmp( child->Value(), "path" ) == 0 ) {
-							camera->path = string(text);
+							camera->path = std::string(text);
 						} else if ( strcasecmp( child->Value(), "attitude" ) == 0 ) {
 							double attitude[9];
 							sscanf( text, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", attitude+0, attitude+1, attitude+2, attitude+3, attitude+4, attitude+5, attitude+6, attitude+7, attitude+8 );
@@ -242,7 +240,7 @@ namespace vrlt {
 				
 				text = elem->Attribute("name");
 				if ( text != NULL ) {
-					match->name = string(text);
+					match->name = std::string(text);
 				}
 
 				text = elem->Attribute("score");
@@ -260,10 +258,10 @@ namespace vrlt {
 					TiXmlElement *child = childnode->ToElement();
 					text = child->Attribute("feature");
 					if ( count++ == 0 ) {
-						match->feature1 = (Feature*)r.features[string(text)];
+						match->feature1 = (Feature*)r.features[std::string(text)];
 						match->feature1->matches[ match->name ] = match;
 					} else {
-						match->feature2 = (Feature*)r.features[string(text)];
+						match->feature2 = (Feature*)r.features[std::string(text)];
 						match->feature2->matches[ match->name ] = match;
 					}
 				}
@@ -283,7 +281,7 @@ namespace vrlt {
 					
 					text = elem->Attribute("name");
 					if ( text != NULL ) {
-						track->name = string(text);
+						track->name = std::string(text);
 					}
 					
 					TiXmlNode *childnode = NULL;
@@ -292,7 +290,7 @@ namespace vrlt {
 					{
 						TiXmlElement *child = childnode->ToElement();
 						text = child->Attribute("feature");
-						Feature *feature = (Feature*)r.features[string(text)];
+						Feature *feature = (Feature*)r.features[std::string(text)];
 						track->features[feature->name] = feature;
 						feature->track = track;
 					}
@@ -314,17 +312,17 @@ namespace vrlt {
 				
 				text = elem->Attribute("name");
 				if ( text != NULL ) {
-					nodepair->name = string(text);
+					nodepair->name = std::string(text);
 				}
 				
 				text = elem->Attribute("node1");
 				if ( text != NULL ) {
-					nodepair->node1 = (Node*)r.nodes[string(text)];
+					nodepair->node1 = (Node*)r.nodes[std::string(text)];
 				}
 				
 				text = elem->Attribute("node2");
 				if ( text != NULL ) {
-					nodepair->node2 = (Node*)r.nodes[string(text)];
+					nodepair->node2 = (Node*)r.nodes[std::string(text)];
 				}
 				
 				text = elem->Attribute("rotation");
@@ -419,7 +417,7 @@ namespace vrlt {
 			}
 		}
 		
-		bool write( Reconstruction &r, const string &path )
+		bool write( Reconstruction &r, const std::string &path )
 		{
 			TiXmlDocument doc;
 			
@@ -663,7 +661,7 @@ namespace vrlt {
 				char *name = new char[namelength+1];
 				fread( name, 1, namelength, f );
 				name[namelength] = '\0';
-				Feature *feature = (Feature*)camera->features[string(name)];
+				Feature *feature = (Feature*)camera->features[std::string(name)];
 				feature->descriptor = new unsigned char[128];
 				fread( feature->descriptor, 1, 128, f );
 				delete name;
