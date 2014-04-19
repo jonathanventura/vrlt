@@ -12,7 +12,6 @@
 #define __FEATURES_H
 
 #include <MultiView/multiview.h>
-#include <cvd/rgb.h>
 
 namespace vrlt {
 
@@ -20,20 +19,16 @@ namespace vrlt {
  * \brief Feature extraction
  * @{
  */
-    int detectShiTomasi( CVD::BasicImage<CVD::byte> &image, std::vector<Feature*> &features, int numcorners );
-    int detectHarris( CVD::BasicImage<CVD::byte> &image, std::vector<Feature*> &features, int numcorners );
+//    int detectShiTomasi( cv::Mat &image, std::vector<Feature*> &features, int numcorners );
+//    int detectHarris( cv::Mat &image, std::vector<Feature*> &features, int numcorners );
     
-    int detectFAST( CVD::BasicImage<CVD::byte> &image, std::vector<Feature*> &features, int thresh = 10 );
-    int detectFAST( ImagePyramid &image, std::vector<Feature*> &features );
+//    int detectFAST( cv::Mat &image, std::vector<Feature*> &features, int thresh = 10 );
+//    int detectFAST( ImagePyramid &image, std::vector<Feature*> &features );
     
-    int extractPatchDescriptors( CVD::BasicImage< CVD::Rgb<CVD::byte> > &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
+//    int extractPatchDescriptors( cv::Mat &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
     
-#ifdef USE_VL
-    int extractSIFTdescriptors( CVD::BasicImage< CVD::byte > &image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
-    int extractSIFTdescriptors( CVD::BasicImage< CVD::Rgb<CVD::byte> > &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
-    int extractSIFT( CVD::BasicImage<CVD::byte> &image, std::vector<Feature*> &features, int o_min = 0, bool upright = false, float peak_thresh = 0.5f );
-    int extractSIFT( CVD::BasicImage< CVD::Rgb<CVD::byte> > &color_image, std::vector<Feature*> &features, int o_min = 0, bool upright = false, float peak_thresh = 0.5f );
-#endif
+//    int extractSIFTdescriptors( cv::Mat &image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
+    int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min = 0, bool upright = false, float peak_thresh = 0.5f );
 /**
  * @}
  */

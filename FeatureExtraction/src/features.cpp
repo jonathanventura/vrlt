@@ -10,24 +10,61 @@
 
 #include <FeatureExtraction/features.h>
 
-#include <cvd/fast_corner.h>
-#include <cvd/harris_corner.h>
-
-#include <cvd/image_convert.h>
-#include <cvd/image_interpolate.h>
-
-#ifdef USE_VL
-extern "C" { 
-#include <vl/sift.h>
-}
-#endif
+#include <opencv2/imgproc.hpp>
+#include <opencv2/features2d.hpp>
+#include <opencv2/nonfree.hpp>
 
 namespace vrlt {
 	
-	using namespace TooN;
-	using namespace CVD;
-	using namespace std;
+    static cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt)
+    {
+        assert(!img.empty());
+        assert(img.channels() == 3);
         
+        int x = (int)pt.x;
+        int y = (int)pt.y;
+        
+        int x0 = cv::borderInterpolate(x,   img.cols, cv::BORDER_REFLECT_101);
+        int x1 = cv::borderInterpolate(x+1, img.cols, cv::BORDER_REFLECT_101);
+        int y0 = cv::borderInterpolate(y,   img.rows, cv::BORDER_REFLECT_101);
+        int y1 = cv::borderInterpolate(y+1, img.rows, cv::BORDER_REFLECT_101);
+        
+        float a = pt.x - (float)x;
+        float c = pt.y - (float)y;
+        
+        uchar b = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c)
+                                 + (img.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[0] * a) * c);
+        uchar g = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c)
+                                 + (img.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[1] * a) * c);
+        uchar r = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
+                                 + (img.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[2] * a) * c);
+        
+        return cv::Vec3b(b, g, r);
+    }
+
+    static uchar getGraySubpix(const cv::Mat& img, cv::Point2f pt)
+    {
+        assert(!img.empty());
+        assert(img.channels() == 1);
+        
+        int x = (int)pt.x;
+        int y = (int)pt.y;
+        
+        int x0 = cv::borderInterpolate(x,   img.cols, cv::BORDER_REFLECT_101);
+        int x1 = cv::borderInterpolate(x+1, img.cols, cv::BORDER_REFLECT_101);
+        int y0 = cv::borderInterpolate(y,   img.rows, cv::BORDER_REFLECT_101);
+        int y1 = cv::borderInterpolate(y+1, img.rows, cv::BORDER_REFLECT_101);
+        
+        float a = pt.x - (float)x;
+        float c = pt.y - (float)y;
+        
+        uchar b = (uchar)cvRound((img.at<uchar>(y0, x0) * (1.f - a) + img.at<uchar>(y0, x1) * a) * (1.f - c)
+                                 + (img.at<uchar>(y1, x0) * (1.f - a) + img.at<uchar>(y1, x1) * a) * c);
+        
+        return b;
+    }
+
+    /*
     int detectShiTomasi( CVD::BasicImage<CVD::byte> &image, std::vector<Feature*> &features, int numcorners )
     {
         std::vector<ImageRef> corners_out;
@@ -200,9 +237,8 @@ namespace vrlt {
         
         return nadded;
     }
-    
+    */
 
-#ifdef USE_VL
     void normalizeFloats( float *floatdata )
     {
         float norm = 0;
@@ -218,10 +254,31 @@ namespace vrlt {
         }
     }
     
-    int extractSIFTdescriptors( BasicImage<byte> &image, vector<Feature*> &features_in, vector<Feature*> &features_out )
+    /*
+    int extractSIFTdescriptors( cv::Mat &image, vector<Feature*> &features_in, vector<Feature*> &features_out )
     {
         int err;
         int count = 0;
+        
+        cv::SIFT sift;
+        
+        cv::Mat gray_image;
+        if ( image.type() == CV_8UC3 )
+        {
+            cv::cvtColor( image, gray_image, cv::COLOR_RGB2GRAY );
+        }
+        else if ( image.type() == CV_8UC1 )
+        {
+            gray_image = image;
+        }
+        
+        std::vector<cv::KeyPoint> keypoints( features_in.size() );
+        for ( size_t i = 0; i < features_in.size(); i++ )
+        {
+            keypoints[i].
+        }
+        sift( gray_image, cv::noArray(), keypoints, descriptors );
+        
         
         Image<vl_sift_pix> floatim( image.size() );
         
@@ -373,149 +430,66 @@ namespace vrlt {
         
         return count;
     }
+    */
     
-    int extractSIFT( BasicImage<byte> &image, vector<Feature*> &features, int o_min, bool upright, float peak_thresh )
+    int extractSIFT( const cv::Mat &image, std::vector<Feature*> &features, int o_min, bool upright, float peak_thresh )
     {
-        Image<vl_sift_pix> floatim( image.size() );
-        for ( int i = 0; i < image.size().x * image.size().y; i++ ) floatim.data()[i] = (float) image.data()[i];
+        cv::Mat gray_image;
+        if ( image.channels() == 3 )
+        {
+            cv::cvtColor( image, gray_image, cv::COLOR_RGB2GRAY );
+        }
+        else
+        {
+            gray_image = image;
+        }
         
-        VlSiftFilt* f = vl_sift_new( image.size().x, image.size().y, -1, 3, o_min );
-        vl_sift_set_peak_thresh( f, peak_thresh );
+        std::vector<cv::KeyPoint> keypoints;
+        std::vector<cv::Mat> descriptors;
         
-        int err;
+        cv::SIFT sift( 0, 3, peak_thresh );
+        sift( gray_image, cv::noArray(), keypoints, descriptors );
         
-        int count = 0;
-        
-        err = vl_sift_process_first_octave( f, floatim.data() );
-        do {	
-            vl_sift_detect( f );
+        features.clear();
+        features.reserve( keypoints.size() );
+        for ( size_t i = 0; i < keypoints.size(); i++ )
+        {
+            if ( keypoints[i].octave < o_min ) continue;
             
-            const VlSiftKeypoint* keys = vl_sift_get_keypoints( f );
-            const VlSiftKeypoint* key = keys;
-            float floatdata[128];
+            Feature *feature = new Feature;
+            feature->location[0] = keypoints[i].pt.x;
+            feature->location[1] = keypoints[i].pt.y;
+            feature->scale = keypoints[i].size;
+            feature->orientation = keypoints[i].angle;
             
-            int nkeypoints = vl_sift_get_nkeypoints( f );
-            for ( int i = 0; i < nkeypoints; i++,key++ ) {
-                double angles[4];
-                
-                int nangles = 1;
-                angles[0] = 0;
-                
-                if ( !upright ) nangles = vl_sift_calc_keypoint_orientations( f, angles, key );
-                
-                for ( int j = 0; j < nangles; j++ ) {
-                    count++;
-                    
-                    Feature *feature = new Feature;
-                    feature->location[0] = key->x;
-                    feature->location[1] = key->y;
-                    feature->scale = key->sigma;
-                    feature->orientation = angles[j];
-                    
-                    feature->color[0] = 0;
-                    feature->color[1] = 0;
-                    feature->color[2] = 0;
-                    
-                    vl_sift_calc_keypoint_descriptor( f, floatdata, key, angles[j] );
-                    
-                    normalizeFloats( floatdata );
-                    /*
-                    limitFloats( floatdata );
-                    normalizeFloats( floatdata );
-                    */
-                    feature->descriptor = new unsigned char[128];
-                    for ( int k = 0; k < 128; k++ ) {
-                        float val = floatdata[k] * 512.f;
-                        //float val = floatdata[k] * 512.f * 2.f;
-                        if ( val > 255.f ) val = 255.f;
-                        feature->descriptor[k] = (unsigned char) val;
-                    }
-                    
-                    features.push_back( feature );
-                }
+            if ( image.channels() == 3 )
+            {
+                cv::Vec3b color = getColorSubpix( image, keypoints[i].pt );
+                feature->color[0] = color[0];
+                feature->color[1] = color[1];
+                feature->color[2] = color[2];
             }
-            err = vl_sift_process_next_octave( f );
-        } while ( err != VL_ERR_EOF );
-        
-        vl_sift_delete( f );
-
-        return count;
-    }
-    
-    int extractSIFT( BasicImage< Rgb<byte> > &color_image, vector<Feature*> &features, int o_min, bool upright, float peak_thresh )
-    {
-        image_interpolate<Interpolate::Bilinear,Rgb<byte> > interpolator( color_image );
-        
-        Image<byte> image( color_image.size() );
-        convert_image( color_image, image );
-        
-        Image<vl_sift_pix> floatim( image.size() );
-        //convert_image( image, floatim );
-        
-        for ( int i = 0; i < image.size().x * image.size().y; i++ ) floatim.data()[i] = (float) image.data()[i];
-        
-        VlSiftFilt* f = vl_sift_new( image.size().x, image.size().y, -1, 3, o_min );
-        vl_sift_set_peak_thresh( f, peak_thresh );
-
-        int err;
-        
-        int count = 0;
-        
-        err = vl_sift_process_first_octave( f, floatim.data() );
-        do {	
-            vl_sift_detect( f );
-            
-            const VlSiftKeypoint* keys = vl_sift_get_keypoints( f );
-            const VlSiftKeypoint* key = keys;
-            float floatdata[128];
-            
-            int nkeypoints = vl_sift_get_nkeypoints( f );
-            for ( int i = 0; i < nkeypoints; i++,key++ ) {
-                double angles[4];
-                
-                int nangles = 1;
-                angles[0] = 0;
-                
-                if ( !upright ) nangles = vl_sift_calc_keypoint_orientations( f, angles, key );
-                
-                for ( int j = 0; j < nangles; j++ ) {
-                    count++;
-                    
-                    Feature *feature = new Feature;
-                    feature->location[0] = key->x;
-                    feature->location[1] = key->y;
-                    feature->scale = key->sigma;
-                    feature->orientation = angles[j];
-                    
-                    Rgb<float> color;
-                    if ( interpolator.in_image( feature->location ) ) color = interpolator[ feature->location ];
-                    feature->color[0] = color.red;
-                    feature->color[1] = color.green;
-                    feature->color[2] = color.blue;
-
-                    vl_sift_calc_keypoint_descriptor( f, floatdata, key, angles[j] );
-                    
-                    normalizeFloats( floatdata );
-                    /*
-                    limitFloats( floatdata );
-                    normalizeFloats( floatdata );
-                    */
-                    feature->descriptor = new unsigned char[128];
-                    for ( int k = 0; k < 128; k++ ) {
-                        float val = floatdata[k] * 512.f;
-                        if ( val > 255.f ) val = 255.f;
-                        feature->descriptor[k] = (unsigned char) val;
-                    }
-                    features.push_back( feature );
-                }
+            else
+            {
+                uchar gray = getGraySubpix( image, keypoints[i].pt );
+                feature->color[0] = gray;
+                feature->color[1] = gray;
+                feature->color[2] = gray;
             }
-            err = vl_sift_process_next_octave( f );
-        } while ( err != VL_ERR_EOF );
+            
+            float *floatdata = (float*)descriptors[i].data;
+            normalizeFloats( floatdata );
+
+            feature->descriptor = new unsigned char[128];
+            for ( int k = 0; k < 128; k++ ) {
+                float val = floatdata[k] * 512.f;
+                if ( val > 255.f ) val = 255.f;
+                feature->descriptor[k] = (unsigned char) val;
+            }
+            features.push_back( feature );
+        }
         
-        vl_sift_delete( f );
-        
-        return count;
+        return features.size();
     }
-#endif
 }
 
