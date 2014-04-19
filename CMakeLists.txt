@@ -9,6 +9,9 @@ endif()
 
 project( vrlt )
 
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -stdlib=libstdc++" )
+#set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}  -stdlib=libstdc++" )
+
 set( BUILD_MULTIVIEW TRUE CACHE BOOL "Build MultiView module" )
 set( BUILD_FEATURE_EXTRACTION TRUE CACHE BOOL "Build FeatureExtraction module" )
 set( BUILD_FEATURE_MATCHER TRUE CACHE BOOL "Build FeatureMatcher module" )
@@ -23,7 +26,14 @@ set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
 set( USE_VL TRUE CACHE BOOL "Use VLFeat library" )
 
-find_library( TOONTAG toontag REQUIRED )
+find_package( Eigen3 REQUIRED )
+include_directories( ${EIGEN3_INCLUDE_DIR} )
+
+find_package( Sophus REQUIRED )
+include_directories( ${SOPHUS_INCLUDE_DIR} )
+
+find_package( OpenCV REQUIRED )
+include_directories( ${OPENCV_INCLUDE_DIR} )
 
 if( USE_ACCELERATE )
 find_library( ACCELERATE Accelerate REQUIRED )
@@ -38,10 +48,6 @@ if ( USE_VL )
 find_library( VL vl REQUIRED )
 add_definitions( -DUSE_VL )
 endif()
-
-find_package( CVD REQUIRED )
-
-include_directories( ${CVD_INCLUDE_DIR} )
 
 if( BUILD_MULTIVIEW )
 include_directories( $(vrlt)/MultiView )
