@@ -21,16 +21,16 @@ namespace vrlt {
      */
     
     /** \brief 3D point pairs */
-    typedef std::pair< TooN::Vector<3>, TooN::Vector<3> > PointPair;
+    typedef std::pair< Eigen::Vector3d, Eigen::Vector3d > PointPair;
     /** \brief List of 3D point pairs */
     typedef std::vector<PointPair> PointPairList;
 
     /** Computes the reprojection error of a feature in its camera image. */
-    TooN::Vector<2> computeReprojError( Feature *feature );
+    Eigen::Vector2d computeReprojError( Feature *feature );
     /** Triangulates a point given a relative pose and a pair of homogeneous observations. */
-    TooN::Vector<4> triangulate( const TooN::SE3<> &pose, PointPair point_pair );
+    Eigen::Vector4d triangulate( const Sophus::SE3d &pose, PointPair point_pair );
     /** Triangulates a point given two features. */
-    TooN::Vector<4> triangulate( Feature *feature1, Feature *feature2 );
+    Eigen::Vector4d triangulate( Feature *feature1, Feature *feature2 );
     /** Triangulates a track using all feature observations. */
     void triangulate( Node *root, Track *track );
     
@@ -72,10 +72,13 @@ namespace vrlt {
         int sampleSize();
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
-        std::vector< TooN::Matrix<3> > Elist;
-        TooN::Matrix<3> E;
+        std::vector< Eigen::Matrix3d > Elist;
+        std::vector< Eigen::Matrix3d > Rlist;
+        std::vector< Eigen::Vector3d > tlist;
+        Eigen::Matrix3d E;
+        Eigen::Matrix3d R;
+        Eigen::Vector3d t;
         void chooseSolution( int soln );
-        TooN::SE3<> getPose( PointPairList::iterator begin, PointPairList::iterator end );
         virtual bool canRefine();
     };
     
@@ -89,8 +92,8 @@ namespace vrlt {
         int sampleSize();
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
-        TooN::Matrix<3> E;
-        TooN::SE3<> getPose( PointPairList::iterator begin, PointPairList::iterator end );
+        Eigen::Matrix3d E;
+        Sophus::SE3d getPose( PointPairList::iterator begin, PointPairList::iterator end );
     };
     
     /** \brief Three point pose
@@ -103,14 +106,14 @@ namespace vrlt {
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         void chooseSolution( int soln );
         double score( PointPairList::iterator it );
-        std::vector< TooN::SE3<> > poses;
-        TooN::SE3<> pose;
-        TooN::Vector<3> R0;
-        TooN::Vector<3> R1;
-        TooN::Vector<3> R2;
-        TooN::Vector<3> t;
+        std::vector< Sophus::SE3d > poses;
+        Sophus::SE3d pose;
+        Eigen::Vector3d R0;
+        Eigen::Vector3d R1;
+        Eigen::Vector3d R2;
+        Eigen::Vector3d t;
         bool canRefine();
-        ThreePointPose() { poses.push_back( TooN::SE3<>() ); }
+        ThreePointPose() { poses.push_back( Sophus::SE3d() ); }
     };
 
     /** \brief Six point pose
@@ -123,13 +126,13 @@ namespace vrlt {
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         void chooseSolution( int soln );
         double score( PointPairList::iterator it );
-        std::vector< TooN::SE3<> > poses;
-        TooN::SE3<> pose;
-        TooN::Vector<3> R0;
-        TooN::Vector<3> R1;
-        TooN::Vector<3> R2;
-        TooN::Vector<3> t;
-        SixPointPose() { poses.push_back( TooN::SE3<>() ); }
+        std::vector< Sophus::SE3d > poses;
+        Sophus::SE3d pose;
+        Eigen::Vector3d R0;
+        Eigen::Vector3d R1;
+        Eigen::Vector3d R2;
+        Eigen::Vector3d t;
+        SixPointPose() { poses.push_back( Sophus::SE3d() ); }
     };
     
     /** \brief Plane estimation
@@ -142,7 +145,7 @@ namespace vrlt {
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         bool canRefine();
         double score( PointPairList::iterator it );
-        TooN::Vector<4> plane;
+        Eigen::Vector4d plane;
     };
 
     /** \brief Upright pose
@@ -154,7 +157,7 @@ namespace vrlt {
         int sampleSize();
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
-        TooN::SE3<> pose;
+        Sophus::SE3d pose;
     };
 
     /** \brief Homography
@@ -166,7 +169,7 @@ namespace vrlt {
         int sampleSize();
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
-        TooN::Matrix<3> H;
+        Eigen::Matrix3d H;
     };
     
     /** \brief Vertical vanishing point
@@ -178,8 +181,8 @@ namespace vrlt {
         int sampleSize();
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
-        TooN::Vector<3> vp;
-        TooN::SO3<> R; // R*vp = [0 1 0]'
+        Eigen::Vector3d vp;
+        Sophus::SO3d R; // R*vp = [0 1 0]'
         bool canRefine();
     };
 

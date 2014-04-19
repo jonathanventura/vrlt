@@ -10,6 +10,9 @@
 
 #include <Estimator/estimator.h>
 
+#include "five_point_relative_pose.h"
+#include "perspective_three_point.h"
+
 #include <algorithm>
 #include <ext/algorithm>
 
@@ -23,91 +26,91 @@
 
 namespace vrlt {
     
-    Vector<2> computeReprojError( Feature *feature )
+    Eigen::Vector2d computeReprojError( Feature *feature )
     {
         Point *point = feature->track->point;
         Camera *camera = feature->camera;
         Calibration *calibration = camera->calibration;
         
-        Vector<2> err;
+        Eigen::Vector2d err;
         
         switch ( calibration->type )
         {
             case Calibration::Perspective:
             {
-                Vector<2> projpt = camera->calibration->project( project( camera->node->globalPose() * project(point->position ) ) );
+                Eigen::Vector2d projpt = camera->calibration->project( project( camera->node->globalPose() * project(point->position ) ) );
                 err = projpt - feature->location;
                 break;
             }
                 
             case Calibration::Spherical:
             {
-                Vector<3> projray = camera->node->globalPose() * project( point->position );
-                Vector<3> obsray = calibration->unproject( feature->location );
-                err[0] = acos( projray * obsray / norm(projray) / norm(obsray) ) * 180. / M_PI;
+                Eigen::Vector3d projray = camera->node->globalPose() * project( point->position );
+                Eigen::Vector3d obsray = calibration->unproject( feature->location );
+                err[0] = acos( projray.dot( obsray ) / projray.norm() / obsray.norm() ) * 180. / M_PI;
                 err[1] = 0;
                 break;
             }
                 
             default:
             {
-                err = Zeros;
+                err = Eigen::Vector2d::Zero();
             }
         }
         
         return err;
     }
     
-    Vector<3> applyPose( const SE3<> &pose, const Vector<4> &point )
+    Eigen::Vector3d applyPose( const Sophus::SE3d &pose, const Eigen::Vector4d &point )
     {
-        return pose.get_rotation() * point.slice<0,3>() + point[3] * pose.get_translation();
+        return pose.so3() * point.head(3) + point[3] * pose.translation();
     }
     
-    Vector<4> triangulate( const TooN::SE3<> &pose, PointPair point_pair )
+    Eigen::Vector4d triangulate( const Sophus::SE3d &pose, PointPair point_pair )
     {
-        Matrix<3,4> P;
-        P.slice<0,0,3,3>() = pose.get_rotation().get_matrix();
-        P.T()[3] = pose.get_translation();
+        Eigen::Matrix<double,3,4> P;
+        P.block<3,3>(0,0) = pose.so3().matrix();
+        P.col(3) = pose.translation();
         
-        Matrix<4> J;
-        SVD<4> svdJ;
+        Eigen::Matrix4d J;
+        Eigen::JacobiSVD< Eigen::Matrix4d > svdJ;
         
-        Vector<2> point0 = project( point_pair.first );
-        Vector<2> point1 = project( point_pair.second );
+        Eigen::Vector2d point0 = project( point_pair.first );
+        Eigen::Vector2d point1 = project( point_pair.second );
         
-        J[0] = makeVector( -1, 0, point0[0], 0 );
-        J[1] = makeVector( 0, -1, point0[1], 0 );
-        J[2] = P[2] * point1[0] - P[0];
-        J[3] = P[2] * point1[1] - P[1];
+        J.row(0) << -1, 0, point0[0], 0;
+        J.row(1) << 0, -1, point0[1], 0;
+        J.row(2) = P.row(2) * point1[0] - P.row(0);
+        J.row(3) = P.row(2) * point1[1] - P.row(1);
         
-        svdJ.compute( J );
+        svdJ.compute( J, Eigen::ComputeFullV );
         
-        return svdJ.get_VT()[3];
+        return svdJ.matrixV().col(3);
     }
     
-    Vector<4> triangulate( Feature *feature1, Feature *feature2 )
+    Eigen::Vector4d triangulate( Feature *feature1, Feature *feature2 )
     {
         Camera *camera1 = feature1->camera;
         Camera *camera2 = feature2->camera;
         
-        SE3<> pose1 = camera1->node->globalPose();
-        SE3<> pose2 = camera2->node->globalPose();
+        Sophus::SE3d pose1 = camera1->node->globalPose();
+        Sophus::SE3d pose2 = camera2->node->globalPose();
         
-        SE3<> rel_pose = pose2 * pose1.inverse();
+        Sophus::SE3d rel_pose = pose2 * pose1.inverse();
         
         PointPair point_pair;
         point_pair.first = feature1->unproject();
         point_pair.second = feature2->unproject();
         
-        Vector<4> pt = triangulate( rel_pose, point_pair );
+        Eigen::Vector4d pt = triangulate( rel_pose, point_pair );
         
-        return pose1.inverse() * pt;
+        return unproject( pose1.inverse() * project(pt) );
     }
     
     void triangulate( Node *root, Track *track )
     {
-        vector< Matrix<3,4> > poses;
-        vector< Vector<3> > obs;
+        std::vector< Eigen::Matrix<double,3,4> > poses;
+        std::vector< Eigen::Vector3d > obs;
         
         ElementList::iterator it;
         for ( it = track->features.begin(); it != track->features.end(); it++ )
@@ -116,10 +119,10 @@ namespace vrlt {
             if ( feature->camera->node->root() != root ) continue;
             obs.push_back( feature->unproject() );
             
-            SE3<> pose = feature->camera->node->globalPose();
-            Matrix<3,4> P;
-            P.slice<0,0,3,3>() = pose.get_rotation().get_matrix();
-            P.T()[3] = pose.get_translation();
+            Sophus::SE3d pose = feature->camera->node->globalPose();
+            Eigen::Matrix<double,3,4> P;
+            P.block<3,3>(0,0) = pose.so3().matrix();
+            P.col(3) = pose.translation();
 
             poses.push_back( P );
         }
@@ -127,24 +130,25 @@ namespace vrlt {
         int N = poses.size();
 
         if ( N < 2 ) return;
-        Matrix<> J( 3 * N, 4 );
+        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> J( 3 * N, 4 );
         
         int row = 0;
         for ( int i = 0; i < N; i++ )
         {
-            Vector<3> X = obs[i];
-            Matrix<3> skew;
-            skew[0] = makeVector( 0, X[2], -X[1] );
-            skew[1] = makeVector( -X[2], 0, X[0] );
-            skew[2] = makeVector( X[1], -X[0], 0 );
-            Matrix<3,4> Jmat = skew * poses[i];;
-            J[row++] = Jmat[0];
-            J[row++] = Jmat[1];
-            J[row++] = Jmat[2];
+            Eigen::Vector3d X = obs[i];
+            Eigen::Matrix3d skew;
+            skew <<
+            0, X[2], -X[1],
+            -X[2], 0, X[0],
+            X[1], -X[0], 0;
+            Eigen::Matrix<double,3,4> Jmat = skew * poses[i];
+            J.row(row++) = Jmat.row(0);
+            J.row(row++) = Jmat.row(1);
+            J.row(row++) = Jmat.row(2);
         }
         
-        SVD<> svdJ( J );
-        track->point->position = svdJ.get_VT()[3];
+        Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdJ( J, Eigen::ComputeFullV );
+        track->point->position = svdJ.matrixV().col(3);
     }
 
     int Estimator::sampleSize()
@@ -179,77 +183,44 @@ namespace vrlt {
     
     int FivePointEssential::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        tr1::array< pair< Vector<3>, Vector<3> >, 5> points;
+        Eigen::Vector3d image1_points[5];
+        Eigen::Vector3d image2_points[5];
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; n < 5; it++, n++ )
         {
-            points[n] = *it;
+            image1_points[n] = it->first;
+            image2_points[n] = it->second;
         }
-        Elist = tag::five_point( points );
+        
+        theia::FivePointRelativePose( image1_points, image2_points, &Elist, &Rlist, &tlist );
+        
         return (int)Elist.size();
     }
     
     void FivePointEssential::chooseSolution( int soln )
     {
         E = Elist[soln];
+        R = Rlist[soln];
+        t = tlist[soln];
     }
     
     double FivePointEssential::score( PointPairList::iterator it )
     {
-        Vector<3> x1 = it->first;
-        Vector<3> x2 = it->second;
+        Eigen::Vector3d x1 = it->first;
+        Eigen::Vector3d x2 = it->second;
         
         x2 /= x2[2];
-        Vector<3> line = E * x1;
-        double d = x2 * line;
+        Eigen::Vector3d line = E * x1;
+        double d = x2.dot( line );
         return (d*d) / (line[0]*line[0] + line[1]*line[1]);
-    }
-    
-    SE3<> FivePointEssential::getPose( PointPairList::iterator begin, PointPairList::iterator end )
-    {
-        vector< SE3<> > poses = tag::se3_from_E( E );
-        
-        SE3<> bestpose;
-        int bestcount = 0;
-        for ( int i = 0; i < poses.size(); i++ ) {
-            SE3<> pose = poses[i];
-            
-            Vector<3> newup = pose.get_rotation() * makeVector( 0, 1, 0 );
-            if ( newup[1] < 0 ) continue;
-
-            Vector<3> old_trans = pose.get_translation();
-            pose.get_translation() = old_trans / norm(old_trans);
-            
-            int count = 0;
-            
-            PointPairList::iterator it;
-            for ( it = begin; it != end; it++ ) 
-            {
-                Vector<4> X = triangulate( pose, *it );
-                Vector<3> Xproj = project(X);
-                
-                if ( Xproj * it->first > 0 ) count++;
-            }
-            
-            if ( count > bestcount ) {
-                bestcount = count;
-                bestpose = pose;
-            }
-        }
-
-        PointPairList mylist( begin, end );
-        
-        bestpose = tag::optimize_epipolar( mylist, bestpose );
-        
-        return bestpose;
     }
     
     bool FivePointEssential::canRefine()
     {
         return false;
     }
-    
+    /*
     int UprightEssential::sampleSize()
     {
         return 5;
@@ -258,35 +229,39 @@ namespace vrlt {
     int UprightEssential::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
         int N = (int) distance( begin, end );
-        Matrix<> A( N, 6 );
+        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> A( N, 6 );
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; it != end; it++,n++ )
         {
-            Vector<3> x1 = it->first;
-            Vector<3> x2 = it->second;
+            Eigen::Vector3d x1 = it->first;
+            Eigen::Vector3d x2 = it->second;
             
-            A[n] = makeVector( x1[2]*x2[2]+x1[0]*x2[0], x2[0]*x1[1], x2[0]*x1[2]-x1[0]*x2[2], x1[0]*x2[1], x2[1]*x1[2], x1[1]*x2[2] );
+            A.row(n) << x1[2]*x2[2]+x1[0]*x2[0], x2[0]*x1[1], x2[0]*x1[2]-x1[0]*x2[2], x1[0]*x2[1], x2[1]*x1[2], x1[1]*x2[2];
         }
         
-        SVD<> svdA( A );
+        Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdA( A, Eigen::ComputeFullV );
 
-        Vector<6> sol = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
+        Eigen::VectorXd sol = svdA.matrixV().col( svdA.cols() - 1 );
         
-        E[0] = makeVector( sol[0],  sol[1], sol[2] );
-        E[1] = makeVector( sol[3],  0,      sol[4] );
-        E[2] = makeVector( -sol[2], sol[5], sol[0] );
+        E <<
+        sol[0],  sol[1], sol[2],
+        sol[3],  0,      sol[4],
+        -sol[2], sol[5], sol[0];
         
-        SVD<3> svdE( E );
-        E = svdE.get_U() * DiagonalMatrix<3>( makeVector( 1, 1, 0 ) ) * svdE.get_VT();
+        Eigen::JacobiSVD<Eigen::Matrix3d> svdE( E, Eigen::ComputeFullU | Eigen::ComputeFullV );
+        Eigen::Vector3d s;
+        s << 1, 1, 0;
+        Eigen::DiagonalMatrix<double,3,3> S( s );
+        E = svdE.matrixU() * S * svdE.matrixV().transpose();
         
         return 1;
     }
     
     double UprightEssential::score( PointPairList::iterator it )
     {
-        Vector<3> x1 = it->first;
-        Vector<3> x2 = it->second;
+        Eigen::Vector3d x1 = it->first;
+        Eigen::Vector3d x2 = it->second;
 
         double scoresq = 0;
         
@@ -301,7 +276,7 @@ namespace vrlt {
                 
             case Angle:
             {
-                Vector<3> line = E * x1;
+                Eigen::Vector3d line = E * x1;
                 double angle = asin( x2 * line / norm(x2) / norm(line) ) * 180. / M_PI;
                 scoresq = angle*angle;
                 break;
@@ -311,28 +286,28 @@ namespace vrlt {
         return scoresq;
     }
     
-    SE3<> UprightEssential::getPose( PointPairList::iterator begin, PointPairList::iterator end )
+    Sophus::SE3d UprightEssential::getPose( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        vector< SE3<> > poses = tag::se3_from_E( E );
+        vector< Sophus::SE3d > poses = tag::se3_from_E( E );
         
-        SE3<> bestpose;
+        Sophus::SE3d bestpose;
         int bestcount = 0;
         for ( int i = 0; i < poses.size(); i++ ) {
-            SE3<> pose = poses[i];
+            Sophus::SE3d pose = poses[i];
             
-            Vector<3> newup = pose.get_rotation() * makeVector( 0, 1, 0 );
+            Eigen::Vector3d newup = pose.get_rotation() * makeVector( 0, 1, 0 );
             if ( newup[1] < 0 ) continue;
 
-            Vector<3> old_rot = pose.get_rotation().ln();
-            pose.get_rotation() = SO3<>::exp( makeVector( 0, old_rot[1], 0 ) );
+            Eigen::Vector3d old_rot = pose.get_rotation().ln();
+            pose.get_rotation() = Sophus::SO3d::exp( makeVector( 0, old_rot[1], 0 ) );
             
             int count = 0;
             
             PointPairList::iterator it;
             for ( it = begin; it != end; it++ ) 
             {
-                Vector<4> X = triangulate( pose, *it );
-                Vector<3> Xproj = project(X);
+                Eigen::Vector4d X = triangulate( pose, *it );
+                Eigen::Vector3d Xproj = project(X);
                 
                 if ( Xproj * it->first > 0 ) count++;
             }
@@ -362,8 +337,8 @@ namespace vrlt {
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ )
         {
-            Vector<3> X = it->first;
-            Vector<3> x = it->second;
+            Eigen::Vector3d X = it->first;
+            Eigen::Vector3d x = it->second;
             
             A[n++] = makeVector( -x[2]*X[0]+X[2]*x[0], -x[2]*X[2]-X[0]*x[0], -x[2], 0, 0, x[0] );
             if ( n == numrows ) break;
@@ -384,7 +359,7 @@ namespace vrlt {
         R[1] = makeVector( 0, sol[3], 0 );
         R[2] = makeVector( -sol[1], 0, sol[0] );
         
-        pose.get_rotation() = SO3<>( R );
+        pose.get_rotation() = Sophus::SO3d( R );
         pose.get_translation() = makeVector( sol[2], sol[4], sol[5] );
         
         return 1;
@@ -394,14 +369,14 @@ namespace vrlt {
     {
         double scoresq = 0;
         
-        Vector<3> projray = pose * it->first;
-        Vector<3> obsray = it->second;
+        Eigen::Vector3d projray = pose * it->first;
+        Eigen::Vector3d obsray = it->second;
         
         switch ( scoreType ) 
         {
             case Pixel:
             {
-                Vector<2> diff = project(projray) - project(obsray);
+                Eigen::Vector2d diff = project(projray) - project(obsray);
                 scoresq = diff*diff;
                 break;
             }
@@ -416,7 +391,8 @@ namespace vrlt {
         
         return scoresq;
     }
-    
+    */
+    /*
     int SixPointPose::sampleSize()
     {
         return 6;
@@ -430,8 +406,8 @@ namespace vrlt {
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ ) {
-            Vector<3> X = it->first;
-            Vector<2> x = project(it->second);
+            Eigen::Vector3d X = it->first;
+            Eigen::Vector2d x = project(it->second);
             
             A[n++] = makeVector( -X[0], -X[1], -X[2], 1,   0, 0, 0, 0,   x[0]*X[0], x[0]*X[1], x[0]*X[2], x[0] );
             A[n++] = makeVector( 0, 0, 0, 0,   -X[0], -X[1], -X[2], 1,   x[1]*X[0], x[1]*X[1], x[1]*X[2], x[1] );
@@ -444,7 +420,7 @@ namespace vrlt {
         
         Vector<12> mysol;
         Matrix<3> Rmat;
-        Vector<3> t;
+        Eigen::Vector3d t;
         
         mysol = sol / sol[5];
         Rmat[0] = mysol.slice<0,3>();
@@ -453,7 +429,7 @@ namespace vrlt {
         t[0] = mysol[3];
         t[1] = mysol[7];
         t[2] = mysol[11];
-        poses[0] = SE3<>( SO3<>(Rmat).ln(), t );
+        poses[0] = Sophus::SE3d( Sophus::SO3d(Rmat).ln(), t );
         
         mysol = sol / -sol[5];
         Rmat[0] = mysol.slice<0,3>();
@@ -462,7 +438,7 @@ namespace vrlt {
         t[0] = mysol[3];
         t[1] = mysol[7];
         t[2] = mysol[11];
-        poses[1] = SE3<>( SO3<>(Rmat).ln(), t );
+        poses[1] = Sophus::SE3d( Sophus::SO3d(Rmat).ln(), t );
         
         return 2;
     }
@@ -479,12 +455,12 @@ namespace vrlt {
     double SixPointPose::score( PointPairList::iterator it )
     {
 #ifdef USE_ACCELERATE
-        Vector<3> X = it->first;
-        Vector<2> x = it->second.slice<0,2>();
+        Eigen::Vector3d X = it->first;
+        Eigen::Vector2d x = it->second.slice<0,2>();
         double scale = 1. / it->second[2];
         vDSP_vsmulD( x.get_data_ptr(), 1, &scale, x.get_data_ptr(), 1, 2 );
         
-        Vector<3> poseX;
+        Eigen::Vector3d poseX;
         vDSP_dotprD( R0.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr()    , 3 );
         vDSP_dotprD( R1.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr() + 1, 3 );
         vDSP_dotprD( R2.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr() + 2, 3 );
@@ -496,10 +472,10 @@ namespace vrlt {
         
         scale = 1. / poseX[2];
         
-        Vector<2> xproj = poseX.slice<0,2>();
+        Eigen::Vector2d xproj = poseX.slice<0,2>();
         vDSP_vsmulD( xproj.get_data_ptr(), 1, &scale, xproj.get_data_ptr(), 1, 2 );
         
-        Vector<2> diff;
+        Eigen::Vector2d diff;
         vDSP_vsubD( xproj.get_data_ptr(), 1, x.get_data_ptr(), 1, diff.get_data_ptr(), 1, 2 );
         
         double s;
@@ -507,17 +483,17 @@ namespace vrlt {
         
         return s;
 #else
-        Vector<3> poseX = pose * it->first;
+        Eigen::Vector3d poseX = pose * it->first;
         if ( poseX * it->second < 0 ) return INFINITY;
         
-        Vector<2> xproj = project( poseX );
-        Vector<2> diff = xproj - project( it->second );
+        Eigen::Vector2d xproj = project( poseX );
+        Eigen::Vector2d diff = xproj - project( it->second );
         return diff*diff;
 #endif
     }
+    */
     
-    
-    
+    /*
     int ThreePointPlane::sampleSize()
     {
         return 3;
@@ -535,7 +511,7 @@ namespace vrlt {
         }
         
         SVD<> svdA( A );
-        Vector<4> sol = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
+        Eigen::Vector4d sol = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
         
         plane = sol / norm(sol.slice<0,3>());
         
@@ -554,7 +530,7 @@ namespace vrlt {
         // N * X + D + N * offset = s
         // N * offset = s
         
-        Vector<4> pt = unproject( it->first );
+        Eigen::Vector4d pt = unproject( it->first );
         return fabs( plane * pt );
     }
     
@@ -571,8 +547,8 @@ namespace vrlt {
     
     int ThreePointPose::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        Vector<3> x[3];
-        Vector<2> z[3];
+        Eigen::Vector3d x[3];
+        Eigen::Vector2d z[3];
         
         int n = 0;
         PointPairList::iterator it;
@@ -599,13 +575,13 @@ namespace vrlt {
     double ThreePointPose::score( PointPairList::iterator it )
     {
 #ifdef USE_ACCELERATE
-        Vector<3> X = it->first;
-        Vector<2> x = it->second.slice<0,2>();
+        Eigen::Vector3d X = it->first;
+        Eigen::Vector2d x = it->second.slice<0,2>();
         //double featurescale = it->second[2];
         double scale = 1. / it->second[2];
         vDSP_vsmulD( x.get_data_ptr(), 1, &scale, x.get_data_ptr(), 1, 2 );
         
-        Vector<3> poseX;
+        Eigen::Vector3d poseX;
         vDSP_dotprD( R0.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr()    , 3 );
         vDSP_dotprD( R1.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr() + 1, 3 );
         vDSP_dotprD( R2.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr() + 2, 3 );
@@ -617,10 +593,10 @@ namespace vrlt {
         
         scale = 1. / poseX[2];
         
-        Vector<2> xproj = poseX.slice<0,2>();
+        Eigen::Vector2d xproj = poseX.slice<0,2>();
         vDSP_vsmulD( xproj.get_data_ptr(), 1, &scale, xproj.get_data_ptr(), 1, 2 );
         
-        Vector<2> diff;
+        Eigen::Vector2d diff;
         vDSP_vsubD( xproj.get_data_ptr(), 1, x.get_data_ptr(), 1, diff.get_data_ptr(), 1, 2 );
         //diff /= featurescale;
         
@@ -629,16 +605,16 @@ namespace vrlt {
         
         return s;
 #else
-        Vector<3> poseX = pose * it->first;
+        Eigen::Vector3d poseX = pose * it->first;
         //if ( poseX[2] < 0 ) return INFINITY;
         if ( poseX * it->second < 0 ) return INFINITY;
         
-        Vector<2> x = project( it->second );
-        //Vector<2> x = it->second.slice<0,2>();
+        Eigen::Vector2d x = project( it->second );
+        //Eigen::Vector2d x = it->second.slice<0,2>();
         //double featurescale = it->second[2];
         
-        Vector<2> xproj = project( poseX );
-        Vector<2> diff = xproj - x;
+        Eigen::Vector2d xproj = project( poseX );
+        Eigen::Vector2d diff = xproj - x;
         //diff /= featurescale;
         return diff*diff;
 #endif
@@ -648,7 +624,8 @@ namespace vrlt {
     {
         return false;
     }
-
+     */
+    /*
     int Homography::sampleSize()
     {
         return 4;
@@ -662,8 +639,8 @@ namespace vrlt {
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ )
         {
-            Vector<3> x1 = it->first;
-            Vector<3> x2 = it->second;
+            Eigen::Vector3d x1 = it->first;
+            Eigen::Vector3d x2 = it->second;
             
             A[n++] = makeVector( x2[2]*x1[0], x2[2]*x1[1], x2[2]*x1[2], 0, 0, 0, x2[0]*x1[0], x2[0]*x1[1], x2[0]*x1[2] );
             A[n++] = makeVector( 0, 0, 0, x2[2]*x1[0], x2[2]*x1[1], x2[2]*x1[2], x2[1]*x1[0], x2[1]*x1[1], x2[1]*x1[2] );
@@ -681,16 +658,15 @@ namespace vrlt {
     
     double Homography::score( PointPairList::iterator it )
     {
-        Vector<3> x1 = it->first;
-        Vector<3> x2 = it->second;
+        Eigen::Vector3d x1 = it->first;
+        Eigen::Vector3d x2 = it->second;
         
-        Vector<3> diff = H * x1 - x2;
+        Eigen::Vector3d diff = H * x1 - x2;
         return diff * diff;
     }
+    */
     
-    
-    
-    
+    /*
     int VerticalVanishingPoint::sampleSize()
     {
         return 2;
@@ -705,13 +681,13 @@ namespace vrlt {
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ )
         {
-            Vector<3> coeffs = it->first;
+            Eigen::Vector3d coeffs = it->first;
             A[n++] = coeffs;
         }
         
         if ( N == 2 ) {
-            Vector<3> coeffs1 = A[0];
-            Vector<3> coeffs2 = A[1];
+            Eigen::Vector3d coeffs1 = A[0];
+            Eigen::Vector3d coeffs2 = A[1];
             vp = coeffs1 ^ coeffs2;
         } else {
             SVD<> svdA( A );
@@ -723,21 +699,21 @@ namespace vrlt {
         if ( vp[1] < 0 ) vp = -vp;
         
         // find rotation axis to make vertical
-        Vector<3> axis = vp ^ makeVector(0,1,0);
+        Eigen::Vector3d axis = vp ^ makeVector(0,1,0);
         normalize( axis );
         
         // find angle
         double angle = acos( vp[1] );
         
         // get rotation
-        R = SO3<>( axis * angle );
+        R = Sophus::SO3d( axis * angle );
         
         return 1;
     }
     
     double VerticalVanishingPoint::score( PointPairList::iterator it )
     {
-        Vector<3> coeffs = it->first;
+        Eigen::Vector3d coeffs = it->first;
         
         double angle = asin( coeffs * vp ) * 180. / M_PI;
         return angle * angle;
@@ -747,7 +723,7 @@ namespace vrlt {
     {
         return true;
     }
-
+     */
     
     
 
@@ -766,8 +742,8 @@ namespace vrlt {
         double threshsq;
         PointPairList::iterator begin;
         Estimator &estimator;
-        vector<bool> &inliers;
-        InlierData( double _threshsq, PointPairList::iterator _begin, Estimator &_estimator, vector<bool> &_inliers )
+        std::vector<bool> &inliers;
+        InlierData( double _threshsq, PointPairList::iterator _begin, Estimator &_estimator, std::vector<bool> &_inliers )
         : threshsq( _threshsq ), begin( _begin ), estimator( _estimator ), inliers( _inliers ) { }
     };
 
@@ -781,7 +757,7 @@ namespace vrlt {
     {
         int N = (int) distance( begin, end );
         double threshsq = inlier_threshold * inlier_threshold;
-        vector<bool> inliers( N );
+        std::vector<bool> inliers( N );
         PointPairList::iterator it;
         InlierData inlierData( threshsq, begin, estimator, inliers );
 #ifdef USE_DISPATCH
@@ -902,10 +878,10 @@ namespace vrlt {
             }
             
             if (T_n_prime < t) {
-                random_sample(begin, begin + n, random_subset.begin(), random_subset.begin() + m );
+                __gnu_cxx::random_sample(begin, begin + n, random_subset.begin(), random_subset.begin() + m );
             }
             else {
-                random_sample(begin, begin + n-1, random_subset.begin(), random_subset.begin() + m - 1 );
+                __gnu_cxx::random_sample(begin, begin + n-1, random_subset.begin(), random_subset.begin() + m - 1 );
                 random_subset[m-1] = *(begin+(n-1));
             }
             
@@ -995,10 +971,10 @@ namespace vrlt {
             }
             
             if (T_n_prime < t) {
-                random_sample(begin, begin + n, random_subset.begin(), random_subset.begin() + m );
+                __gnu_cxx::random_sample(begin, begin + n, random_subset.begin(), random_subset.begin() + m );
             }
             else {
-                random_sample(begin, begin + n-1, random_subset.begin(), random_subset.begin() + m - 1 );
+                __gnu_cxx::random_sample(begin, begin + n-1, random_subset.begin(), random_subset.begin() + m - 1 );
                 random_subset[m-1] = *(begin+(n-1));
             }
             
