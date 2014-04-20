@@ -15,26 +15,21 @@
 #include <FeatureMatcher/bruteforce.h>
 #include <FeatureExtraction/features.h>
 
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
-#include <cvd/timer.h>
-#include <cvd/image_interpolate.h>
-#include <cvd/vision.h>
-#include <cvd/convolution.h>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
-#include <TooN/Lapack_Cholesky.h>
+#include <Eigen/Eigen>
+
+#include <iostream>
 
 using namespace vrlt;
-using namespace std;
-using namespace CVD;
-using namespace TooN;
 
-void loadImages( string prefix, Node *node )
+void loadImages( std::string prefix, Node *node )
 {
     if ( node->camera != NULL ) {
-        stringstream path;
+        std::stringstream path;
         path << prefix << "/" << node->camera->path;
-        node->camera->image = img_load( path.str() );
+        node->camera->image = cv::imread( path.str(), cv::IMREAD_GRAYSCALE );
         node->camera->pyramid = ImagePyramid( node->camera );
     }
     
@@ -53,33 +48,26 @@ int main( int argc, char **argv )
         exit(1);
     }
     
-    string pathin = string(argv[1]);
-    string queryin = string(argv[2]);
+    std::string pathin = std::string(argv[1]);
+    std::string queryin = std::string(argv[2]);
     int step = atoi(argv[3]);
     bool test_bounds = ( argc == 5 );
     
-    SimpleTimer readtimer( "read reconstruction", 1 );
-    
-    readtimer.click();
     Reconstruction r;
     r.pathPrefix = pathin;
-    stringstream mypath;
+    std::stringstream mypath;
     mypath << pathin << "/reconstruction.xml";
     XML::read( r, mypath.str() );
     
     Node *root = (Node*)r.nodes["root"];
     XML::readDescriptors( r, root );
-    readtimer.click();
 
-    SimpleTimer readimagestimer( "read images", 1 );
-    readimagestimer.click();
     loadImages( pathin, root );
-    readimagestimer.click();
     
     double minY = INFINITY;
     for ( ElementList::iterator it = root->children.begin(); it != root->children.end(); it++ ) {
         Node *node = (Node *)it->second;
-        Vector<3> center = -( node->globalPose().get_rotation().inverse() * node->globalPose().get_translation() );
+        Eigen::Vector3d center = -( node->globalPose().so3().inverse() * node->globalPose().translation() );
         if ( center[1] < minY ) minY = center[1];
     }
 
@@ -93,26 +81,20 @@ int main( int argc, char **argv )
     
     ElementList::iterator it;
     
-    SimpleTimer buildtimer( "build localizer", 1 );
-    buildtimer.click();
     NN *index = NULL;
 
     index = new BruteForceNN;
     
     NNLocalizer *localizer = new NNLocalizer( root, index );
-    buildtimer.click();
     localizer->verbose = true;
     localizer->tracker->verbose = false;
     ElementList::iterator camerait = query.cameras.begin();
     Camera *camera = (Camera*)camerait->second;
     Calibration *calibration = camera->calibration;
-    Image<byte> image = img_load( camera->path );
-    int width = image.size().x;
+    cv::Mat image = cv::imread( camera->path, cv::IMREAD_GRAYSCALE );
+    int width = image.size().width;
     localizer->thresh = 0.006 * width / camera->calibration->focal;
     localizer->tracker->minnumpoints = 100;
-    
-    SimpleTimer feature_timer( "extract features", 1 );
-    SimpleTimer localizer_timer( "localize", 1 );
     
     Calibration *mycalibration = new Calibration;
     Camera *mycamera = new Camera;
@@ -147,17 +129,15 @@ int main( int argc, char **argv )
         mycamera->name = querycamera->name;
         mynode->pose = querycamera->node->globalPose();
         mycamera->path = querycamera->path;
-        mycamera->image = img_load( mycamera->path );
+        mycamera->image = cv::imread( mycamera->path, cv::IMREAD_GRAYSCALE );
         mycamera->pyramid.resize( mycamera->image.size() );
         mycamera->pyramid.copy_from( mycamera->image );
         
         mycamera->features.clear();
-        vector<Feature*> features;
-        feature_timer.click();
+        std::vector<Feature*> features;
 		extractSIFT( mycamera->image, features );
 
-        feature_timer.click();
-        for ( int i = 0; i < features.size(); i++ ) 
+        for ( int i = 0; i < features.size(); i++ )
         {
             char name[256];
             sprintf( name, "feature%d", i );
@@ -169,10 +149,10 @@ int main( int argc, char **argv )
         bool good = localizer->localize( mycamera );
         
         if ( good && test_bounds ) {
-            SE3<> pose = mycamera->node->pose;
-            Vector<3> center = - ( pose.get_rotation().inverse() * pose.get_translation() );
+            Sophus::SE3d pose = mycamera->node->pose;
+            Eigen::Vector3d center = - ( pose.so3().inverse() * pose.translation() );
             if ( center[1] > 0 || center[1] < minY ) {
-                cout << "\trejected because of bad pose (Y = " << center[1] << " and minY is " << minY << ")\n";
+                std::cout << "\trejected because of bad pose (Y = " << center[1] << " and minY is " << minY << ")\n";
                 good = false;
             }
         }
@@ -180,7 +160,7 @@ int main( int argc, char **argv )
         if ( good ) goodCount++;
         attemptedCount++;
         
-        if ( querycamera->node->parent != NULL ) querycamera->node->parent->pose = SE3<>();
+        if ( querycamera->node->parent != NULL ) querycamera->node->parent->pose = Sophus::SE3d();
         querycamera->node->pose = mynode->pose;
 
         for ( int i = 0; i < features.size(); i++ )
