@@ -432,7 +432,7 @@ namespace vrlt {
     }
     */
     
-    int extractSIFT( const cv::Mat &image, std::vector<Feature*> &features, int o_min, bool upright, float peak_thresh )
+    int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min, bool upright, float peak_thresh )
     {
         cv::Mat gray_image;
         if ( image.channels() == 3 )
@@ -445,14 +445,16 @@ namespace vrlt {
         }
         
         std::vector<cv::KeyPoint> keypoints;
-        std::vector<cv::Mat> descriptors;
+        cv::Mat descriptors;
         
         cv::SIFT sift( 0, 3, peak_thresh );
         sift( gray_image, cv::noArray(), keypoints, descriptors );
         
+        float *floatdata = (float*)descriptors.ptr();
+        
         features.clear();
         features.reserve( keypoints.size() );
-        for ( size_t i = 0; i < keypoints.size(); i++ )
+        for ( size_t i = 0; i < keypoints.size(); i++,floatdata+=128 )
         {
             if ( keypoints[i].octave < o_min ) continue;
             
@@ -477,7 +479,6 @@ namespace vrlt {
                 feature->color[2] = gray;
             }
             
-            float *floatdata = (float*)descriptors[i].data;
             normalizeFloats( floatdata );
 
             feature->descriptor = new unsigned char[128];
