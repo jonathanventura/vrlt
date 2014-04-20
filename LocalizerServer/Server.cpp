@@ -15,29 +15,25 @@
 #include <PatchTracker/tracker.h>
 #include <Localizer/nnlocalizer.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
-#include <cvd/timer.h>
-#include <cvd/thread.h>
+#include <opencv2/highgui.hpp>
+
+#include <iostream>
 
 using namespace vrlt;
-using namespace std;
-using namespace CVD;
-using namespace TooN;
 
 #define BUFFER_SIZE 131072
 
 // from http://stackoverflow.com/questions/2079912/simpler-way-to-create-a-c-memorystream-from-char-size-t-without-copying-t
-class membuf : public basic_streambuf<char>
+class membuf : public std::basic_streambuf<char>
 {
 public:
     membuf(char* p, size_t n) {
@@ -45,14 +41,12 @@ public:
     }
 };
 
-class ServerThread : public Thread
+class ServerThread
 {
 public:
-    ServerThread( Reconstruction &_r, Calibration *_calibration, ImageRef _imsize, int _clntSock )
-    : r( _r ), imsize( _imsize ), clntSock( _clntSock )
+    ServerThread( Node *_root, Calibration *_calibration, cv::Size _imsize, int _clntSock )
+    : root( _root ), imsize( _imsize ), clntSock( _clntSock )
     {
-        root = (Node*) r.nodes["root"];
-        
         index = new BruteForceNN;
         
         localizer = new NNLocalizer( root, index );
@@ -60,7 +54,7 @@ public:
         //        localizer->tracker->firstlevel = 3;
         //        localizer->tracker->lastlevel = 1;
         localizer->tracker->minnumpoints = 200;
-        localizer->thresh = 0.006 * imsize.x / _calibration->focal;
+        localizer->thresh = 0.006 * imsize.width / _calibration->focal;
         //        localizer->thresh *= 2.;
         
         querynode = new Node;
@@ -150,7 +144,7 @@ public:
             ptr += recvMsgSize;
         }
         
-        cout << "receiving JPEG image of " << datasize << " bytes\n";
+        std::cout << "receiving JPEG image of " << datasize << " bytes\n";
         
         char *jpegData = new char[datasize];
         
@@ -178,9 +172,10 @@ public:
         //
         //        cout << "read JPEG image from file\n";
         
-        membuf mb( jpegData, datasize );
-        istream is( &mb );
-        querycamera->image = img_load( is );
+//        membuf mb( jpegData, datasize );
+//        std::istream is( &mb );
+        cv::Mat jpegDataMat( cv::Size(datasize,1), CV_8UC1, jpegData );
+        querycamera->image = cv::imdecode( jpegDataMat, cv::IMREAD_UNCHANGED );
         
         delete [] jpegData;
         
@@ -205,10 +200,11 @@ public:
         return true;
     }
     
-    bool sendPose( SE3<> &pose )
+    bool sendPose( Sophus::SE3d &pose )
     {
         double buffer[6];
-        wrapVector<6>(buffer) = pose.ln();
+        Eigen::Map< Eigen::Matrix<double,6,1> > buffervec(buffer);
+        buffervec = pose.log();
         
         int nbytesSent = send( clntSock, buffer, sizeof(double)*6, 0 );
         if ( nbytesSent < 0 ) return false;
@@ -238,8 +234,9 @@ public:
         if ( localizer->tracker->firstlevel < 0 ) localizer->tracker->firstlevel = 0;
         if ( localizer->tracker->lastlevel < 0 ) localizer->tracker->lastlevel = 0;
         
-        imsize /= scale;
-        querycamera->image.resize( imsize );
+        imsize.width /= scale;
+        imsize.height /= scale;
+        querycamera->image.create( imsize, CV_8UC1 );
         
         querycalibration->focal /= scale;
         querycalibration->center /= scale;
@@ -253,9 +250,6 @@ public:
     
     void run()
     {
-        SimpleTimer featureTimer( "extract features", 1 );
-        SimpleTimer localizeTimer( "localize", 1 );
-        
         bool gotHeader = recvHeader();
         
         if ( gotHeader )
@@ -280,14 +274,12 @@ public:
                 //                path << "Output/image" << count++ << ".jpg";
                 //                img_save( querycamera->image, path.str(), ImageType::JPEG );
                 
-                featureTimer.click();
-                vector<Feature*> features;
+                std::vector<Feature*> features;
                 extractSIFT( querycamera->image, features );
-                featureTimer.click();
                 
                 for ( int i = 0; i < features.size(); i++ )
                 {
-                    stringstream name;
+                    std::stringstream name;
                     name << "feature" << i << "\n";
                     features[i]->name = name.str();
                     features[i]->camera = querycamera;
@@ -298,20 +290,18 @@ public:
                 querycamera->pyramid.copy_from( querycamera->image );
                 
                 
-                localizeTimer.click();
                 bool success = localizer->localize( querycamera );
-                localizeTimer.click();
                 
                 
                 //bool success = false;
                 
-                SE3<> pose;
+                Sophus::SE3d pose;
                 if ( success ) pose = querynode->pose;
                 
                 good = sendPose( pose );
                 if ( !good ) break;
                 
-                if ( good ) cout << "pose: " << pose.ln() << "\n";
+                if ( good ) std::cout << "pose: " << pose.log() << "\n";
                 
                 for ( int i = 0; i < features.size(); i++ )
                 {
@@ -321,7 +311,7 @@ public:
             }
         }
         
-        cout << "closing connection...\n";
+        std::cout << "closing connection...\n";
         
         close( clntSock );
         
@@ -338,9 +328,8 @@ public:
         querycalibration = NULL;
     }
     
-    Reconstruction &r;
     Node *root;
-    ImageRef imsize;
+    cv::Size imsize;
     
     Node *querynode;
     Camera *querycamera;
@@ -408,12 +397,12 @@ int AcceptTCPConnection(int servSock)
     return clntSock;
 }
 
-void loadImages( string prefix, Node *node )
+void loadImages( std::string prefix, Node *node )
 {
     if ( node->camera != NULL ) {
-        stringstream path;
+        std::stringstream path;
         path << prefix << "/" << node->camera->path;
-        node->camera->image = img_load( path.str() );
+        node->camera->image = cv::imread( path.str(), cv::IMREAD_GRAYSCALE );
         node->camera->pyramid = ImagePyramid( node->camera );
     }
     
@@ -432,15 +421,15 @@ int main( int argc, char **argv )
         exit(1);
     }
     
-    cout << "loading...\n";
+    std::cout << "loading...\n";
     
-    string pathin = string(argv[1]);
+    std::string pathin = std::string(argv[1]);
     int portno = 12345;
     if ( argc == 3 ) portno = atoi(argv[2]);
     
     Reconstruction r;
     r.pathPrefix = pathin;
-    stringstream mypath;
+    std::stringstream mypath;
     mypath << pathin << "/reconstruction.xml";
     XML::read( r, mypath.str() );
     
@@ -449,7 +438,7 @@ int main( int argc, char **argv )
     XML::readDescriptors( r, root );
     
     Calibration *calibration = new Calibration;
-    ImageRef imsize;
+    cv::Size imsize;
     
     // iPhone
     //calibration->focal = 1489.653430;
@@ -457,7 +446,7 @@ int main( int argc, char **argv )
     calibration->focal = 1179.90411;
     calibration->center[0] = 639.500000;
     calibration->center[1] = 359.500000;
-    imsize = ImageRef( 1280, 720 );
+    imsize = cv::Size( 1280, 720 );
     
     //    imsize = imsize / 4;
     //    int level = 2;
@@ -467,14 +456,22 @@ int main( int argc, char **argv )
     
     int servSock = CreateTCPServerSocket(portno);
     
-    cout << "server ready.\n";
+    std::cout << "server ready.\n";
+    
+#if USE_DISPATCH
+    dispatch_queue_t myCustomQueue = dispatch_queue_create("com.example.MyCustomQueue", NULL);
+#endif
     
     for ( ; ; )
     {
         int clntSock = AcceptTCPConnection(servSock);
         
-        ServerThread *serverThread = new ServerThread( r, calibration, imsize, clntSock );
-        serverThread->start();
+#if USE_DISPATCH
+        dispatch_async(myCustomQueue, ^{
+            ServerThread *serverThread = new ServerThread( root, calibration, imsize, clntSock );
+            serverThread->run();
+        });
+#endif
     }
     
     return 0;
