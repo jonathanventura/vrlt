@@ -12,24 +12,23 @@
 #include <MultiView/multiview_io_xml.h>
 #include <PatchTracker/tracker.h>
 
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
-#include <cvd/timer.h>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <PatchTracker/robustlsq.h>
 
+#include <iostream>
+
 using namespace vrlt;
-using namespace std;
-using namespace CVD;
-using namespace TooN;
 
 void drawPoints( Node *root, Camera *camera, bool good )
 {
+    /*
     //Image< Rgb<byte> > image_out = img_load( camera->path );
-    Image< Rgb<byte> > image_out( camera->image.size(), Rgb<byte>(0,0,0) );
-    convert_image( camera->image, image_out );
+    cv::Mat image_out( camera->image.size(), CV_8UC3, cv::Scalar(0,0,0) );
+    cv::cvtColor( camera->image, image_out, cv::COLOR_RGB2GRAY );
     
-    vector<ImageRef> circle[NLEVELS];
+    std::vector<cv::Point2i> circle[NLEVELS];
     for ( int i = 0; i < NLEVELS; i++ ) circle[i] = getCircle( 4*powf(2,i) );
     
     ElementList::iterator it;
@@ -62,6 +61,7 @@ void drawPoints( Node *root, Camera *camera, bool good )
     char name[256];
     sprintf( name, "Output/%s.jpg", camera->name.c_str() );
     img_save( image_out, name, ImageType::JPEG );
+    */
 }
 
 int main( int argc, char **argv )
@@ -71,13 +71,13 @@ int main( int argc, char **argv )
         exit(1);
     }
     
-    string pathin = string(argv[1]);
-    string queryin = string(argv[2]);
+    std::string pathin = std::string(argv[1]);
+    std::string queryin = std::string(argv[2]);
     
     // load reconstruction
     Reconstruction r;
     r.pathPrefix = pathin;
-    stringstream mypath;
+    std::stringstream mypath;
     mypath << pathin << "/reconstruction.xml";
     XML::read( r, mypath.str() );
     Node *root = (Node*)r.nodes["root"];
@@ -99,9 +99,9 @@ int main( int argc, char **argv )
     for ( it = r.cameras.begin(); it != r.cameras.end(); it++ )
     {
         Camera *camera = (Camera *)it->second;
-        stringstream path;
+        std::stringstream path;
         path << pathin << "/" << camera->path;
-        camera->image = img_load( path.str() );
+        camera->image = cv::imread( path.str(), cv::IMREAD_GRAYSCALE );
         camera->pyramid = ImagePyramid( camera );
     }
     
@@ -123,23 +123,22 @@ int main( int argc, char **argv )
     // so we don't allocate a new image for each frame
     Camera *trackercamera = new Camera;
     
-    SimpleTimer tracktimer("track",100);
-    
-    TooN::Matrix<3> mymat;
-    mymat[0] = TooN::makeVector( 0,-1, 0 );
-    mymat[1] = TooN::makeVector(-1, 0, 0 );
-    mymat[2] = TooN::makeVector( 0, 0,-1 );
-    SO3<> gyroconversion = TooN::SO3<>( mymat );
+    Eigen::Matrix3d mymat;
+    mymat <<
+    0, -1, 0,
+    -1, 0, 0,
+    0, 0,-1;
+    Sophus::SO3d gyroconversion(mymat);
     
     int count = 0;
-    SE3<> localizer_pose;
-    SO3<> localizer_attitude;
+    Sophus::SE3d localizer_pose;
+    Sophus::SO3d localizer_attitude;
     double prev_timestamp;
-    SO3<> prev_attitude;
+    Sophus::SO3d prev_attitude;
     
-    SE3<> last_pose;
+    Sophus::SE3d last_pose;
 
-    vector<Camera*> trackedCameras;
+    std::vector<Camera*> trackedCameras;
     
     RobustLeastSq robustlsq( root );
     
@@ -151,14 +150,19 @@ int main( int argc, char **argv )
         Node *querynode = (Node *)querycamera->node;
         
         // get gyro input
-        SO3<> queryattitude = gyroconversion * querycamera->attitude * gyroconversion;
+        Sophus::SO3d queryattitude = gyroconversion * querycamera->attitude * gyroconversion;
         double querytimestamp = querycamera->timestamp;
         
         prev_attitude = queryattitude;
         prev_timestamp = querytimestamp;
         
-        Vector<3> gyroxyz = querycamera->rotationRate;
-        TooN::SO3<> gyro( TooN::SO3<>( TooN::makeVector( 0, 0, gyroxyz[2] ) ) * TooN::SO3<>( TooN::makeVector( 0, gyroxyz[1], 0 ) ) * TooN::SO3<>( TooN::makeVector( gyroxyz[0], 0, 0 ) ) );
+        Eigen::Vector3d gyroxyz = querycamera->rotationRate;
+        Eigen::Vector3d gyrox, gyroy, gyroz;
+        gyrox << gyroxyz[0], 0, 0;
+        gyroy << 0, gyroxyz[1], 0;
+        gyroz << 0, 0, gyroxyz[2];
+        
+        Sophus::SO3d gyro( Sophus::SO3d::exp( gyroz ) * Sophus::SO3d::exp( gyroy ) * Sophus::SO3d::exp( gyrox ) );
         gyro = gyroconversion * gyro * gyroconversion;
         
         // create query node if necessary
@@ -188,14 +192,13 @@ int main( int argc, char **argv )
         querynode->pose = last_pose;
         
         // load the image
-        trackercamera->image = img_load( querycamera->path );
+        trackercamera->image = cv::imread( querycamera->path, cv::IMREAD_GRAYSCALE );
         trackercamera->pyramid.resize( trackercamera->image.size() );
         trackercamera->pyramid.copy_from( trackercamera->image );
         
         // run tracker
-        tracktimer.click();
         bool good = tracker.track( trackercamera );
-        cout << "tracked: " << tracker.ntracked << " / " << tracker.nattempted << " (" << tracker.ntracked / (float) tracker.nattempted << ")\n";
+        std::cout << "tracked: " << tracker.ntracked << " / " << tracker.nattempted << " (" << tracker.ntracked / (float) tracker.nattempted << ")\n";
 		int ntracked = 0;
 		float newratio = (float)tracker.nnew / (float)tracker.ntracked;
 		if ( good ) {
@@ -211,7 +214,6 @@ int main( int argc, char **argv )
                 good = ( ratio > tracker.minratio );
             }
         }
-        tracktimer.click();
         
         if ( good ) {
             nlost = 0;
@@ -226,8 +228,8 @@ int main( int argc, char **argv )
             if ( newratio >= .5 ) {
                 should_add = false;
                 
-                SE3<> trackerpose = querycamera->node->pose;
-                Vector<3> trackercenter = -( trackerpose.get_rotation().inverse() * trackerpose.get_translation() );
+                Sophus::SE3d trackerpose = querycamera->node->pose;
+                Eigen::Vector3d trackercenter = -( trackerpose.so3().inverse() * trackerpose.translation() );
                 
                 double min_dist = INFINITY;
                 
@@ -237,10 +239,10 @@ int main( int argc, char **argv )
                     Camera *camera = tracker.cameras[i];
                     if ( camera->isnew == false ) continue;
                     
-                    SE3<> pose = camera->node->pose;
-                    Vector<3> center = -( pose.get_rotation().inverse() * pose.get_translation() );
+                    Sophus::SE3d pose = camera->node->pose;
+                    Eigen::Vector3d center = -( pose.so3().inverse() * pose.translation() );
                     
-                    double dist = norm( center - trackercenter );
+                    double dist = ( center - trackercenter ).norm();
                     if ( dist < min_dist ) min_dist = dist;
                 }
                 
