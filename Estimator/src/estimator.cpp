@@ -533,7 +533,7 @@ namespace vrlt {
         Eigen::Vector4d pt = unproject( it->first );
         return fabs( plane * pt );
     }
-    
+    */
     
     
     
@@ -547,61 +547,69 @@ namespace vrlt {
     
     int ThreePointPose::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        Eigen::Vector3d x[3];
-        Eigen::Vector2d z[3];
+        Eigen::Vector2d feature_point[3];
+        Eigen::Vector3d world_point[3];
         
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; n < 3; it++,n++ ) {
-            x[n] = it->first;
-            z[n] = it->second.slice<0,2>();
+            world_point[n] = it->first;
+            feature_point[n] = it->second.head(2);
         }
         
         poses.clear();
-        int nposes = tag::three_point_pose( x, z, poses );
+        std::vector<Eigen::Matrix3d> solution_rotations;
+        std::vector<Eigen::Vector3d> solution_translations;
+        theia::PoseFromThreePoints( feature_point, world_point, &solution_rotations, &solution_translations );
+        poses.resize( solution_rotations.size() );
+        for ( size_t i = 0; i < solution_rotations.size(); i++ )
+        {
+            poses[i].so3() = Sophus::SO3d( solution_rotations[i] );
+            poses[i].translation() = solution_translations[i];
+        }
         
-        return nposes;
+        return poses.size();
     }
     
     void ThreePointPose::chooseSolution( int soln )
     {
         pose = poses[soln];
-        R0 = pose.get_rotation().get_matrix()[0];
-        R1 = pose.get_rotation().get_matrix()[1];
-        R2 = pose.get_rotation().get_matrix()[2];
-        t = pose.get_translation();
+        R0 = pose.so3().matrix().row(0);
+        R1 = pose.so3().matrix().row(1);
+        R2 = pose.so3().matrix().row(2);
+        t = pose.translation();
     }
     
     double ThreePointPose::score( PointPairList::iterator it )
     {
 #ifdef USE_ACCELERATE
         Eigen::Vector3d X = it->first;
-        Eigen::Vector2d x = it->second.slice<0,2>();
+        Eigen::Vector2d x = it->second.head(2);
         //double featurescale = it->second[2];
         double scale = 1. / it->second[2];
-        vDSP_vsmulD( x.get_data_ptr(), 1, &scale, x.get_data_ptr(), 1, 2 );
+        vDSP_vsmulD( x.data(), 1, &scale, x.data(), 1, 2 );
         
         Eigen::Vector3d poseX;
-        vDSP_dotprD( R0.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr()    , 3 );
-        vDSP_dotprD( R1.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr() + 1, 3 );
-        vDSP_dotprD( R2.get_data_ptr(), 1, X.get_data_ptr(), 1, poseX.get_data_ptr() + 2, 3 );
-        vDSP_vaddD( poseX.get_data_ptr(), 1, t.get_data_ptr(), 1, poseX.get_data_ptr(), 1, 3 );
+        vDSP_dotprD( R0.data(), 1, X.data(), 1, poseX.data()    , 3 );
+        vDSP_dotprD( R1.data(), 1, X.data(), 1, poseX.data() + 1, 3 );
+        vDSP_dotprD( R2.data(), 1, X.data(), 1, poseX.data() + 2, 3 );
+        vDSP_vaddD( poseX.data(), 1, t.data(), 1, poseX.data(), 1, 3 );
         
         double c;
-        vDSP_dotprD( poseX.get_data_ptr(), 1, it->second.get_data_ptr(), 1, &c, 3 );
+        vDSP_dotprD( poseX.data(), 1, it->second.data(), 1, &c, 3 );
         if ( c < 0 ) return INFINITY;
         
         scale = 1. / poseX[2];
         
-        Eigen::Vector2d xproj = poseX.slice<0,2>();
-        vDSP_vsmulD( xproj.get_data_ptr(), 1, &scale, xproj.get_data_ptr(), 1, 2 );
+        Eigen::Vector2d xproj = poseX.head(2);
+        vDSP_vsmulD( xproj.data(), 1, &scale, xproj.data(), 1, 2 );
         
         Eigen::Vector2d diff;
-        vDSP_vsubD( xproj.get_data_ptr(), 1, x.get_data_ptr(), 1, diff.get_data_ptr(), 1, 2 );
+        vDSP_vsubD( xproj.data(), 1, x.data(), 1, diff.data(), 1, 2 );
         //diff /= featurescale;
         
         double s;
-        vDSP_svesqD( diff.get_data_ptr(), 1, &s, 2 );
+        vDSP_svesqD( diff.data(), 1, &s, 2 );
         
         return s;
 #else
@@ -616,7 +624,7 @@ namespace vrlt {
         Eigen::Vector2d xproj = project( poseX );
         Eigen::Vector2d diff = xproj - x;
         //diff /= featurescale;
-        return diff*diff;
+        return diff.dot(diff);
 #endif
     }
     
@@ -624,7 +632,7 @@ namespace vrlt {
     {
         return false;
     }
-     */
+    
     /*
     int Homography::sampleSize()
     {
