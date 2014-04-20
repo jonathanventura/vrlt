@@ -33,8 +33,8 @@ namespace vrlt
         bool verbose;
         virtual bool localize( Camera *querycamera );
         
-        bool refinePose( Camera *camera_in, float lambda );
-        void refinePoseLM( Camera *camera_in, int niter );
+//        bool refinePose( Camera *camera_in, float lambda );
+//        void refinePoseLM( Camera *camera_in, int niter );
         
     //protected:
         Node *root;

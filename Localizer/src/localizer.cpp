@@ -11,14 +11,12 @@
 #include <Localizer/localizer.h>
 #include <PatchTracker/tracker.h>
 
-#include <TooN/Lapack_Cholesky.h>
-
-using namespace TooN;
+#include <Eigen/Eigen>
 
 namespace vrlt
 {
     Localizer::Localizer( Node *_root, Node *_tracker_root )
-    : root( _root ), verbose( false )
+    : verbose( false ), root( _root )
     {
         if ( _tracker_root == NULL ) _tracker_root = root->root();
         tracker = new Tracker( _tracker_root, 1024 );
@@ -40,15 +38,15 @@ namespace vrlt
         return false;
         
     }
-
+/*
     bool Localizer::refinePose( Camera *camera_in, float lambda )
     {
-        Matrix<6> FtF = Zeros;
-        Vector<6> Fte = Zeros;
+        Eigen::Matrix<float,6,6> FtF = Zeros;
+        Eigen::Matrix<float,6,1> Fte = Zeros;
         
-        SE3<> pose( camera_in->node->pose );
+        Sophus::SE3d pose( camera_in->node->pose );
         float f = camera_in->calibration->focal;
-        Vector<2,float> center = camera_in->calibration->center;
+        Eigen::Vector2f center = camera_in->calibration->center;
         
         float toterr = 0.f;
         
@@ -62,7 +60,7 @@ namespace vrlt
             Point *point = track->point;
             if ( point == NULL ) continue;
             
-            Vector<3,float> PX = pose * project( point->position );
+            Eigen::Vector3f PX = pose * project( point->position );
             
             Matrix<2,3,float> A;
             A[0] = makeVector<float>( PX[2], 0, -PX[0] );
@@ -80,9 +78,9 @@ namespace vrlt
             
             Matrix<2,6,float> Fn = A * J;
             
-            Vector<2,float> x = f * project(PX) + center;
-            Vector<2,float> pos = feature->location;
-            Vector<2,float> e = pos - x;
+            Eigen::Vector2f x = f * project(PX) + center;
+            Eigen::Vector2f pos = feature->location;
+            Eigen::Vector2f e = pos - x;
             
             FtF += Fn.T() * Fn;
             Fte += Fn.T() * e;
@@ -104,7 +102,7 @@ namespace vrlt
         Vector<6,float> soln = chol.backsub( Fte );
 
         Vector<3> old_center = -( pose.get_rotation().inverse() * pose.get_translation() );
-        SE3<> newpose;
+        Sophus::SE3d newpose;
         newpose.get_rotation() = SO3<>( soln.slice<3,3>() ) * pose.get_rotation();
         Vector<3> new_center = old_center + soln.slice<0,3>();
         newpose.get_translation() = -( newpose.get_rotation() * new_center );
@@ -120,11 +118,11 @@ namespace vrlt
             Point *point = track->point;
             if ( point == NULL ) continue;
             
-            Vector<3,float> PX = newpose * project( point->position );
+            Eigen::Vector3f PX = newpose * project( point->position );
             
-            Vector<2,float> x = f * project(PX) + center;
-            Vector<2,float> pos = feature->location;
-            Vector<2,float> e = pos - x;
+            Eigen::Vector2f x = f * project(PX) + center;
+            Eigen::Vector2f pos = feature->location;
+            Eigen::Vector2f e = pos - x;
             
             newerr += e*e;
         }
@@ -140,7 +138,7 @@ namespace vrlt
     void Localizer::refinePoseLM( Camera *camera_in, int niter )
     {
         float lambda = 1e-3f;
-        SE3<> last_pose = camera_in->node->pose;
+        Sophus::SE3d last_pose = camera_in->node->pose;
         for ( int i = 0; i < niter; i++ )
         {
             // LM Step
@@ -160,4 +158,5 @@ namespace vrlt
         }
 
     }
+     */
 }

@@ -14,29 +14,16 @@
 #include <PatchTracker/robustlsq.h>
 #include <FeatureMatcher/bruteforce.h>
 
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
-
-#include <cvd/timer.h>
+#include <opencv2/imgproc.hpp>
 
 #include <dispatch/dispatch.h>
 
-//#define FEATURE_VERIFY
-#define TRACKER_VERIFY
+#include <iostream>
 
 static const int min_level = 0;
 
 namespace vrlt
 {
-    using namespace std;
-    using namespace TooN;
-    using namespace CVD;
-    
-    static SimpleTimer nntimer( "nearest neighbor", 1 );
-    static SimpleTimer prosactimer( "prosac", 1 );
-    static SimpleTimer verifytimer( "verify", 1 );
-    static SimpleTimer tracktimer( "track", 1 );
-    
     NNLocalizer::NNLocalizer( Node *_root, NN *index ) : Localizer( _root )
     {
         fm = new FeatureMatcher( index );
@@ -48,11 +35,12 @@ namespace vrlt
         delete fm;
     }
     
-    static void drawMatches( Node *querynode, vector<Match*> &matches, vector<bool> &inliers )
+    static void drawMatches( Node *querynode, std::vector<Match*> &matches, std::vector<bool> &inliers )
     {
-        vector<Camera*> cameras;
-        vector< Image<byte>* > images;
-        Image<byte> queryim = querynode->camera->image;
+        /*
+        std::vector<Camera*> cameras;
+        std::vector< cv::Mat* > images;
+        cv::Mat queryim = querynode->camera->image;
         
         for ( int j = 0; j < matches.size(); j++ )
         {
@@ -101,7 +89,7 @@ namespace vrlt
             img_save( *(images[j]), name, ImageType::JPEG );
             delete images[j];
         }
-        
+        */
     }
     
     struct SortByFeatureName
@@ -115,26 +103,16 @@ namespace vrlt
         addFeatures( querycamera->node, false, features );
         if ( features.empty() ) return false;
         
-        int k = 1;
-        vector<Match*> matches;
+        std::vector<Match*> matches;
         
-        nntimer.click();
-        if ( k == 1 ) {
-            findMatches( (*fm), features, matches );
-//            findConsistentMatches( (*nn), features, matches );
-//            findUniqueMatches( (*nn), features, 0.8, matches );
-        } else {
-            findMatches( (*fm), features, k, matches );
-        }
+        findMatches( (*fm), features, matches );
 
-        nntimer.click();
-        
-        vector<bool> inliers;
+        std::vector<bool> inliers;
 
-        map<string,float> scores;
+        std::map<std::string,float> scores;
         for ( int i = 0; i < matches.size(); i++ )
         {
-            string trackname = matches[i]->feature1->track->name;
+            std::string trackname = matches[i]->feature1->track->name;
             if ( scores.count(trackname) == 0 ) scores[trackname] = matches[i]->score;
             else if ( matches[i]->score < scores[trackname] ) scores[trackname] = matches[i]->score;
         }
@@ -159,7 +137,7 @@ namespace vrlt
             all_point_pairs.push_back( point_pair );
         }
         
-        cout << point_pairs.size() << " matches for pose estimation; " << all_point_pairs.size() << " matches for inliers\n";
+        std::cout << point_pairs.size() << " matches for pose estimation; " << all_point_pairs.size() << " matches for inliers\n";
         
         ThreePointPose estimator;
         
@@ -168,86 +146,10 @@ namespace vrlt
         prosac.min_num_inliers = 100;
         prosac.inlier_threshold = thresh;
         
-        prosactimer.click();
         int ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), all_point_pairs.begin(), all_point_pairs.end(), estimator, inliers );
-        prosactimer.click();
         
-#ifdef FEATURE_VERIFY
-        verifytimer.click();
-        float max_dist_sq = 0;
-        for ( int i = 0; i < inliers.size(); i++ )
-        {
-            if ( !inliers[i] ) continue;
-            
-            Match *match = matches[i];
-            Feature *feature = match->feature1;
-            Feature *queryfeature = match->feature2;
-
-            float dist_sq = 0;
-            for ( int j = 0; j < 128; j++ ) {
-                float diff = (float)feature->descriptor[j] - (float)queryfeature->descriptor[j];
-                dist_sq += diff*diff;
-            }
-            if ( dist_sq > max_dist_sq ) max_dist_sq = dist_sq;
-        }
-
-        // SIFT-based verification
-        int num_possible = 0;
-        int num_feature_inliers = 0;
         ElementList::iterator it;
-        for ( it = root->points.begin(); it != root->points.end(); it++ )
-        {
-            Point *point = (Point*)it->second;
-            
-            // project point into frame.
-            Vector<3> PX = estimator.pose * project( point->position );
-            if ( PX[2] < 0 ) continue;
-            Vector<2> pos = querycamera->calibration->project( project( PX ) );
-            
-            //if ( pos[0] < 0 || pos[0] >= querycamera->calibration->center[0] * 2 || pos[1] < 0 || pos[1] >= querycamera->calibration->center[1] * 2 ) continue;
-            
-            // check all features within threshold
-            ElementList::iterator queryit;
-            for ( queryit = querycamera->features.begin(); queryit != querycamera->features.end(); queryit++ )
-            {
-                Feature *queryfeature = (Feature*)queryit->second;
-                if ( queryfeature->track != NULL ) continue;
-                
-                double featdist = norm( queryfeature->location - pos );
-                if ( featdist / querycamera->calibration->focal > thresh ) continue;
-
-                // compare with all features observing point
-                // if any feature has descriptor distance below max_dist, count as inlier.
-                bool is_inlier = false;
-                ElementList::iterator featit;
-                for ( featit = point->track->features.begin(); featit != point->track->features.end(); featit++ )
-                {
-                    Feature *feature = (Feature*)featit->second;
-                    
-                    float descriptor_dist_sq = 0;
-                    for ( int i = 0; i < 128; i++ ) {
-                        float diff = (float)feature->descriptor[i] - (float)queryfeature->descriptor[i];
-                        descriptor_dist_sq += diff*diff;
-                    }
-                    if ( descriptor_dist_sq < max_dist_sq ) {
-                        is_inlier = true;
-                        break;
-                    }
-                }
-                if ( is_inlier ) {
-                    num_feature_inliers++;
-                    queryfeature->track = new Track;
-                    queryfeature->track->point = point;
-                    break;
-                }
-            }
-        }
-        cout << matches.size() << " matches; " << ninliers << " PROSAC inliers; " << num_feature_inliers << " re-found inliers\n";
-        verifytimer.click();
-#else
-        ElementList::iterator it;
-        int num_feature_inliers = ninliers;
-        cout << matches.size() << " matches; " << ninliers << " PROSAC inliers\n";
+        std::cout << matches.size() << " matches; " << ninliers << " PROSAC inliers\n";
         
         for ( int i = 0; i < inliers.size(); i++ )
         {
@@ -263,56 +165,28 @@ namespace vrlt
             queryfeature->track = new Track;
             queryfeature->track->point = point;
         }
-#endif
         
-#ifdef SEARCH_MULTIPLE
-        for ( int n = 0; n < N; n++ ) {
-            for ( int i = 0; i < mymatches[n].size(); i++ ) {
-                delete mymatches[n][i];
-            }
-            mymatches[n].clear();
-        }
-#else
         for ( int i = 0; i < matches.size(); i++ ) {
             delete matches[i];
         }
-#endif
         
-#ifndef TRACKER_VERIFY
-        bool good = ( num_feature_inliers >= 10 );
-        
-        if ( good ) {
-            querycamera->node->pose = estimator.pose;
-            refinePoseLM( querycamera, 10 );
-        }
-        
-        for ( it = querycamera->features.begin(); it != querycamera->features.end(); it++ ) {
-            Feature *feature = (Feature*)it->second;
-            if ( feature->track != NULL ) {
-                delete feature->track;
-                feature->track = NULL;
-            }
-        }
-#else
         RobustLeastSq robustlsq( root );
-        tracktimer.click();
         querycamera->node->pose = estimator.pose;
         bool good = false;
         for ( int i = 0; i < 10; i++ )
         {
-            SE3<> last_pose = querycamera->node->pose;
+            Sophus::SE3d last_pose = querycamera->node->pose;
             tracker->verbose = false;
             good = tracker->track( querycamera );
-            cout << "tracker tracked " << tracker->ntracked << " / " << tracker->nattempted << "\n";
+            std::cout << "tracker tracked " << tracker->ntracked << " / " << tracker->nattempted << "\n";
             if ( !good ) break;
             if ( good ) {
                 robustlsq.run( querycamera, 10 );
-                SE3<> update = querycamera->node->pose * last_pose.inverse();
-                if ( norm( update.ln() ) < 1e-6 ) break;
+                Sophus::SE3d update = querycamera->node->pose * last_pose.inverse();
+                if ( update.log().norm() < 1e-6 ) break;
             }
         }
-        tracktimer.click();
-#endif
+
         return good;
     }
 }
