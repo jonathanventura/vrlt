@@ -120,7 +120,7 @@ namespace vrlt {
     };
     
     template<int d,typename T>
-    Eigen::Matrix<T,d-1,1> project( const Eigen::Matrix<T,d,1> &Xin )
+    inline Eigen::Matrix<T,d-1,1> project( const Eigen::Matrix<T,d,1> &Xin )
     {
         return Xin.head(d-1)/Xin[d-1];
     }
@@ -134,7 +134,7 @@ namespace vrlt {
 //    }
 
     template<int d,typename T>
-    Eigen::Matrix<T,d+1,1> unproject( const Eigen::Matrix<T,d,1> &Xin )
+    inline Eigen::Matrix<T,d+1,1> unproject( const Eigen::Matrix<T,d,1> &Xin )
     {
         Eigen::Matrix<T,d+1,1> Xout;
         Xout.head(d) = Xin;
@@ -240,7 +240,7 @@ namespace vrlt {
         Node *node;
         Track *track;
         Eigen::Vector2f location;
-        Eigen::Matrix<double,4,1> position;
+        Eigen::Vector4d position;
         Eigen::Vector3d normal;
         Point() : node( NULL ), track( NULL ), normal( Eigen::Vector3d::Zero() ), cov( Eigen::Matrix2f::Identity() ) { }
         bool tracked;
