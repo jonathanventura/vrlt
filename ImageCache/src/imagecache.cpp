@@ -11,40 +11,41 @@
 #include <ImageCache/imagecache.h>
 #include <PatchTracker/ssd.h>
 
-#include <cvd/vision.h>
-#include <cvd/image_convert.h>
-#include <cvd/convolution.h>
-#include <cvd/image_io.h>
+#include <opencv2/imgproc.hpp>
 
-#include <TooN/TooN.h>
+#include <Eigen/Core>
 
 namespace vrlt
 {
-    using namespace std;
-    using namespace TooN;
-    using namespace CVD;
     
     ImageCache::ImageCache()
-    : matchThreshold( 30 * 30 * 80 * 45 ), maxCacheSize( 1 ), ssd_calc( ImageRef(80,45) ), next_to_try( 0 )
+    : matchThreshold( 30 * 30 * 80 * 45 ), maxCacheSize( 1 ), next_to_try( 0 ), ssd_calc( cv::Size(80,45) )
     {
         
     }
     
     void ImageCache::makeSmallByteImage( Camera *camera )
     {
-        camera->small_byte_image = halfSample( halfSample( halfSample( halfSample( camera->image ) ) ) );
+        cv::Mat img1;
+        cv::Mat img2;
+        cv::Mat img3;
+        cv::pyrDown( camera->image, img1 );
+        cv::pyrDown( img1, img2 );
+        cv::pyrDown( img2, img3 );
+        cv::pyrDown( img3, camera->small_byte_image );
     }
     
     void ImageCache::prepareSmallImage( Camera *camera )
     {
-        camera->small_byte_image = halfSample( camera->small_byte_image );
+        cv::Mat img5;
+        cv::pyrDown( camera->small_byte_image, img5 );
+        camera->small_byte_image = img5;
 
-        camera->small_image.resize( camera->small_byte_image.size() );
-        convert_image( camera->small_byte_image, camera->small_image );
+        camera->small_byte_image.convertTo( camera->small_image, CV_32FC1 );
 
-        convolveGaussian( camera->small_image, 2.5 );
-        removeMean( camera->small_image );
-        normalize( camera->small_image );
+        cv::GaussianBlur( camera->small_image, camera->small_image, cv::Size(7,7), 2.5 );
+        cv::subtract( camera->small_image, cv::mean(camera->small_image), camera->small_image );
+        cv::divide( camera->small_image, cv::norm(camera->small_image), camera->small_image );
     }
     
     bool ImageCache::test( Camera *camera )
@@ -54,9 +55,9 @@ namespace vrlt
         for ( int i = 0; i < cache.size(); i++ )
         {
             Sophus::SE3d rel_pose = cache[i]->node->globalPose() * inv_pose;
-            double dist = norm( rel_pose.get_translation() );
+            double dist = rel_pose.translation().norm();
             if ( dist < 0.1 ) {
-                double angle = norm( rel_pose.get_rotation().ln() ) * 180. / M_PI;
+                double angle = rel_pose.so3().log().norm() * 180. / M_PI;
                 if ( angle < 45. ) return false;
             }
         }
