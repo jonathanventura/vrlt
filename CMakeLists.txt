@@ -32,7 +32,7 @@ find_package( Sophus REQUIRED )
 include_directories( ${SOPHUS_INCLUDE_DIR} )
 
 find_package( OpenCV REQUIRED )
-include_directories( ${OPENCV_INCLUDE_DIR} )
+include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 if( USE_ACCELERATE )
 find_library( ACCELERATE Accelerate REQUIRED )
