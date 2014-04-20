@@ -48,12 +48,12 @@ namespace vrlt
 
     bool RobustLeastSq::updatePose( Camera *camera_in, int count, int iter, float eps )
     {
-        Eigen::Matrix<double,6,6> FtF = Eigen::Matrix<double,6,6>::Zero();
-        Eigen::Matrix<double,6,1> Fte = Eigen::Matrix<double,6,1>::Zero();
+        Eigen::Matrix<float,6,6> FtF = Eigen::Matrix<float,6,6>::Zero();
+        Eigen::Matrix<float,6,1> Fte = Eigen::Matrix<float,6,1>::Zero();
 
-        Sophus::SE3d pose( camera_in->node->pose );
+        Sophus::SE3f pose( camera_in->node->pose.cast<float>() );
         float f = camera_in->calibration->focal;
-        Eigen::Vector2f center = camera_in->calibration->center;
+        Eigen::Vector2f center = camera_in->calibration->center.cast<float>();
 
         ElementList::iterator it;
 
@@ -65,7 +65,7 @@ namespace vrlt
                 Point *point = (Point*)it->second;
                 if ( !point->tracked ) continue;
 
-                Eigen::Vector3f PX = pose * project( point->position );
+                Eigen::Vector3f PX = pose * point->position.head(3).cast<float>();
 
                 Eigen::Vector2f x = f * project(PX) + center;
                 Eigen::Vector2f e = point->location - x;
@@ -88,7 +88,7 @@ namespace vrlt
             Point *point = (Point*)it->second;
             if ( !point->tracked ) continue;
 
-            Eigen::Vector3f PX = pose * project( point->position );
+            Eigen::Vector3f PX = pose * point->position.head(3).cast<float>();
 
             Eigen::Matrix<float,2,3> A;
             A << PX[2], 0, -PX[0],
@@ -98,7 +98,7 @@ namespace vrlt
             Eigen::Matrix<float,3,6> J;
 
             for ( int m = 0; m < 6; m++ ) {
-                J.T()[m] = SE3<float>::generator_field( m, unproject(PX) ).slice<0,3>();
+                J.col(m) = ( Sophus::SE3f::generator( m ) * unproject(PX) ).head(3);
             }
 
             Eigen::Matrix<float,2,6> Fn = A * J;
@@ -108,12 +108,12 @@ namespace vrlt
             Eigen::Vector2f pos = point->location;
             Eigen::Vector2f e = pos - x;
 
-            float residsq = e*e;
+            float residsq = e.dot(e);
             float w = computeTukeyWeight( ksq, residsq );
             weights[i] = w;
 
-            FtF += Fn.T() * ( weights[i] * Fn );
-            Fte += Fn.T() * ( weights[i] * e );
+            FtF += Fn.transpose() * ( weights[i] * Fn );
+            Fte += Fn.transpose() * ( weights[i] * e );
 
             toterr += computeTukeyObjectiveFunction( ksq, residsq );
         }
@@ -128,9 +128,8 @@ namespace vrlt
             FtF(i,i) = FtF(i,i) + eps * avg_diag;
         }
 
-        Lapack_Cholesky<6,float> chol( FtF );
-        Vector<6,float> soln = chol.backsub( Fte );
-        Sophus::SE3d newpose = Sophus::SE3d( soln ) * pose;
+        Eigen::Matrix<float,6,1> soln = FtF.llt().solve( Fte );
+        Sophus::SE3f newpose = Sophus::SE3f::exp( soln ) * pose;
 
         // calculate new error
         float newerr = 0;
@@ -140,7 +139,7 @@ namespace vrlt
             Point *point = (Point*)it->second;
             if ( !point->tracked ) continue;
 
-            Eigen::Vector3f PX = newpose * project( point->position );
+            Eigen::Vector3f PX = newpose * point->position.head(3).cast<float>();
 
             Eigen::Vector2f x = f * project(PX) + center;
 
@@ -151,7 +150,7 @@ namespace vrlt
                 point->tracked = false;
             }
 
-            float residsq = e*e;
+            float residsq = e.dot(e);
             newerr += computeTukeyObjectiveFunction( ksq, residsq );
 
             if ( iter == niter-1 ) {
@@ -160,7 +159,7 @@ namespace vrlt
         }
 
         if ( newerr < toterr ) {
-            camera_in->node->pose = newpose;
+            camera_in->node->pose = newpose.cast<double>();
             return true;
         }
 

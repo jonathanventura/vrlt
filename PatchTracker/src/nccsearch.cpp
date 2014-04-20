@@ -22,7 +22,7 @@
 
 namespace vrlt
 {
-    static bool in_image( const cv::Size &size, const cv::Point2i &loc )
+    static inline bool in_image( const cv::Size &size, const cv::Point2i &loc )
     {
         return ( loc.x >= 0 && loc.x < size.width && loc.y >= 0 && loc.y < size.height );
     }

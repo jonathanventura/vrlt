@@ -17,6 +17,8 @@
 
 #include <Eigen/Eigen>
 
+#include <iostream>
+
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>
 #endif
@@ -30,7 +32,12 @@
 #endif
 
 namespace vrlt
-{    
+{
+    static inline bool in_image( const cv::Size &size, const cv::Point2i &loc )
+    {
+        return ( loc.x >= 0 && loc.x < size.width && loc.y >= 0 && loc.y < size.height );
+    }
+
     struct SortPatches
     {
         bool operator()( const Patch *a, const Patch *b ) { return ( a->shouldTrack > b->shouldTrack ); }
@@ -108,8 +115,8 @@ namespace vrlt
     {
         Sophus::SE3d poseinv = mynode->pose.inverse();
         Sophus::SE3d rel_pose = source->node->precomputedGlobalPose * poseinv;
-        source->KAKinv = source->calibration->K * rel_pose.so3().matrix()).cast<float>() * target->calibration->Kinv;
-        source->Ka.col(0) = source->calibration->K * rel_pose.translation();
+        source->KAKinv = source->calibration->K * rel_pose.so3().matrix().cast<float>() * target->calibration->Kinv;
+        source->Ka.col(0) = source->calibration->K * rel_pose.translation().cast<float>();
     }
     
     void Tracker::updateMatrices( Camera *target )
@@ -118,8 +125,8 @@ namespace vrlt
         for ( int i = 0; i < cameras.size(); i++ )
         {
             Sophus::SE3d rel_pose = cameras[i]->node->precomputedGlobalPose * poseinv;
-            cameras[i]->KAKinv = cameras[i]->calibration->K * rel_pose.get_rotation().get_matrix() * target->calibration->Kinv;
-            cameras[i]->Ka.T()[0] = cameras[i]->calibration->K * rel_pose.get_translation();
+            cameras[i]->KAKinv = cameras[i]->calibration->K * rel_pose.so3().matrix().cast<float>() * target->calibration->Kinv;
+            cameras[i]->Ka.col(0) = cameras[i]->calibration->K * rel_pose.translation().cast<float>();
         }
     }
     
@@ -132,18 +139,19 @@ namespace vrlt
 
         tracker->searchPatches[i] = NULL;
 
-        Vector<4,float> pointData;
+        Eigen::Vector4f pointData;
         Eigen::Vector3f PX;
         Eigen::Vector2f proj;
         Eigen::Vector3f normalData;
         Eigen::Vector3f PN;
 
+        // NB: Eigen is column major
         // check in front of camera
-        pointData = point->position;
+        pointData = point->position.cast<float>();
 #ifdef USE_ACCELERATE
-        vDSP_dotpr( tracker->poseMatrix.get_data_ptr() + 8, 1, pointData.get_data_ptr(), 1, PX.get_data_ptr()+2, 4 );
+        vDSP_dotpr( tracker->poseMatrix.data() + 3, 4, pointData.data(), 1, PX.data()+2, 4 );
 #else
-        PX[2] = tracker->poseMatrix[2] * pointData;
+        PX[2] = tracker->poseMatrix.row(2).dot( pointData );
 #endif
         if ( PX[2] < 0 ) {
             return;
@@ -151,32 +159,32 @@ namespace vrlt
         
         // check in image
 #ifdef USE_ACCELERATE
-        vDSP_dotpr( tracker->poseMatrix.get_data_ptr()    , 1, pointData.get_data_ptr(), 1, PX.get_data_ptr()  , 4 );
-        vDSP_dotpr( tracker->poseMatrix.get_data_ptr() + 4, 1, pointData.get_data_ptr(), 1, PX.get_data_ptr()+1, 4 );
+        vDSP_dotpr( tracker->poseMatrix.data()    , 4, pointData.data(), 1, PX.data()  , 4 );
+        vDSP_dotpr( tracker->poseMatrix.data() + 1, 4, pointData.data(), 1, PX.data()+1, 4 );
 #else
-        PX[0] = tracker->poseMatrix[0] * pointData;
-        PX[1] = tracker->poseMatrix[1] * pointData;
+        PX[0] = tracker->poseMatrix.row(0).dot( pointData );
+        PX[1] = tracker->poseMatrix.row(1).dot( pointData );
 #endif
         proj[0] = tracker->f * (PX[0]/PX[2]) + tracker->u;
         proj[1] = tracker->f * (PX[1]/PX[2]) + tracker->v;
-        ImageRef pos( (int)proj[0], (int)proj[1] );
-        if ( !tracker->current_camera->image.in_image( pos ) )
+        cv::Point2i pos( (int)proj[0], (int)proj[1] );
+        if ( !in_image( tracker->current_camera->image.size(), pos ) )
         {
             return;
         }
                 
-        normalData = point->normal;
+        normalData = point->normal.cast<float>();
 #ifdef USE_ACCELERATE
-        vDSP_dotpr( tracker->poseMatrix.get_data_ptr()    , 1, normalData.get_data_ptr(), 1, PN.get_data_ptr()  , 3 );
-        vDSP_dotpr( tracker->poseMatrix.get_data_ptr() + 4, 1, normalData.get_data_ptr(), 1, PN.get_data_ptr()+1, 3 );
-        vDSP_dotpr( tracker->poseMatrix.get_data_ptr() + 8, 1, normalData.get_data_ptr(), 1, PN.get_data_ptr()+2, 3 );
+        vDSP_dotpr( tracker->poseMatrix.data()    , 4, normalData.data(), 1, PN.data()  , 3 );
+        vDSP_dotpr( tracker->poseMatrix.data() + 1, 4, normalData.data(), 1, PN.data()+1, 3 );
+        vDSP_dotpr( tracker->poseMatrix.data() + 2, 4, normalData.data(), 1, PN.data()+2, 3 );
 #else
-        PN = tracker->poseMatrix.slice<0,0,3,3>() * normalData;
+        PN = tracker->poseMatrix.block<3,3>(0,0) * normalData;
 #endif
       
         float D;
 #ifdef USE_ACCELERATE
-        vDSP_dotpr( PN.get_data_ptr(), 1, PX.get_data_ptr(), 1, &D, 3 );
+        vDSP_dotpr( PN.data(), 1, PX.data(), 1, &D, 3 );
         D = -D;
 #else
         D = -(PN * PX);
@@ -230,8 +238,8 @@ namespace vrlt
     {
         current_camera = c;
         updateMatrices( c );
-        poseMatrix.slice<0,0,3,3>() = c->node->pose.get_rotation().get_matrix();
-        poseMatrix.T()[3] = c->node->pose.get_translation();
+        poseMatrix.block<3,3>(0,0) = c->node->pose.so3().matrix().cast<float>();
+        poseMatrix.col(3) = c->node->pose.translation().cast<float>();
         f = c->calibration->focal;
         u = c->calibration->center[0];
         v = c->calibration->center[1];
@@ -269,8 +277,8 @@ namespace vrlt
         
         prev_pose = Sophus::SE3d();
         
-        vector<Point*> new_points;
-        vector<Patch*> new_patches;
+        std::vector<Point*> new_points;
+        std::vector<Patch*> new_patches;
         
         // reduce number of patches
         if ( count > maxnumpoints )
@@ -281,7 +289,7 @@ namespace vrlt
         nattempted = count;
 
         int firstcount = count;
-        if ( verbose ) cout << "first count: " << count << "\n";
+        if ( verbose ) std::cout << "first count: " << count << "\n";
         
         // iterate through pyramid
         for ( int level = firstlevel; level >= lastlevel; level-- )
@@ -316,13 +324,13 @@ namespace vrlt
             newcount = patchSearcher->makeTemplates( count );
             sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );
             count = newcount;
-            if ( verbose ) cout << "after templates: count at level " << level << ": " << count << "\n";
+            if ( verbose ) std::cout << "after templates: count at level " << level << ": " << count << "\n";
 
             patchSearcher->begin = searchPatches.begin();
             newcount = patchSearcher->doSearch( count );
             sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );
             count = newcount;
-            if ( verbose ) cout << "after search: count at level " << level << ": " << count << "\n";
+            if ( verbose ) std::cout << "after search: count at level " << level << ": " << count << "\n";
             
             if ( level == firstlevel )
             {
@@ -354,8 +362,9 @@ namespace vrlt
             sourcepatch->point->location = sourcepatch->targetPos;
             
             if ( sourcepatch->point->position[3] == 0 ) {
-                prev_features.push_back( sourcepatch->source->calibration->project( project( sourcepatch->point->position.slice<0,3>() ) ) );
-                next_features.push_back( sourcepatch->targetPos );
+                Eigen::Vector3d X = sourcepatch->point->position.head(3);
+                prev_features.push_back( sourcepatch->source->calibration->project( project( X ) ) );
+                next_features.push_back( sourcepatch->targetPos.cast<double>() );
             }
         }
         

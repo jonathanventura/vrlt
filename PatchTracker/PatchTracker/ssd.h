@@ -15,29 +15,30 @@
 #include <Eigen/Core>
 
 namespace vrlt {
-    /*
-    void adjustMinMax( cv::Mat &patch );
-    void copyPatch( const cv::Mat &from, const cv::Point2i &loc, cv::Mat &to );
+    //void adjustMinMax( cv::Mat &patch );
+    //void copyPatch( const cv::Mat &from, const cv::Point2i &loc, cv::Mat &to );
     
-    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
-    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
-    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, const Eigen::Matrix3d &warp, cv::Mat &templatePatch );
-    bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, const Eigen::Matrix3f &warp, float scale, cv::Mat &templatePatch );
-    void removeMean( cv::Mat &patch );
-    void copyPatch( cv::Mat &from, const cv::Point2i &loc, cv::Mat &to );
-    float calcVariance( cv::Mat &zero_mean_patch );
-    void normalize( cv::Mat &patch );
+    //bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
+    //bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
+    //bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, const Eigen::Matrix3d &warp, cv::Mat &templatePatch );
+    //bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, const Eigen::Matrix3f &warp, float scale, cv::Mat &templatePatch );
+    
+    //void removeMean( cv::Mat &patch );
+    //void copyPatch( cv::Mat &from, const cv::Point2i &loc, cv::Mat &to );
+    //float calcVariance( cv::Mat &zero_mean_patch );
+    //void normalize( cv::Mat &patch );
     
     class SSDCalculator
     {
     public:
-        SSDCalculator( cv::Point2i _sz );
+        SSDCalculator( cv::Size _sz );
         float getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch, float matchThreshold );
     private:
         cv::Size sz;
+        int N;
         cv::Mat tempData;
     };
-    
+    /*
     // warning: this is destructive to targetPatch
     float getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch, float matchThreshold );
 

@@ -179,19 +179,20 @@ namespace vrlt {
         return score;
 #endif
     }
+    */
     
-    SSDCalculator::SSDCalculator( ImageRef _sz ) : sz( _sz ), N( sz.x * sz.y ), tempData( sz )
+    SSDCalculator::SSDCalculator( cv::Size _sz ) : sz( _sz ), N( sz.width * sz.height ), tempData( sz, CV_32FC1 )
     {
         
     }
     
-    float SSDCalculator::getSSD( BasicImage<float> &templatePatch, BasicImage<float> &targetPatch, float matchThreshold )
+    float SSDCalculator::getSSD( cv::Mat &templatePatch, cv::Mat &targetPatch, float matchThreshold )
     {
 #ifdef USE_ACCELERATE
         float score = 0;
         
-        vDSP_vsub( templatePatch.data(), 1, targetPatch.data(), 1, tempData.data(), 1, N );
-        vDSP_svesq( tempData.data(), 1, &score, N );
+        vDSP_vsub( (float*)templatePatch.data, 1, (float*)targetPatch.data, 1, (float*)tempData.data, 1, N );
+        vDSP_svesq( (float*)tempData.data, 1, &score, N );
         
         return score;
 #else
@@ -209,7 +210,7 @@ namespace vrlt {
         return score;
 #endif
     }
-    */
+    
     float getCorr( cv::Mat &im1, cv::Mat &im2 )
     {
 #ifdef USE_ACCELERATE
