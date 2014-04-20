@@ -139,6 +139,7 @@ namespace vrlt {
         Eigen::Matrix<T,d+1,1> Xout;
         Xout.head(d) = Xin;
         Xout[d-1] = 1;
+        return Xout;
     }
     
     Eigen::Vector2d sphericalProject( const Eigen::Vector3d &X );
