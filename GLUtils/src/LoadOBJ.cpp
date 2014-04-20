@@ -17,42 +17,44 @@
 #include <vector>
 #include <string>
 #include <sstream>
-using namespace std;
+#include <iostream>
 
-#include <TooN/TooN.h>
-using namespace TooN;
+#include <Eigen/Core>
 
-#include <cvd/vision.h>
-using namespace CVD;
+#include <opencv2/imgproc.hpp>
 
 #if defined( __IPHONE__ )
 #include <GLUtils/LoadImage.h>
 #else
-#include <cvd/image_io.h>
+#include <opencv2/highgui.hpp>
 #endif
 
-Vector<2> scaleVector( const Vector<2> &scale, const Vector<2> &in )
+static inline Eigen::Vector2d scaleVector( const Eigen::Vector2d &scale, const Eigen::Vector2d &in )
 {
-    return makeVector( scale[0] * in[0], scale[1] * in[1] );
+    Eigen::Vector2d output;
+    output << scale[0] * in[0], scale[1] * in[1];
+    return output;
 }
 
-Vector<2> rotateVector( const Vector<2> &in )
+static inline Eigen::Vector2d rotateVector( const Eigen::Vector2d &in )
 {
-    return makeVector( in[1], in[0] );
+    Eigen::Vector2d output;
+    output << in[1], in[0];
+    return output;
 }
 
 struct Texture
 {
-    string name;
-    Image< Rgb<byte> > image;
+    std::string name;
+    cv::Mat image;
     bool hasCoords;
     
     // for texture packing
-    Vector<2> scale;
-    Vector<2> offset;
+    Eigen::Vector2d scale;
+    Eigen::Vector2d offset;
     bool rotated;
     
-    Vector<2> transformTexCoords( const Vector<2> &tc )
+    Eigen::Vector2d transformTexCoords( const Eigen::Vector2d &tc )
     {
         if ( !rotated )
             return scaleVector( scale, tc ) + offset;
@@ -61,42 +63,43 @@ struct Texture
     }
 };
 
-Image< Rgb<byte> > PackTextures( vector<Texture> &textures )
+cv::Mat PackTextures( std::vector<Texture> &textures )
 {
     TEXTURE_PACKER::TexturePacker *tp = TEXTURE_PACKER::createTexturePacker();
     tp->setTextureCount( textures.size() );
     for ( int i = 0; i < textures.size(); i++ ) {
-        tp->addTexture( textures[i].image.size().x, textures[i].image.size().y );
+        tp->addTexture( textures[i].image.size().width, textures[i].image.size().height );
     }
     int width, height;
     tp->packTextures( width, height, true, false );
     
-    Image< Rgb<byte> > packed_texture( ImageRef( width, height ), Rgb<byte>(255,255,255) );
+    cv::Mat packed_texture( cv::Size( width, height ), CV_8UC3, cv::Scalar(255,255,255) );
     printf( "packed texture size: %d %d\n", width, height );
     for ( int i = 0; i < textures.size(); i++ ) {
         int tx, ty, tw, th;
         bool rotated = tp->getTextureLocation( i, tx, ty, tw, th );
         
         if ( !rotated ) {
-            textures[i].scale = makeVector( (float)textures[i].image.size().x / (float)width, (float)textures[i].image.size().y / (float)height );
+            textures[i].scale << (float)textures[i].image.size().width / (float)width, (float)textures[i].image.size().height / (float)height;
         } else {
-            textures[i].scale = makeVector( (float)textures[i].image.size().y / (float)width, (float)textures[i].image.size().x / (float)height );
+            textures[i].scale << (float)textures[i].image.size().height / (float)width, (float)textures[i].image.size().width / (float)height;
         }
-        textures[i].offset = makeVector( (float)tx / (float)width, (float)ty / (float)height );
+        textures[i].offset << (float)tx / (float)width, (float)ty / (float)height;
         textures[i].rotated = rotated;
 
         if ( rotated ) {
-            int w = textures[i].image.size().x;
-            int h = textures[i].image.size().y;
-            Image< Rgb<byte> > rotated_im( ImageRef( h, w ) );
-            for ( int y = 0; y < h; y++ ) {
-                for ( int x = 0; x < w; x++ ) {
-                    rotated_im[x][y] = textures[i].image[y][x];
-                }
-            }
-            packed_texture.sub_image( ImageRef(tx,ty), rotated_im.size() ).copy_from( rotated_im );
+            int w = textures[i].image.size().width;
+            int h = textures[i].image.size().height;
+            cv::Mat rotated_im( cv::Size( h, w ), CV_8UC3 );
+            cv::flip(textures[i].image,rotated_im,-1);
+//            for ( int y = 0; y < h; y++ ) {
+//                for ( int x = 0; x < w; x++ ) {
+//                    rotated_im.at<cv::Vec3b>(x,y) = textures[i].image.at<cv::Vec3b>(y,x);
+//                }
+//            }
+            rotated_im.copyTo( packed_texture( cv::Rect(cv::Point2i(tx,ty),rotated_im.size()) ) );
         } else {
-            packed_texture.sub_image( ImageRef(tx,ty), textures[i].image.size() ).copy_from( textures[i].image );
+            textures[i].image.copyTo( packed_texture( cv::Rect(cv::Point2i(tx,ty),textures[i].image.size()) ) );
         }
     }
 
@@ -104,7 +107,7 @@ Image< Rgb<byte> > PackTextures( vector<Texture> &textures )
     return packed_texture;
 }
 
-void LoadMaterialFile( const char *prefix, const char *filename, vector<Texture> &textures )
+void LoadMaterialFile( const char *prefix, const char *filename, std::vector<Texture> &textures )
 {
     char path[256];
     sprintf( path, "%s/%s", prefix, filename );
@@ -113,16 +116,16 @@ void LoadMaterialFile( const char *prefix, const char *filename, vector<Texture>
     
     char buffer[256];
 
-    string mtlname;
-    Rgb<byte> Kd;
+    std::string mtlname;
+    cv::Scalar Kd;
     bool found_map = false;
 
     while ( !feof( f ) ) {
         if ( fgets( buffer, 256, f ) == NULL ) break;
         if ( buffer[0] == '#' ) continue;
 
-        istringstream line( buffer );
-        string word;
+        std::istringstream line( buffer );
+        std::string word;
         line >> word;
         
         if ( word == "newmtl" ) {
@@ -131,8 +134,7 @@ void LoadMaterialFile( const char *prefix, const char *filename, vector<Texture>
                 Texture texture;
                 texture.name = mtlname;
                 texture.hasCoords = false;
-                texture.image.resize( ImageRef(1,1) );
-                texture.image.data()[0] = Kd;
+                texture.image = cv::Mat( cv::Size(1,1), CV_8UC3, Kd );
                 textures.push_back( texture );
             }
             found_map = false;
@@ -140,13 +142,13 @@ void LoadMaterialFile( const char *prefix, const char *filename, vector<Texture>
         } else if ( word == "Kd" ) {
             float r,g,b;
             line >> r >> g >> b;
-            Kd.red = 255 * r;
-            Kd.green = 255 * g;
-            Kd.blue = 255 * b;
+            Kd.val[0] = 255 * r;
+            Kd.val[1] = 255 * g;
+            Kd.val[2] = 255 * b;
         } else if ( word == "map_Kd" ) {
             found_map = true;
             
-            string mtlpath;
+            std::string mtlpath;
             line >> mtlpath;
             
             Texture texture;
@@ -158,11 +160,11 @@ void LoadMaterialFile( const char *prefix, const char *filename, vector<Texture>
 #if defined( __IPHONE__ )
             loadJPEG( path, texture.image );
 #else
-            texture.image = img_load( path );
+            texture.image = cv::imread( path, cv::IMREAD_COLOR );
 #endif
 //            cout << path << " has dimensions " << texture.image.size().x << " " << texture.image.size().y << "\n";
 //            cout << (int) texture.image.data()[0].red << "\n";
-            flipVertical( texture.image );
+            cv::flip( texture.image, texture.image, 0 );
             
             textures.push_back( texture );
         }
@@ -173,8 +175,7 @@ void LoadMaterialFile( const char *prefix, const char *filename, vector<Texture>
         Texture texture;
         texture.name = mtlname;
         texture.hasCoords = false;
-        texture.image.resize( ImageRef(1,1) );
-        texture.image.data()[0] = Kd;
+        texture.image = cv::Mat( cv::Size(1,1), CV_8UC3, Kd );
         textures.push_back( texture );
     }
 
@@ -192,22 +193,22 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
     
     char buffer[256];
     
-    vector<Texture> textures;
-    Image< Rgb<byte> > packed_texture;
+    std::vector<Texture> textures;
+    cv::Mat packed_texture;
     GLuint packedTexID;
-    map<string,GLuint> materials;
+    std::map<std::string,GLuint> materials;
     
     // load materials
     while ( !feof( f ) ) {
         if ( fgets( buffer, 256, f ) == NULL ) break;
         if ( buffer[0] == '#' ) continue;
         
-        istringstream line( buffer );
-        string word;
+        std::istringstream line( buffer );
+        std::string word;
         line >> word;
         
         if ( word == "mtllib" ) {
-            string material_path;
+            std::string material_path;
             line >> material_path;
             LoadMaterialFile( prefix, material_path.c_str(), textures );
         }
@@ -224,7 +225,7 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
     checkGL( "about to make packed texture" );
     glGenTextures( 1, &packedTexID );
     glBindTexture( GL_TEXTURE_2D, packedTexID );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, packed_texture.size().x, packed_texture.size().y, 0, GL_RGB, GL_UNSIGNED_BYTE, packed_texture.data() );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, packed_texture.size().width, packed_texture.size().height, 0, GL_RGB, GL_UNSIGNED_BYTE, packed_texture.data );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -235,9 +236,9 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
     
     
     
-    vector< Vector<3> > vertices;
-    vector< Vector<2> > texCoords;
-    vector< Vector<3> > normals;
+    std::vector< Eigen::Vector3d > vertices;
+    std::vector< Eigen::Vector2d > texCoords;
+    std::vector< Eigen::Vector3d > normals;
     
     model->drawable = new GLGenericDrawable();
     model->drawable->Create();
@@ -261,36 +262,36 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
         if ( fgets( buffer, 256, f ) == NULL ) break;
         if ( buffer[0] == '#' ) continue;
         
-        istringstream line( buffer );
-        string word;
+        std::istringstream line( buffer );
+        std::string word;
         line >> word;
         
         if ( word == "v" ) {
-            Vector<3> data;
+            Eigen::Vector3d data;
             line >> data[0] >> data[1] >> data[2];
             vertices.push_back( data );
         } else if ( word == "vt" ) {
-            Vector<2> data;
+            Eigen::Vector2d data;
             line >> data[0] >> data[1];
             texCoords.push_back( data );
         } else if ( word == "vn" ) {
-            Vector<3> data;
+            Eigen::Vector3d data;
             line >> data[0] >> data[1] >> data[2];
             normals.push_back( data );
         } else if ( word == "usemtl" ) {
-            string data;
+            std::string data;
             line >> data;
             current_texture = NULL;
             for ( int i = 0; i < textures.size(); i++ ) if ( textures[i].name == data ) current_texture = &textures[i];
         } else if ( word == "f" ) {
             if ( current_texture == NULL ) continue;
             
-            string data;
+            std::string data;
             int v,t,n;
-            Vector<3> vertex;
-            Vector<2> texCoord;
-            Vector<3> normal;
-            Vector<4> scaleOffset;
+            Eigen::Vector3d vertex;
+            Eigen::Vector2d texCoord;
+            Eigen::Vector3d normal;
+            Eigen::Vector4d scaleOffset;
             scaleOffset[0] = current_texture->scale[0];
             scaleOffset[1] = current_texture->scale[1];
             scaleOffset[2] = current_texture->offset[0];
@@ -311,9 +312,9 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
                     line >> data;
                     sscanf( data.c_str(), "%d//%d", &v, &n );
                     vertex = vertices[v-1];
-                    if ( i == 0 ) texCoord = makeVector(0,0);
-                    else if ( i == 1 ) texCoord = makeVector(1,0);
-                    else if ( i == 2 ) texCoord = makeVector(0,1);
+                    if ( i == 0 ) texCoord << 0, 0;
+                    else if ( i == 1 ) texCoord << 1, 0;
+                    else if ( i == 2 ) texCoord << 0, 1;
                     normal = normals[n-1];
                     model->drawable->AddElem( vertex, texCoord, scaleOffset, normal );
                 }
@@ -323,9 +324,9 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
         }
     }
 
-    cout << "model has " << model->objects.size() << " objects\n";
-    cout << "model has " << model->objects.back().length << " faces\n";
-    cout << "model texture is " << model->objects[0].texID << "\n";
+    std::cout << "model has " << model->objects.size() << " objects\n";
+    std::cout << "model has " << model->objects.back().length << " faces\n";
+    std::cout << "model texture is " << model->objects[0].texID << "\n";
     
     if ( model->objects.back().length == 0 )
     {
@@ -334,9 +335,9 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
         
         if ( current_texture != NULL ) {
             for ( int i = 0; i < vertices.size(); i++ ) {
-                Vector<3> vertex;
-                Vector<2> texCoord;
-                Vector<4> scaleOffset;
+                Eigen::Vector3d vertex;
+                Eigen::Vector2d texCoord;
+                Eigen::Vector4d scaleOffset;
                 scaleOffset[0] = current_texture->scale[0];
                 scaleOffset[1] = current_texture->scale[1];
                 scaleOffset[2] = current_texture->offset[0];

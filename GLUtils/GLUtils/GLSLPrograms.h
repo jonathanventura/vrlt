@@ -22,7 +22,7 @@ public:
     
     void Create();
     
-    void SetColorTransform( const TooN::Matrix<3> &transform );
+    void SetColorTransform( const Eigen::Matrix3d &transform );
     void SetTextureUnit( const GLuint index );
 };
 
@@ -65,7 +65,7 @@ public:
     
     void Create();
     
-    void SetModelViewProj( const TooN::Matrix<4> &modelViewProj );
-    void SetColor( const TooN::Vector<3> &color );
+    void SetModelViewProj( const Eigen::Matrix4d &modelViewProj );
+    void SetColor( const Eigen::Vector3d &color );
 };
 

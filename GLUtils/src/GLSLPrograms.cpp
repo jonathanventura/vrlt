@@ -90,10 +90,11 @@ void GLYUVImageShader::Create()
     shaderProgram.SetUniform( "u_textureY" , (GLuint)0 );
     shaderProgram.SetUniform( "u_textureU" , (GLuint)1 );
     shaderProgram.SetUniform( "u_textureV" , (GLuint)2 );
-    TooN::Matrix<3> transform;
-    transform[0] = TooN::makeVector( 1, 0, 1.13983 );
-    transform[1] = TooN::makeVector( 1, -0.39465, -0.58060 );
-    transform[2] = TooN::makeVector( 1, 2.03211, 0 );
+    Eigen::Matrix3d transform;
+    transform <<
+    1, 0, 1.13983,
+    1, -0.39465, -0.58060,
+    1, 2.03211, 0;
     shaderProgram.SetUniform( "u_colorTransform", transform );
     shaderProgram.UnUse();
     
@@ -174,12 +175,12 @@ void GLPointShader::Create()
     shaderProgram.Link();
 }
 
-void GLPointShader::SetModelViewProj( const TooN::Matrix<4> &modelViewProj )
+void GLPointShader::SetModelViewProj( const Eigen::Matrix4d &modelViewProj )
 {
     shaderProgram.SetUniform( "u_modelViewProj", modelViewProj );
 }
 
-void GLPointShader::SetColor( const TooN::Vector<3> &color )
+void GLPointShader::SetColor( const Eigen::Vector3d &color )
 {
     shaderProgram.SetUniform( "u_color", color );
 }

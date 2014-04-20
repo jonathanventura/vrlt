@@ -10,8 +10,6 @@
 
 #include <GLUtils/GLSL.h>
 #include <cstdio>
-using namespace std;
-using namespace TooN;
 
 GLSLShader::GLSLShader() : mID( 0 )
 {
@@ -181,7 +179,7 @@ void GLSLProgram::UnUse()
 	glUseProgram( 0 );
 }
 
-void GLSLProgram::BindAttribute( const string &name, GLenum index )
+void GLSLProgram::BindAttribute( const std::string &name, GLenum index )
 {
 	glBindAttribLocation( mID, index, name.c_str() );
 
@@ -192,36 +190,36 @@ void GLSLProgram::BindAttribute( const string &name, GLenum index )
 	//glUniform1f( mDict[ name ], value );
 //}
 
-void GLSLProgram::SetUniform( const string &name, GLfloat value )
+void GLSLProgram::SetUniform( const std::string &name, GLfloat value )
 {
 	glUniform1f( mDict[ name ], value );
 }
 
-void GLSLProgram::SetUniform( const string &name, GLuint value )
+void GLSLProgram::SetUniform( const std::string &name, GLuint value )
 {
 	glUniform1i( mDict[ name ], value );
 }
 
 
 
-void GLSLProgram::SetUniform( const string &name, const Vector<2> &value )
+void GLSLProgram::SetUniform( const std::string &name, const Eigen::Vector2d &value )
 {
 	glUniform2f( mDict[ name ], value[0], value[1] );
 }
 
-void GLSLProgram::SetUniform( const string &name, const Vector<3> &value )
+void GLSLProgram::SetUniform( const std::string &name, const Eigen::Vector3d &value )
 {
 	glUniform3f( mDict[ name ], value[0], value[1], value[2] );
 }
 
-void GLSLProgram::SetUniform( const string &name, const Vector<4> &value )
+void GLSLProgram::SetUniform( const std::string &name, const Eigen::Vector4d &value )
 {
 	glUniform4f( mDict[ name ], value[0], value[1], value[2], value[3] );
 }
 
 
 
-void GLSLProgram::SetUniform( const string &name, const Matrix<2> &value )
+void GLSLProgram::SetUniform( const std::string &name, const Eigen::Matrix2d &value )
 {
 	GLfloat buf[4];
 	buf[0] = value(0,0);	buf[1] = value(1,0);
@@ -229,7 +227,7 @@ void GLSLProgram::SetUniform( const string &name, const Matrix<2> &value )
 	glUniformMatrix2fv( mDict[ name ], 1, GL_FALSE, buf );
 }
 
-void GLSLProgram::SetUniform( const string &name, const Matrix<3> &value )
+void GLSLProgram::SetUniform( const std::string &name, const Eigen::Matrix3d &value )
 {
 	GLfloat buf[9];
 	buf[0] = value(0,0);	buf[1] = value(1,0);	buf[2] = value(2,0);
@@ -238,7 +236,7 @@ void GLSLProgram::SetUniform( const string &name, const Matrix<3> &value )
 	glUniformMatrix3fv( mDict[ name ], 1, GL_FALSE, buf );
 }
 
-void GLSLProgram::SetUniform( const string &name, const Matrix<4> &value )
+void GLSLProgram::SetUniform( const std::string &name, const Eigen::Matrix4d &value )
 {
 	GLfloat buf[16];
 	buf[0] = value(0,0);	buf[1] = value(1,0);	buf[2] = value(2,0);	buf[3] = value(3,0);

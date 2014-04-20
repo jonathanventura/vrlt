@@ -8,15 +8,15 @@
  * Last Modified: 11.17.2012
  */
 
-#include <TooN/TooN.h>
-#include <TooN/se3.h>
+#include <Eigen/Core>
+#include <Sophus/se3.hpp>
 
 /**
  * @params: fx, fy, cx, cy
  */
-TooN::Matrix<4> makeProj( const TooN::Vector<4> &params, double width, double height, double nearPlane = 0.1, double farPlane = 100. );
+Eigen::Matrix4d makeProj( const Eigen::Vector4d &params, double width, double height, double nearPlane = 0.1, double farPlane = 100. );
 
-TooN::Matrix<4> makeScale( const TooN::Vector<3> &scale );
-TooN::Matrix<4> makeTranslation( const TooN::Vector<3> &translation );
-TooN::Matrix<4> makeRotation( const TooN::SO3<> &rotation );
-TooN::Matrix<4> makeModelView( const TooN::SE3<> &pose );
+Eigen::Matrix4d makeScale( const Eigen::Vector3d &scale );
+Eigen::Matrix4d makeTranslation( const Eigen::Vector3d &translation );
+Eigen::Matrix4d makeRotation( const Sophus::SO3d &rotation );
+Eigen::Matrix4d makeModelView( const Sophus::SE3d &pose );

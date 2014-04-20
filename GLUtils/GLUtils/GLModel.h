@@ -34,8 +34,8 @@ public:
     
     void Create();
     void SetAmbient( float ambient );
-    void SetLightDirection( const TooN::Vector<3> &lightDirection );
-    void SetModelViewProj( const TooN::Matrix<4> &mvp );
+    void SetLightDirection( const Eigen::Vector3d &lightDirection );
+    void SetModelViewProj( const Eigen::Matrix4d &mvp );
 };
 
 struct GLModelObject

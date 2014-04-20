@@ -65,9 +65,10 @@ void GLModelShader::Create()
     
     shaderProgram.SetUniform( "u_texture", (GLuint)0 );
     
-//    TooN::Vector<3> lightDirection = TooN::makeVector( 1, 1, -1 );
-    TooN::Vector<3> lightDirection = TooN::makeVector( 1, 1, 1 );
-    normalize( lightDirection );
+    Eigen::Vector3d lightDirection;
+//    lightDirection << 1, 1, -1;
+    lightDirection << 1, 1, 1;
+    lightDirection.normalize();
     shaderProgram.SetUniform( "u_lightDirection", lightDirection );
     
     shaderProgram.SetUniform( "u_ambient", 0.2f );
@@ -80,12 +81,12 @@ void GLModelShader::SetAmbient( float ambient )
     shaderProgram.SetUniform( "u_ambient", ambient );
 }
 
-void GLModelShader::SetLightDirection( const TooN::Vector<3> &lightDirection )
+void GLModelShader::SetLightDirection( const Eigen::Vector3d &lightDirection )
 {
     shaderProgram.SetUniform( "u_lightDirection", lightDirection );
 }
 
-void GLModelShader::SetModelViewProj( const TooN::Matrix<4> &mvp )
+void GLModelShader::SetModelViewProj( const Eigen::Matrix4d &mvp )
 {
     shaderProgram.SetUniform( "u_mvp", mvp );
 }

@@ -29,10 +29,10 @@ public:
     GLSLProgram shaderProgram;
     
     void Create( bool rgb = false );
-    void SetModelViewProj( const TooN::Matrix<4> &mvp );
-    void SetLightDirection( const TooN::Vector<3> &lightDirection );
-    void SetPlane( const TooN::Vector<4> &plane );
-    void SetColor( const TooN::Vector<4> &color );
+    void SetModelViewProj( const Eigen::Matrix4d &mvp );
+    void SetLightDirection( const Eigen::Vector3d &lightDirection );
+    void SetPlane( const Eigen::Vector4d &plane );
+    void SetColor( const Eigen::Vector4d &color );
 };
 
 #endif

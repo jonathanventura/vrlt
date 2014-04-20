@@ -88,14 +88,17 @@ void GLShadowShader::Create( bool rgb )
     
     shaderProgram.Use();
     
-    TooN::Vector<3> lightDirection = TooN::makeVector( 1, 1, -1 );
-    normalize( lightDirection );
+    Eigen::Vector3d lightDirection;
+    lightDirection << 1, 1, -1;
+    lightDirection.normalize();
     shaderProgram.SetUniform( "u_lightDirection", lightDirection );
     
-    TooN::Vector<4> plane = TooN::makeVector( 0, -1, 0, 0 );
+    Eigen::Vector4d plane;
+    plane << 0, -1, 0, 0;
     shaderProgram.SetUniform( "u_plane", plane );
     
-    TooN::Vector<4> color = TooN::makeVector( 0, 0, 0, 0.5 );
+    Eigen::Vector4d color;
+    color << 0, 0, 0, 0.5;
     shaderProgram.SetUniform( "u_color", color );
     
     if ( rgb ) {
@@ -108,22 +111,22 @@ void GLShadowShader::Create( bool rgb )
     shaderProgram.UnUse();
 }
 
-void GLShadowShader::SetLightDirection( const TooN::Vector<3> &lightDirection )
+void GLShadowShader::SetLightDirection( const Eigen::Vector3d &lightDirection )
 {
     shaderProgram.SetUniform( "u_lightDirection", lightDirection );
 }
 
-void GLShadowShader::SetModelViewProj( const TooN::Matrix<4> &mvp )
+void GLShadowShader::SetModelViewProj( const Eigen::Matrix4d &mvp )
 {
     shaderProgram.SetUniform( "u_mvp", mvp );
 }
 
-void GLShadowShader::SetPlane( const TooN::Vector<4> &plane )
+void GLShadowShader::SetPlane( const Eigen::Vector4d &plane )
 {
     shaderProgram.SetUniform( "u_plane", plane );
 }
 
-void GLShadowShader::SetColor( const TooN::Vector<4> &color )
+void GLShadowShader::SetColor( const Eigen::Vector4d &color )
 {
     shaderProgram.SetUniform( "u_color", color );
 }

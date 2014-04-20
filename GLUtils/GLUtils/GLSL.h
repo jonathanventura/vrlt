@@ -19,7 +19,7 @@
 #include <OpenGL/gl.h>
 #endif
 
-#include <TooN/TooN.h>
+#include <Eigen/Core>
 
 #include <map>
 #include <string>
@@ -89,12 +89,12 @@ public:
 	
 	void SetUniform( const std::string &name, GLuint value );
 	void SetUniform( const std::string &name, GLfloat value );
-	void SetUniform( const std::string &name, const TooN::Vector<2> &value );
-	void SetUniform( const std::string &name, const TooN::Vector<3> &value );
-	void SetUniform( const std::string &name, const TooN::Vector<4> &value );
-	void SetUniform( const std::string &name, const TooN::Matrix<2> &value );
-	void SetUniform( const std::string &name, const TooN::Matrix<3> &value );
-	void SetUniform( const std::string &name, const TooN::Matrix<4> &value );
+	void SetUniform( const std::string &name, const Eigen::Vector2d &value );
+	void SetUniform( const std::string &name, const Eigen::Vector3d &value );
+	void SetUniform( const std::string &name, const Eigen::Vector4d &value );
+	void SetUniform( const std::string &name, const Eigen::Matrix2d &value );
+	void SetUniform( const std::string &name, const Eigen::Matrix3d &value );
+	void SetUniform( const std::string &name, const Eigen::Matrix4d &value );
 };
 
 #endif
