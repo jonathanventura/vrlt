@@ -11,17 +11,12 @@
 
 using namespace vrlt;
 
-#define NTHREADS 8
-
-int min_octave = 0;
-const float peak_thresh = 0.5f;
-
 class SIFTThread : public ReconstructionThread
 {
 public:
     
-    SIFTThread( Camera *_camera, bool _upright = false, bool _make_points = false )
-    : camera( _camera ), upright( _upright ), make_points( _make_points )
+    SIFTThread( Camera *_camera, int _min_octave = 0, double _contrast_thresh = 0.04 )
+    : camera( _camera ), min_octave( _min_octave ), contrast_thresh( _contrast_thresh )
     {
         
     }
@@ -30,7 +25,7 @@ public:
     {
         cv::Mat color_image = cv::imread( camera->path, cv::IMREAD_COLOR );
 
-        int nfeatures = extractSIFT( color_image, features, min_octave, false, peak_thresh );
+        int nfeatures = extractSIFT( color_image, features, min_octave, contrast_thresh );
         std::cout << "extracted " << nfeatures << " features for image " << camera->name << "\n";
         
         for ( int i = 0; i < features.size(); i++ ) {
@@ -40,6 +35,8 @@ public:
             features[i]->camera = camera;
             camera->features[ features[i]->name ] = features[i];
         }
+        
+        color_image.resize(0);
     }
     
     void finish( Reconstruction &r )
@@ -48,45 +45,21 @@ public:
             r.features[ features[i]->name ] = features[i];
         }
         
-        if ( make_points )
-        {
-            for ( int i = 0; i < features.size(); i++ ) {
-                camera->features[ features[i]->name ] = features[i];
-                
-                char name[256];
-                
-                Track *track = new Track;
-                sprintf( name, "track.%s.%d", camera->name.c_str(), i );
-                track->name = name;
-                track->features[ features[i]->name ] = features[i];
-                r.tracks[ track->name ] = track;
-                
-                Point *point = new Point;
-                sprintf( name, "point.%s.%d", camera->name.c_str(), i );
-                point->name = name;
-                point->position = unproject( features[i]->unproject() );
-                point->normal << 0, 0, -1;
-                track->point = point;
-                point->track = track;
-                camera->node->root()->points[ point->name ] = point;
-            }
-        }
-        
         XML::writeFeatures( r, camera );
         XML::writeDescriptors( r, camera );
         XML::clearDescriptors( r, camera );
     }
     
     Camera *camera;
+    int min_octave;
+    double contrast_thresh;
     std::vector<Feature*> features;
-    bool upright;
-    bool make_points;
 };
 
 int main( int argc, char **argv )
 {
-    if ( argc != 3 && argc != 4  && argc != 5 ) {
-        fprintf( stderr, "usage: %s <file in> <file out> [<step>] [<min octave>]\n", argv[0] );
+    if ( argc != 3 && argc != 4  && argc != 5 && argc != 6 ) {
+        fprintf( stderr, "usage: %s <file in> <file out> [<step>] [<min octave>] [<contrast threshold>]\n", argv[0] );
         exit(1);
     }
     
@@ -94,8 +67,11 @@ int main( int argc, char **argv )
     std::string pathout = std::string(argv[2]);
 
     int step = 1;
+    int min_octave = 0;
+    double contrast_thresh = 0.04;
     if ( argc > 3 ) step = atoi(argv[3]);
     if ( argc > 4 ) min_octave = atoi(argv[4]);
+    if ( argc > 5 ) contrast_thresh = atof(argv[5]);
     
     Reconstruction r;
     XML::read( r, pathin, false );
@@ -140,14 +116,8 @@ int main( int argc, char **argv )
     std::vector<ReconstructionThread*> threads;
     for ( int i = 0; i < cameras.size(); i++ )
     {
-        if ( threads.size() == NTHREADS )
-        {
-            finishThreads( r, threads );
-            std::cout << i << " completed\n";
-        }
-        
         Camera *camera = cameras[i];
-        SIFTThread *thread = new SIFTThread( camera, false, false );
+        SIFTThread *thread = new SIFTThread( camera, min_octave, contrast_thresh );
         threads.push_back( thread );
     }
     finishThreads( r, threads );

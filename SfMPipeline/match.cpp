@@ -51,7 +51,7 @@ namespace vrlt
         }
         
         PROSAC prosac;
-        prosac.num_trials = 1000;
+        prosac.num_trials = 100;
         prosac.inlier_threshold = threshold;
         prosac.min_num_inliers = point_pairs.size();
         
@@ -91,8 +91,7 @@ namespace vrlt
         nodepair->name = name;
         nodepair->node1 = node1;
         nodepair->node2 = node2;
-        nodepair->pose.so3() = Sophus::SO3d( ((FivePointEssential*)estimator)->R );
-        nodepair->pose.translation() = ((FivePointEssential*)estimator)->t;
+        nodepair->pose = ((FivePointEssential*)estimator)->getPose( inlier_point_pairs.begin(), inlier_point_pairs.end() );
 
         nodepair->nmatches = (int)inlier_point_pairs.size();
         

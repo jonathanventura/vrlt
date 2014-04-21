@@ -23,7 +23,6 @@ int main( int argc, char **argv )
     std::string pathin = std::string(argv[1]);
     std::string pathout = std::string(argv[2]);
     int maxnumneighbors = atoi(argv[3]);
-    int radius = 0;
     
     Reconstruction r;
     XML::read( r, pathin );
@@ -42,8 +41,6 @@ int main( int argc, char **argv )
     ElementList::iterator camerait = r.cameras.begin();
     Camera *camera = (Camera*)camerait->second;
     cv::Mat image = cv::imread( camera->path, cv::IMREAD_GRAYSCALE );
-    int width = image.size().width;
-    int height = image.size().height;
     double threshold = 4.f / camera->calibration->focal;
     
     ElementList::iterator nodeit1;
