@@ -39,7 +39,7 @@ namespace vrlt {
         {
             case Calibration::Perspective:
             {
-                Eigen::Vector2d projpt = camera->calibration->project( project( camera->node->globalPose() * project(point->position ) ) );
+                Eigen::Vector2d projpt = camera->calibration->project( project( camera->node->globalPose() * project( point->position ) ) );
                 err = projpt - feature->location;
                 break;
             }
