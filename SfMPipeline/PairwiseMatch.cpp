@@ -2,7 +2,7 @@
 #include <MultiView/multiview.h>
 #include <MultiView/multiview_io_xml.h>
 #include <FeatureMatcher/featurematcher.h>
-#include <FeatureMatcher/bruteforce.h>
+#include <FeatureMatcher/approxnn.h>
 #include <Estimator/estimator.h>
 
 #include <opencv2/highgui.hpp>
@@ -48,7 +48,7 @@ int main( int argc, char **argv )
     
     std::vector<ReconstructionThread*> threads;
     
-    NN *nn = new BruteForceNN;
+    NN *nn = new ApproxNN;
     
     int nodeindex1 = 0;
     for ( nodeit1 = r.nodes.begin(); nodeit1 != r.nodes.end(); nodeit1++,nodeindex1++ ) {
