@@ -138,7 +138,7 @@ namespace vrlt {
     {
         Eigen::Matrix<T,d+1,1> Xout;
         Xout.head(d) = Xin;
-        Xout[d-1] = 1;
+        Xout[d] = 1;
         return Xout;
     }
     
