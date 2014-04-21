@@ -596,7 +596,7 @@ namespace vrlt {
         PointPairList::iterator it;
         for ( it = begin; n < 3; it++,n++ ) {
             world_point[n] = it->first;
-            feature_point[n] = it->second.head(2);
+            feature_point[n] = project(it->second);
         }
         
         poses.clear();
@@ -627,7 +627,6 @@ namespace vrlt {
 #ifdef USE_ACCELERATE
         Eigen::Vector3d X = it->first;
         Eigen::Vector2d x = it->second.head(2);
-        //double featurescale = it->second[2];
         double scale = 1. / it->second[2];
         vDSP_vsmulD( x.data(), 1, &scale, x.data(), 1, 2 );
         
