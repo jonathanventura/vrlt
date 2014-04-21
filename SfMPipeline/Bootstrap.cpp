@@ -92,7 +92,7 @@ struct Tester
             }
         }
         
-        sort( mymatches.begin(), mymatches.end(), SortMyMatches() );
+        std::sort( mymatches.begin(), mymatches.end(), SortMyMatches() );
         
         for ( int i = 0; i < mymatches.size(); i++ )
         {
@@ -203,8 +203,8 @@ struct Tester
         
         rel_pose = node2pose * node1pose.inverse();
         
-        std::cout << node1pose.log() << "\n";
-        std::cout << node2pose.log() << "\n";
+        std::cout << node1pose.log().transpose() << "\n";
+        std::cout << node2pose.log().transpose() << "\n";
         std::cout << mymatches.size() << " matches to triangulate\n";
         
         // triangulate points
@@ -224,6 +224,8 @@ struct Tester
             if ( angle > 90. ) continue;
             
             Eigen::Vector4d pt = triangulate( rel_pose, point_pairs[i] );
+            
+            if ( fabs(pt[3]) < 1e-10 ) continue;
 
             Point *point = new Point;
             point->position = pt;
@@ -408,8 +410,8 @@ struct PairFinder
                 return NULL;
             }
             
-            std::cout << node1->pose.translation() << "\n";
-            std::cout << node2->pose.translation() << "\n";
+            std::cout << node1->pose.translation().transpose() << "\n";
+            std::cout << node2->pose.translation().transpose() << "\n";
 
             good = runBundle( r_out );
             if ( !good ) {
