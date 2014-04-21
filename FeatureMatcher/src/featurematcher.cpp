@@ -202,7 +202,7 @@ namespace vrlt {
             matches.push_back( match );
         }
         
-        sort( matches.begin(), matches.end(), SortMatches() );
+        std::sort( matches.begin(), matches.end(), SortMatches() );
         
         delete [] neighbors;
         delete [] distances_sq;
@@ -235,7 +235,7 @@ namespace vrlt {
         delete [] neighbors;
         delete [] distances_sq;
         
-        sort( matches.begin(), matches.end(), SortMatches() );
+        std::sort( matches.begin(), matches.end(), SortMatches() );
     }
         
     void findUniqueMatches( FeatureMatcher &matcher, std::vector<Feature*> &features, double max_ratio, std::vector<Match*> &matches )
@@ -263,7 +263,7 @@ namespace vrlt {
             matches.push_back( match );
         }
         
-        sort( matches.begin(), matches.end(), SortMatches() );
+        std::sort( matches.begin(), matches.end(), SortMatches() );
 
         delete [] neighbors;
         delete [] distances_sq;
@@ -289,7 +289,7 @@ namespace vrlt {
             matches.push_back( match );
         }
         
-        sort( matches.begin(), matches.end(), SortMatches() );
+        std::sort( matches.begin(), matches.end(), SortMatches() );
         
         delete [] neighbors;
         delete [] distances_sq;
