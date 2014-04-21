@@ -176,7 +176,7 @@ struct ImageAdder
     int resection( Node *node, std::vector<MyMatch> &mymatches, Sophus::SE3d &pose, std::vector<bool> &inliers )
     {
         // sort by match score
-        sort( mymatches.begin(), mymatches.end(), SortMyMatches() );
+        std::sort( mymatches.begin(), mymatches.end(), SortMyMatches() );
         
         // get point pairs
         PointPairList point_pairs;
