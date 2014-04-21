@@ -176,9 +176,7 @@ struct Tester
         std::vector<bool> inliers;
         int ninliers = prosac.compute( my_point_pairs.begin(), my_point_pairs.end(), essential, inliers );
         std::cout << ninliers << " / " << my_point_pairs.size() << " inliers\n";
-        Sophus::SE3d pose;
-        pose.so3() = Sophus::SO3d(essential.R);
-        pose.translation() = essential.t;
+        Sophus::SE3d pose = essential.getPose( my_point_pairs.begin(), my_point_pairs.end() );
         return pose;
     }
     
