@@ -12,6 +12,8 @@
 
 #include <Estimator/estimator.h>
 
+#include <iostream>
+
 namespace vrlt
 {
     int removeFarAwayPoints( Reconstruction *r, Node *node )
@@ -86,7 +88,7 @@ namespace vrlt
         
         // find 80-th percentile
         std::vector<double> sortedErrors = errors;
-        sort( sortedErrors.begin(), sortedErrors.end() );
+        std::sort( sortedErrors.begin(), sortedErrors.end() );
 
         int percentile = (int)errors.size() * 8 / 10;
         double threshold = 2.4 * sortedErrors[percentile];
