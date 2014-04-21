@@ -65,7 +65,7 @@ namespace vrlt
                 Point *point = (Point*)it->second;
                 if ( !point->tracked ) continue;
 
-                Eigen::Vector3f PX = pose * point->position.head(3).cast<float>();
+                Eigen::Vector3f PX = pose * (point->position.head(3).cast<float>()/(float)point->position[3]);
 
                 Eigen::Vector2f x = f * project(PX) + center;
                 Eigen::Vector2f e = point->location - x;
@@ -88,7 +88,7 @@ namespace vrlt
             Point *point = (Point*)it->second;
             if ( !point->tracked ) continue;
 
-            Eigen::Vector3f PX = pose * point->position.head(3).cast<float>();
+            Eigen::Vector3f PX = pose * (point->position.head(3).cast<float>()/(float)point->position[3]);
 
             Eigen::Matrix<float,2,3> A;
             A << PX[2], 0, -PX[0],
@@ -139,7 +139,7 @@ namespace vrlt
             Point *point = (Point*)it->second;
             if ( !point->tracked ) continue;
 
-            Eigen::Vector3f PX = newpose * point->position.head(3).cast<float>();
+            Eigen::Vector3f PX = newpose * (point->position.head(3).cast<float>()/(float)point->position[3]);
 
             Eigen::Vector2f x = f * project(PX) + center;
 
