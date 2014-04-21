@@ -14,6 +14,8 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/nonfree.hpp>
 
+#include <iostream>
+
 namespace vrlt {
 	
     static cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt)
@@ -432,7 +434,7 @@ namespace vrlt {
     }
     */
     
-    int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min, bool upright, float peak_thresh )
+    int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min, double contrast_thresh )
     {
         cv::Mat gray_image;
         if ( image.channels() == 3 )
@@ -447,7 +449,7 @@ namespace vrlt {
         std::vector<cv::KeyPoint> keypoints;
         cv::Mat descriptors;
         
-        cv::SIFT sift( 0, 3, peak_thresh );
+        cv::SIFT sift( 0, 3, contrast_thresh );
         sift( gray_image, cv::noArray(), keypoints, descriptors );
         
         float *floatdata = (float*)descriptors.ptr();
@@ -456,7 +458,10 @@ namespace vrlt {
         features.reserve( keypoints.size() );
         for ( size_t i = 0; i < keypoints.size(); i++,floatdata+=128 )
         {
-            if ( keypoints[i].octave < o_min ) continue;
+            // according to this page:
+            // https://groups.google.com/forum/#!topic/javacv/E9xngMMwVW4
+            // SIFT octave is found by (keypoint.octave & 255)
+            if ( (keypoints[i].octave & 255) < o_min ) continue;
             
             Feature *feature = new Feature;
             feature->location[0] = keypoints[i].pt.x;

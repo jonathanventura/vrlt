@@ -28,7 +28,7 @@ namespace vrlt {
 //    int extractPatchDescriptors( cv::Mat &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
     
 //    int extractSIFTdescriptors( cv::Mat &image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
-    int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min = 0, bool upright = false, float peak_thresh = 0.5f );
+    int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min = 0, double contrast_thresh = 0.04 );
 /**
  * @}
  */
