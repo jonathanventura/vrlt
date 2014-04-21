@@ -106,7 +106,7 @@ struct SortByTexture
 
 void GLModel::SortObjectsByTexture()
 {
-    sort( objects.begin(), objects.end(), SortByTexture() );
+    std::sort( objects.begin(), objects.end(), SortByTexture() );
 }
 
 void GLModel::Render()

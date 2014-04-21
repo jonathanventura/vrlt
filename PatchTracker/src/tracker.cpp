@@ -322,13 +322,13 @@ namespace vrlt
             int newcount;
             patchSearcher->begin = searchPatches.begin();
             newcount = patchSearcher->makeTemplates( count );
-            sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );
+            std::sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );
             count = newcount;
             if ( verbose ) std::cout << "after templates: count at level " << level << ": " << count << "\n";
 
             patchSearcher->begin = searchPatches.begin();
             newcount = patchSearcher->doSearch( count );
-            sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );
+            std::sort( searchPatches.begin(), searchPatches.begin()+count, SortPatches() );
             count = newcount;
             if ( verbose ) std::cout << "after search: count at level " << level << ": " << count << "\n";
             
