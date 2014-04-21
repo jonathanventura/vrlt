@@ -30,7 +30,8 @@ namespace vrlt
             return;
         }
 
-        findMatches( (*fm), fm2_features, matches );
+//        findMatches( (*fm), fm2_features, matches );
+        findUniqueMatches( (*fm), fm2_features, 0.8, matches );
         
         for ( int i = 0; i < matches.size(); i++ ) {
             PointPair point_pair;
@@ -64,7 +65,7 @@ namespace vrlt
     {
         std::cout << node1->name << "\t" << node2->name << "\t" << ninliers << " / " << point_pairs.size() << "\n";
 
-        if ( ninliers < 100 ) {
+        if ( ninliers < 50 ) {
             for ( int i = 0; i < inliers.size(); i++ ) {
                 delete matches[i];
             }
