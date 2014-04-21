@@ -144,6 +144,11 @@ namespace vrlt
         delete internal;
     }
     
+    bool Bundle::run()
+    {
+        return internal->run();
+    }
+    
     BundleInternal::BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose )
     : root( _root ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints ), verbose( _verbose ), itmax( 100 )
     {

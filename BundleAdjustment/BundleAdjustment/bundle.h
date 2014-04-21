@@ -21,8 +21,6 @@ namespace vrlt
         ~Bundle();
         
         bool run();
-        void run_str();
-        void run_mot();
     protected:
         BundleInternal *internal;
     };
