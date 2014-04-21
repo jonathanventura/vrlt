@@ -20,8 +20,13 @@ namespace vrlt
 {
     struct ReprojectionError
     {
-        ReprojectionError( const double *_prefix, double _focal, double _x, double _y )
-        : prefix( _prefix ), focal(_focal), x(_x), y(_y) {}
+        ReprojectionError( const Sophus::SE3d &_prefix, double _focal, double _x, double _y )
+        : focal(_focal), x(_x), y(_y)
+        {
+            Eigen::Map<Eigen::Vector3d> ptrvec(prefix);
+            ptrvec = _prefix.translation();
+            ceres::RotationMatrixToAngleAxis( _prefix.so3().matrix().data(), prefix+3 );
+        }
         
         template <typename T>
         bool operator()(const T* const camera,
@@ -62,7 +67,7 @@ namespace vrlt
             return true;
         }
         
-        const double *prefix;
+        double prefix[6];
         double focal, x, y;
     };
 
@@ -283,8 +288,11 @@ namespace vrlt
         {
             Node *node = nodes[j];
             
-            Eigen::Map< Eigen::Matrix<double,6,1> > ptrvec(ptr);
-            ptrvec = node->pose.log();
+//            Eigen::Map< Eigen::Matrix<double,6,1> > ptrvec(ptr);
+//            ptrvec = node->pose.log();
+            Eigen::Map<Eigen::Vector3d> ptrvec(ptr);
+            ptrvec = node->pose.translation();
+            ceres::RotationMatrixToAngleAxis( node->pose.so3().matrix().data(), ptr+3 );
         }
     }
     
@@ -295,7 +303,11 @@ namespace vrlt
         {
             Node *node = nodes[j];
             
-            node->pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >(ptr) );
+//            node->pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >(ptr) );
+            node->pose.translation() = Eigen::Map<Eigen::Vector3d>(ptr);
+            Eigen::Matrix3d R;
+            ceres::AngleAxisToRotationMatrix(ptr+3, R.data());
+            node->pose.so3() = Sophus::SO3d(R);
         }
     }
     
@@ -323,7 +335,7 @@ namespace vrlt
                 getVisibility( i, j ) = 1;
                 getFeature( i, j ) = feature;
                 
-                ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i].data(),
+                ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i],
                                                                camera->calibration->focal,
                                                                feature->location[0]-camera->calibration->center[0],
                                                                feature->location[1]-camera->calibration->center[1]);
@@ -396,7 +408,7 @@ namespace vrlt
     {
         ceres::Solver::Options options;
         options.linear_solver_type = ceres::DENSE_SCHUR;
-        if ( verbose ) options.minimizer_progress_to_stdout = true;
+        //if ( verbose ) options.minimizer_progress_to_stdout = true;
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
         if ( verbose ) std::cout << summary.FullReport() << "\n";
