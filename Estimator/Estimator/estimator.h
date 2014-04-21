@@ -74,11 +74,8 @@ namespace vrlt {
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
         std::vector< Eigen::Matrix3d > Elist;
-        std::vector< Eigen::Matrix3d > Rlist;
-        std::vector< Eigen::Vector3d > tlist;
         Eigen::Matrix3d E;
-        Eigen::Matrix3d R;
-        Eigen::Vector3d t;
+        Sophus::SE3d getPose( PointPairList::iterator begin, PointPairList::iterator end );
         void chooseSolution( int soln );
         virtual bool canRefine();
     };

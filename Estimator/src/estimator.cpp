@@ -23,6 +23,8 @@
 #include <dispatch/dispatch.h>
 #endif
 
+#include <iostream>
+
 namespace vrlt {
     
     Eigen::Vector2d computeReprojError( Feature *feature )
@@ -192,7 +194,7 @@ namespace vrlt {
             image2_points[n] = it->second;
         }
         
-        theia::FivePointRelativePose( image1_points, image2_points, &Elist, &Rlist, &tlist );
+        theia::FivePointRelativePose( image1_points, image2_points, &Elist );
         
         return (int)Elist.size();
     }
@@ -200,8 +202,6 @@ namespace vrlt {
     void FivePointEssential::chooseSolution( int soln )
     {
         E = Elist[soln];
-        R = Rlist[soln];
-        t = tlist[soln];
     }
     
     double FivePointEssential::score( PointPairList::iterator it )
@@ -219,6 +219,49 @@ namespace vrlt {
     {
         return false;
     }
+    
+    Sophus::SE3d FivePointEssential::getPose( PointPairList::iterator begin, PointPairList::iterator end )
+    {
+        Eigen::Matrix3d Rlist[4];
+        Eigen::Vector3d tlist[4];
+        Eigen::Vector3d null_space;
+        theia::EfficientSVDDecomp(E,&null_space,Rlist,tlist);
+        
+        Sophus::SE3d bestpose;
+        int bestcount = 0;
+        for ( int i = 0; i < 4; i++ ) {
+            Sophus::SE3d pose;
+            pose.so3() = Rlist[i];
+            pose.translation() = tlist[i];
+            
+            Eigen::Vector3d up;
+            up << 0, 1, 0;
+            Eigen::Vector3d newup = pose.so3() * up;
+            if ( newup[1] < 0 ) continue;
+            
+            Eigen::Vector3d old_trans = pose.translation();
+            pose.translation() = old_trans / old_trans.norm();
+            
+            int count = 0;
+            
+            PointPairList::iterator it;
+            for ( it = begin; it != end; it++ )
+            {
+                Eigen::Vector4d X = triangulate( pose, *it );
+                Eigen::Vector3d Xproj = project(X);
+                
+                if ( Xproj.dot( it->first ) > 0 ) count++;
+            }
+            
+            if ( count > bestcount ) {
+                bestcount = count;
+                bestpose = pose;
+            }
+        }
+        
+        return bestpose;
+    }
+
     /*
     int UprightEssential::sampleSize()
     {
@@ -854,7 +897,7 @@ namespace vrlt {
         
         while (m < n)
         {
-            u = rand()/RAND_MAX; // call a uniform(0,1) random number generator
+            u = rand()/(double)RAND_MAX; // call a uniform(0,1) random number generator
             
             if ( (N - t)*u >= n - m )
             {
@@ -934,6 +977,7 @@ namespace vrlt {
                     best_subset = random_subset;
                     best_soln = soln;
                     bestNInliers = K;
+                    std::cout << "bestNInliers: " << bestNInliers << " / " << N << "\n";
                 }
             }
             if ( bestNInliers >= Kthresh ) break;

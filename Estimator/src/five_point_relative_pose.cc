@@ -213,70 +213,6 @@ Matrix<double, 9, 4> EfficientNullspaceExtraction(
   return null_space.transpose();
 }
 
-void EfficientSVDDecomp(const Matrix3d& essential_mat,
-                        Vector3d* null_space,
-                        Matrix3d rotation[4],
-                        Vector3d translation[4]) {
-  Matrix3d d;
-  d << 0, 1, 0,
-      -1, 0, 0,
-      0, 0, 1;
-
-  const Vector3d& ea = essential_mat.row(0);
-  const Vector3d& eb = essential_mat.row(1);
-  const Vector3d& ec = essential_mat.row(2);
-
-  // Generate cross products.
-  Matrix3d cross_products;
-  cross_products << ea.cross(eb), ea.cross(ec), eb.cross(ec);
-
-  // Choose the cross product with the largest norm (for numerical accuracy).
-  const Vector3d cf_scales(cross_products.col(0).squaredNorm(),
-                           cross_products.col(1).squaredNorm(),
-                           cross_products.col(2).squaredNorm());
-  int max_index;
-  cf_scales.maxCoeff(&max_index);
-
-  // For index 0, 1, we want ea and for index 2 we want eb.
-  const int max_e_index = max_index / 2;
-
-  // Construct v of the SVD.
-  Matrix3d v = Matrix3d::Zero();
-  v.col(2) = cross_products.col(max_index).normalized();
-  v.col(0) = essential_mat.row(max_e_index).normalized();
-  v.col(1) = v.col(2).cross(v.col(0));
-
-  // Construct U of the SVD.
-  Matrix3d u = Matrix3d::Zero();
-  u.col(0) = (essential_mat * v.col(0)).normalized();
-  u.col(1) = (essential_mat * v.col(1)).normalized();
-  u.col(2) = u.col(0).cross(u.col(1));
-
-  // Possible rotation configurations.
-  const RowMatrix3d ra =
-      Eigen::Quaterniond(u * d * v.transpose()).normalized().toRotationMatrix();
-  const RowMatrix3d rb = Eigen::Quaterniond(u * d.transpose() * v.transpose())
-      .normalized().toRotationMatrix();
-
-  // Scale t to be proper magnitude. Scale factor is derived from the fact that
-  // U*diag*V^t = E. We simply choose to scale it such that the last terms will
-  // be equal.
-  const Vector3d t = u.col(2).normalized();
-  const Vector3d t_neg = -t;
-
-  // Copy the 4 possible decompositions into the output arrays.
-  rotation[0] = ra;
-  translation[0] = t;
-  rotation[1] = ra;
-  translation[1] = t_neg;
-  rotation[2] = rb;
-  translation[2] = t;
-  rotation[3] = rb;
-  translation[3] = t_neg;
-
-  *null_space = v.col(2);
-}
-
 void DecomposeWithIdealCorrespondence(const Vector3d& image_point1_homog,
                                       const Vector3d& image_point2_homog,
                                       const Matrix3d& essential_mat,
@@ -335,13 +271,75 @@ void DecomposeWithIdealCorrespondence(const Vector3d& image_point1_homog,
 
 }  // namespace
 
+void EfficientSVDDecomp(const Matrix3d& essential_mat,
+                        Vector3d* null_space,
+                        Matrix3d rotation[4],
+                        Vector3d translation[4]) {
+    Matrix3d d;
+    d << 0, 1, 0,
+    -1, 0, 0,
+    0, 0, 1;
+    
+    const Vector3d& ea = essential_mat.row(0);
+    const Vector3d& eb = essential_mat.row(1);
+    const Vector3d& ec = essential_mat.row(2);
+    
+    // Generate cross products.
+    Matrix3d cross_products;
+    cross_products << ea.cross(eb), ea.cross(ec), eb.cross(ec);
+    
+    // Choose the cross product with the largest norm (for numerical accuracy).
+    const Vector3d cf_scales(cross_products.col(0).squaredNorm(),
+                             cross_products.col(1).squaredNorm(),
+                             cross_products.col(2).squaredNorm());
+    int max_index;
+    cf_scales.maxCoeff(&max_index);
+    
+    // For index 0, 1, we want ea and for index 2 we want eb.
+    const int max_e_index = max_index / 2;
+    
+    // Construct v of the SVD.
+    Matrix3d v = Matrix3d::Zero();
+    v.col(2) = cross_products.col(max_index).normalized();
+    v.col(0) = essential_mat.row(max_e_index).normalized();
+    v.col(1) = v.col(2).cross(v.col(0));
+    
+    // Construct U of the SVD.
+    Matrix3d u = Matrix3d::Zero();
+    u.col(0) = (essential_mat * v.col(0)).normalized();
+    u.col(1) = (essential_mat * v.col(1)).normalized();
+    u.col(2) = u.col(0).cross(u.col(1));
+    
+    // Possible rotation configurations.
+    const RowMatrix3d ra =
+    Eigen::Quaterniond(u * d * v.transpose()).normalized().toRotationMatrix();
+    const RowMatrix3d rb = Eigen::Quaterniond(u * d.transpose() * v.transpose())
+    .normalized().toRotationMatrix();
+    
+    // Scale t to be proper magnitude. Scale factor is derived from the fact that
+    // U*diag*V^t = E. We simply choose to scale it such that the last terms will
+    // be equal.
+    const Vector3d t = u.col(2).normalized();
+    const Vector3d t_neg = -t;
+    
+    // Copy the 4 possible decompositions into the output arrays.
+    rotation[0] = ra;
+    translation[0] = t;
+    rotation[1] = ra;
+    translation[1] = t_neg;
+    rotation[2] = rb;
+    translation[2] = t;
+    rotation[3] = rb;
+    translation[3] = t_neg;
+    
+    *null_space = v.col(2);
+}
+
 // Implementation of Nister from "An Efficient Solution to the Five-Point
 // Relative Pose Problem"
 bool FivePointRelativePose(const Vector3d image1_points[5],
                            const Vector3d image2_points[5],
-                           std::vector<Matrix3d>* essentials,
-                           std::vector<Matrix3d>* rotations,
-                           std::vector<Vector3d>* translations ) {
+                           std::vector<Matrix3d>* essentials ) {
   // Step 1. Create the 5x9 matrix containing epipolar constraints.
   //   Essential matrix is a linear combination of the 4 vectors spanning the
   //   null space of this matrix (found by SVD).
@@ -438,8 +436,6 @@ bool FivePointRelativePose(const Vector3d image1_points[5],
   FindRealPolynomialRoots(n.transpose().reverse(), &roots);
 
   essentials->reserve(roots.size());
-    rotations->reserve(roots.size());
-    translations->reserve(roots.size());
 
   static const double kTolerance = 1e-12;
   for (int i = 0; i < roots.size(); i++) {
@@ -457,16 +453,17 @@ bool FivePointRelativePose(const Vector3d image1_points[5],
     Matrix3d candidate_essential_mat;
     candidate_essential_mat << temp_sum.head<3>().transpose(),
         temp_sum.segment(3, 3).transpose(), temp_sum.tail(3).transpose();
+    candidate_essential_mat.normalize();
     essentials->push_back(candidate_essential_mat);
       
-      Matrix3d rotation_soln;
-      Vector3d translation_soln;
-      // Decompose into R, t using the first point correspondence.
-      DecomposeWithIdealCorrespondence(image1_points[0], image2_points[0],
-                                       candidate_essential_mat, &rotation_soln,
-                                       &translation_soln);
-      rotations->push_back(rotation_soln);
-      translations->push_back(translation_soln);
+//      Matrix3d rotation_soln;
+//      Vector3d translation_soln;
+//      // Decompose into R, t using the first point correspondence.
+//      DecomposeWithIdealCorrespondence(image1_points[0], image2_points[0],
+//                                       candidate_essential_mat, &rotation_soln,
+//                                       &translation_soln);
+//      rotations->push_back(rotation_soln);
+//      translations->push_back(translation_soln);
   }
   return (roots.size() > 0);
 }

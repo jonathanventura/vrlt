@@ -40,6 +40,11 @@
 
 namespace theia {
 
+void EfficientSVDDecomp(const Eigen::Matrix3d& essential_mat,
+                    Eigen::Vector3d* null_space,
+                    Eigen::Matrix3d rotation[4],
+                    Eigen::Vector3d translation[4]);
+
 // Computes the relative pose between two cameras using 5 corresponding
 // points. Algorithm is implemented based on "An Efficient Solution to the
 // Five-Point Relative Pose Problem" by Nister. The relative pose is computed
@@ -52,9 +57,7 @@ namespace theia {
 // Return: true if a valid solution was found.
 bool FivePointRelativePose(const Eigen::Vector3d image1_points[5],
                            const Eigen::Vector3d image2_points[5],
-                           std::vector<Eigen::Matrix3d>* essentials,
-                           std::vector<Eigen::Matrix3d>* rotations,
-                           std::vector<Eigen::Vector3d>* translations);
+                           std::vector<Eigen::Matrix3d>* essentials);
 }  // namespace theia
 
 #endif  // THEIA_VISION_SFM_POSE_FIVE_POINT_RELATIVE_POSE_H_
