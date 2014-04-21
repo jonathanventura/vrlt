@@ -443,8 +443,8 @@ struct PairFinder
 
 int main( int argc, char **argv )
 {
-    if ( argc != 4 && argc != 5 ) {
-        fprintf( stderr, "usage: %s <file in> <file out> <minstep> [ | <node1> <node2>]\n", argv[0] );
+    if ( argc != 3 && argc != 4 && argc != 5 ) {
+        fprintf( stderr, "usage: %s <file in> <file out> [ <minstep> [ | <node1> <node2>] ]\n", argv[0] );
         exit(1);
     }
     
@@ -462,8 +462,9 @@ int main( int argc, char **argv )
 
     Reconstruction *r_out = &r;
     
-    if ( argc == 4 ) {
-        int minstep = atoi(argv[3]);
+    if ( argc < 5 ) {
+        int minstep = 1;
+        if ( argc == 4 ) minstep = atoi(argv[3]);
         PairFinder pairFinder( r, minstep );
         r_out = pairFinder.run( pathin );
     } else {
