@@ -12,30 +12,143 @@
 #include <BundleAdjustment/outliers.h>
 
 #include <ceres/ceres.h>
+#include <ceres/rotation.h>
 
 #include <iostream>
 
 namespace vrlt
 {
-    Bundle::Bundle( Node *_root, bool _upright, bool _verbose ) : verbose( _verbose ), itmax( 100 ), root( _root ), upright( false )
+    struct ReprojectionError
     {
-        init();
+        ReprojectionError( const double *_prefix, double _focal, double _x, double _y )
+        : prefix( _prefix ), focal(_focal), x(_x), y(_y) {}
+        
+        template <typename T>
+        bool operator()(const T* const camera,
+                        const T* const point,
+                        T* residuals) const
+        {
+            // camera pose
+            // camera[3,4,5] are the angle-axis rotation.
+            T p[3];
+            ceres::AngleAxisRotatePoint(camera+3, point, p);
+            // camera[0,1,2] are the translation.
+            p[0] += camera[0]; p[1] += camera[1]; p[2] += camera[2];
+            
+            // prefix pose (e.g. internal camera in panoramic head)
+            T myprefix[6];
+            myprefix[0] = T(prefix[0]);
+            myprefix[1] = T(prefix[1]);
+            myprefix[2] = T(prefix[2]);
+            myprefix[3] = T(prefix[3]);
+            myprefix[4] = T(prefix[4]);
+            myprefix[5] = T(prefix[5]);
+            T pp[3];
+            ceres::AngleAxisRotatePoint(myprefix+3, p, pp);
+            pp[0] += myprefix[0]; pp[1] += myprefix[1]; pp[2] += myprefix[2];
+            
+            // projection
+            T xp = pp[0] / pp[2];
+            T yp = pp[1] / pp[2];
+            
+            // intrinsics
+            T fxp = T(focal) * xp;
+            T fyp = T(focal) * yp;
+            
+            // residuals
+            residuals[0] = fxp - T(x);
+            residuals[1] = fyp - T(y);
+            
+            return true;
+        }
+        
+        const double *prefix;
+        double focal, x, y;
+    };
+
+    class BundleInternal
+    {
+    public:
+        BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose = false );
+        ~BundleInternal();
+        
+        bool run();
+        void run_str();
+        void run_mot();
+
+        Node *root;
+        ElementList fixedNodes;
+        ElementList fixedPoints;
+        
+        bool verbose;
+        int itmax;
+        
+        ceres::Problem problem;
+        
+        void init();
+        
+        void addPoints();
+        void fillPoints();
+        void updatePoints();
+        
+        void addNodes();
+        void fillNodes();
+        void updateNodes();
+        
+        void _addMeasurements( Node *node, int j );
+        void addMeasurements();
+        void fillMeasurements();
+        
+        bool _run();
+        bool _run_str();
+        bool _run_mot();
+        
+        inline char & getVisibility( int i, int j );
+        inline Feature* & getFeature( int i, int j );
+        Feature **features;
+        
+        std::vector<Node*> nodes;
+        std::map<Node*,int> node2index;
+        
+        std::vector<Point*> points;
+        std::map<Point*,int> point2index;
+        
+        std::map< int, std::map< int, Sophus::SE3d > > prefixes;
+        
+        int n;
+        int ncon;
+        int m;
+        int mcon;
+        int o;
+        char *vmask;
+        double *p;
+        int cnp;
+        int pnp;
+        double *x;
+        double *covx;
+        int mnp;
+    };
+    
+    Bundle::Bundle( Node *_root, bool _verbose )
+    {
+        internal = new BundleInternal( _root, ElementList(), ElementList(), _verbose );
     }
     
-    Bundle::Bundle( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _upright, bool _verbose )
-    : verbose( _verbose ), itmax( 100 ), root( _root ),  upright( false ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints )
+    Bundle::Bundle( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose )
     {
-        init();
+        internal = new BundleInternal( _root, _fixedNodes, _fixedPoints, _verbose );
     }
-        
-    void Bundle::init()
+    
+    Bundle::~Bundle()
+    {
+        delete internal;
+    }
+    
+    BundleInternal::BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose )
+    : root( _root ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints ), verbose( _verbose ), itmax( 100 )
     {
         // # camera params
-        if ( upright ) {
-            cnp = 4;
-        } else {
-            cnp = 6;
-        }
+        cnp = 6;
         
         // # point params
         pnp = 3;                
@@ -66,7 +179,7 @@ namespace vrlt
         }
     }
     
-    Bundle::~Bundle()
+    BundleInternal::~BundleInternal()
     {
         delete [] vmask;
         delete [] features;
@@ -74,17 +187,17 @@ namespace vrlt
         delete [] x;
     }
     
-    inline char & Bundle::getVisibility( int i, int j )
+    inline char & BundleInternal::getVisibility( int i, int j )
     {
         return vmask[i*m+j];
     }
     
-    inline Feature* & Bundle::getFeature( int i, int j )
+    inline Feature* & BundleInternal::getFeature( int i, int j )
     {
         return features[i*m+j];
     }
     
-    void Bundle::addPoints()
+    void BundleInternal::addPoints()
     {
         n = 0;
         ncon = 0;
@@ -109,7 +222,7 @@ namespace vrlt
         }
     }
     
-    void Bundle::fillPoints()
+    void BundleInternal::fillPoints()
     {
         double *ptr = p + cnp*m;
         for ( int i = 0; i < n; i++,ptr+=pnp )
@@ -120,7 +233,7 @@ namespace vrlt
         }
     }
     
-    void Bundle::updatePoints()
+    void BundleInternal::updatePoints()
     {
         double *ptr = p + cnp*m;
         for ( int i = 0; i < n; i++,ptr+=pnp )
@@ -130,7 +243,7 @@ namespace vrlt
         }
     }
     
-    void Bundle::addNodes()
+    void BundleInternal::addNodes()
     {
         m = 0;
         mcon = 0;
@@ -158,43 +271,30 @@ namespace vrlt
         }
     }
     
-    void Bundle::fillNodes()
+    void BundleInternal::fillNodes()
     {
         double *ptr = p;
         for ( int j = 0; j < m; j++,ptr+=cnp )
         {
             Node *node = nodes[j];
             
-            if ( upright ) {
-                *ptr = node->pose.so3().log()[1];
-                Eigen::Map<Eigen::Vector3d> ptrvec( ptr+1 );
-                ptrvec = node->pose.translation();
-            } else {
-                Eigen::Map< Eigen::Matrix<double,6,1> > ptrvec(ptr);
-                ptrvec = node->pose.log();
-            }
+            Eigen::Map< Eigen::Matrix<double,6,1> > ptrvec(ptr);
+            ptrvec = node->pose.log();
         }
     }
     
-    void Bundle::updateNodes()
+    void BundleInternal::updateNodes()
     {
         double *ptr = p;
         for ( int j = 0; j < m; j++,ptr+=cnp )
         {
             Node *node = nodes[j];
             
-            if ( upright ) {
-                Eigen::Vector3d r;
-                r << 0, *ptr, 0;
-                node->pose.so3() = Sophus::SO3d::exp( r );
-                node->pose.translation() = Eigen::Map<Eigen::Vector3d>(ptr+1);
-            } else {
-                node->pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >(ptr) );
-            }
+            node->pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >(ptr) );
         }
     }
     
-    void Bundle::_addMeasurements( Node *node, int j )
+    void BundleInternal::_addMeasurements( Node *node, int j )
     {
         Camera *camera = node->camera;
         if ( camera != NULL )
@@ -211,12 +311,23 @@ namespace vrlt
                 
                 int i = point2index[point];
                 
-                prefixes[j][i] = camera->node->globalPose( nodes[j] ).cast<float>();
+                prefixes[j][i] = camera->node->globalPose( nodes[j] );
                 
                 // here is where we lose the redundancy of measurements
                 // only one-to-one mapping between points and nodes
                 getVisibility( i, j ) = 1;
                 getFeature( i, j ) = feature;
+                
+                ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i].data(),
+                                                               camera->calibration->focal,
+                                                               feature->location[0]-camera->calibration->center[0],
+                                                               feature->location[1]-camera->calibration->center[1]);
+                
+                ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(reproj_error);
+                problem.AddResidualBlock(cost_function, NULL, p+j*cnp, p+m*cnp+i*pnp );
+                
+                if ( j < mcon ) problem.SetParameterBlockConstant( p+j*cnp );
+                if ( i < ncon ) problem.SetParameterBlockConstant( p+m*cnp+i*pnp );
             }
         }
         
@@ -228,7 +339,7 @@ namespace vrlt
         }
     }
     
-    void Bundle::addMeasurements()
+    void BundleInternal::addMeasurements()
     {
         bzero(vmask, m*n);
         bzero(features, m*n*sizeof(Feature*));
@@ -246,7 +357,7 @@ namespace vrlt
         }
     }
     
-    void Bundle::fillMeasurements()
+    void BundleInternal::fillMeasurements()
     {
         double *xptr = x;
         
@@ -263,7 +374,7 @@ namespace vrlt
         }
     }
     
-    bool Bundle::run()
+    bool BundleInternal::run()
     {
         bool should_update = _run();
         
@@ -275,369 +386,18 @@ namespace vrlt
         
         return should_update;
     }
-
-    void Bundle::run_str()
+    
+    bool BundleInternal::_run()
     {
-        bool should_update = _run_str();
-        
-        if ( should_update )
-        {
-            updatePoints();
-        }
+        ceres::Solver::Options options;
+        options.linear_solver_type = ceres::DENSE_SCHUR;
+        if ( verbose ) options.minimizer_progress_to_stdout = true;
+        ceres::Solver::Summary summary;
+        ceres::Solve(options, &problem, &summary);
+        if ( verbose ) std::cout << summary.FullReport() << "\n";
+        return ( summary.termination_type != ceres::FAILURE );
     }
     
-    void Bundle::run_mot()
-    {
-        bool should_update = _run_mot();
-        
-        if ( should_update )
-        {
-            updateNodes();
-        }
-    }
-    
-    void Bundle::getPose( int j, int i, double *aj, Sophus::SE3d &pose )
-    {
-        Node *node = nodes[j];
-        Feature *feature = getFeature( i, j );
-        Camera *camera = feature->camera;
-        
-        if ( upright ) {
-            Eigen::Vector3d r;
-            r << 0, *aj, 0;
-            pose.so3() = Sophus::SO3d::exp( r );
-            pose.translation() = Eigen::Map<Eigen::Vector3d>(aj+1);
-        } else {
-            pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >(aj) );
-        }
-        
-        // pre-multiply camera's pose
-        // this prefix could be pre-computed and stored
-        Sophus::SE3d prefix = camera->node->globalPose( node );
-        // assuming that we are one hop away
-        pose = prefix * pose;
-    }
-    
-    void proj( int j, int i, double *aj, double *bi, double *xij, void *adata )
-    {
-        Bundle *bundle = (Bundle*) adata;
-        Feature *feature = bundle->getFeature(i,j);
-        if ( feature == NULL ) {
-            std::cout << "NULL feature\n";
-            exit(1);
-        }
-        
-        Camera *camera = feature->camera;
-
-        Sophus::SE3d pose;
-        bundle->getPose( j, i, aj, pose );
-        Eigen::Vector3d PX = pose * Eigen::Map<Eigen::Vector3d>( bi );
-
-        Eigen::Vector2d projpt = camera->calibration->project( project( PX ) );
-
-        if ( std::isinf(projpt[0]) || std::isinf(projpt[1]) || std::isnan(projpt[0]) || std::isnan(projpt[1]) )
-        {
-            Track *track = feature->track;
-            ElementList::iterator it;
-            for ( it = track->features.begin(); it != track->features.end(); it++ )
-            {
-                Feature *feat = (Feature*)it->second;
-                std::cout << feat->name << "\n";
-                std::cout << feat->location << "\n";
-            }
-            
-            std::cout << pose.log() << "\n";
-            std::cout << Eigen::Map<Eigen::Vector3d>( bi ) << "\n";
-            std::cout << pose * Eigen::Map<Eigen::Vector3d>( bi ) << "\n";
-            std::cout << PX << "\n";
-            std::cout << projpt << "\n";
-            std::cout << "error: NaN or Inf\n";
-            exit(0);
-        }
-        
-        Eigen::Map<Eigen::Vector2d> xijvec( xij );
-        xijvec = projpt;
-    }
-    
-    void proj_str( int j, int i, double *bi, double *xij, void *adata )
-    {
-        Bundle *bundle = (Bundle*) adata;
-        
-        double *aj = bundle->p + bundle->cnp * j;
-        
-        proj( j, i, aj, bi, xij, adata );
-    }
-
-    void proj_mot( int j, int i, double *aj, double *xij, void *adata )
-    {
-        Bundle *bundle = (Bundle*) adata;
-        
-        double *bi = bundle->p + bundle->m * bundle->cnp + i * bundle->pnp;
-
-        proj( j, i, aj, bi, xij, adata );
-    }
-    
-    void projac( int j, int i, double *aj, double *bi, double *Aij, double *Bij, void *adata )
-    {
-        Bundle *bundle = (Bundle*) adata;
-        Feature *feature = bundle->getFeature(i,j);
-        Camera *camera = feature->camera;
-        double f = camera->calibration->focal;
-        
-        Sophus::SE3d pose;
-        bundle->getPose( j, i, aj, pose );
-        Eigen::Vector3d PX = pose * Eigen::Map<Eigen::Vector3d>( bi );
-        
-        Eigen::Matrix<double,2,3> A;
-        A <<
-        PX[2], 0, -PX[0],
-        0, PX[2], -PX[1];
-        A *= f / (PX[2] * PX[2]);
-        
-        Eigen::Matrix3d rotjac;
-        rotjac.col(0) = Sophus::SO3d::generator(0) * PX;
-        rotjac.col(1) = Sophus::SO3d::generator(1) * PX;
-        rotjac.col(2) = Sophus::SO3d::generator(2) * PX;
-        
-        Eigen::Matrix3d R( pose.so3().matrix() );
-        
-        Eigen::Matrix<double,3,6> Jmot;
-        Jmot.block<3,3>(0,0) = rotjac;      // jacobians for rotation
-        Jmot.block<3,3>(0,3) = Eigen::Matrix3d::Identity();  // jacobians for translation
-        
-        Eigen::Map< Eigen::Matrix<double,2,6> > Aijmat(Aij);
-        Aijmat = A * Jmot;
-        
-        Eigen::Matrix3d Jstr;
-        Jstr = R;    // jacobians for point
-        
-        Eigen::Map< Eigen::Matrix<double,2,3> > Bijmat(Bij);
-        Bijmat = A * Jstr;
-    }
-    
-    void projac_mot( int j, int i, double *aj, double *Aij, void *adata )
-    {
-        Bundle *bundle = (Bundle*) adata;
-        double *bi = bundle->p + bundle->m * bundle->cnp + i * bundle->pnp;
-        
-        Feature *feature = bundle->getFeature(i,j);
-        Camera *camera = feature->camera;
-        double f = camera->calibration->focal;
-        
-        Sophus::SE3d pose;
-        bundle->getPose( j, i, aj, pose );
-        Eigen::Vector3d PX = pose * Eigen::Map<Eigen::Vector3d>( bi );
-
-        Eigen::Matrix<double,2,3> A;
-        A <<
-        PX[2], 0, -PX[0],
-        0, PX[2], -PX[1];
-        A *= f / (PX[2] * PX[2]);
-        
-        Eigen::Matrix3d rotjac;
-        rotjac.col(0) = Sophus::SO3d::generator(0) * PX;
-        rotjac.col(1) = Sophus::SO3d::generator(1) * PX;
-        rotjac.col(2) = Sophus::SO3d::generator(2) * PX;
-        
-        Eigen::Matrix<double,3,6> J;
-        J.block<3,3>(0,0) = Eigen::Matrix3d::Identity();  // jacobians for translation
-        J.block<3,3>(0,3) = rotjac;      // jacobians for rotation
-        
-        Eigen::Map< Eigen::Matrix<double,2,6> > Aijmat(Aij);
-        Aijmat = A * J;
-    }
-
-    bool Bundle::_run()
-    {
-#ifdef USE_SBA
-        int sba_verbose = 0;
-        double opts[SBA_OPTSSZ] = { SBA_INIT_MU, SBA_STOP_THRESH, SBA_STOP_THRESH, SBA_STOP_THRESH, 0.0 };
-        double info[SBA_INFOSZ];
-        
-        bool done = false;
-        bool should_update = true;
-        
-        while ( !done ) {
-            int niter = sba_motstr_levmar(n, ncon, m, mcon, vmask, p, cnp, pnp, x, covx, mnp, proj, NULL, this, itmax, sba_verbose, opts, info );
-            
-            done = true;
-            if ( info[6] == 7 ) {
-                fprintf( stderr, "error: Inf or NaN in bundle adjustment.\n" );
-                should_update = false;
-                break;
-            } else if ( niter < 0 ) {
-                fprintf( stderr, "error: SBA failed.\n" );
-                should_update = false;
-                break;
-            } else if ( info[6] == 5 ) {
-                opts[0] *= 10;
-                done = false;
-            }
-            
-            if ( verbose ) {
-                cout << "average error was: " << sqrt(info[0]/o) << "\tnow: " << sqrt(info[1]/o) << "\n";
-            }
-        }
-        
-        return should_update;
-#else
-        Node *node = root;
-        while ( node->camera == NULL ) node = (Node*)node->children.begin()->second;
-        MetricPrefixBA ba( node->camera->calibration->focal, node->camera->calibration->center, prefixes );
-        double *pptr = p;
-	ba.mcon = mcon;
-	ba.ncon = ncon;
-        for ( int j = 0; j < m; j++,pptr+=6 ) ba.addCamera( wrapVector<6,double>(pptr) );
-        for ( int i = 0; i < n; i++,pptr+=3 ) ba.addPoint( wrapVector<3,double>(pptr) );
-        double *xptr = x;
-        for ( int i = 0; i < n; i++ ) {
-            for ( int j = 0; j < m; j++ ) {
-                if ( getVisibility(i, j) == 0 ) continue;
-                ba.addObservation( j, i, wrapVector<2,double>(xptr) );
-                xptr += 2;
-
-/*
-                Matrix<2,9> jac = ba.get_jac( j, wrapVector<6,double>(p+j*6), i, wrapVector<3,double>(p+m*6+i*3) );
-                Matrix<2,6> jac_mot = jac.slice(0,0,2,6);
-                Matrix<2,3> jac_str = jac.slice(0,6,2,3);
-	
-                double my_jac_mot_data[12];
-                projac_mot( j, i, p+j*6, my_jac_mot_data, this );
-*/
-//                cout << "new (" << i << ", " << j << ")\n" << jac_mot << "\n";
-//                cout << "old (" << i << ", " << j << ")\n" << wrapMatrix<2,6>( my_jac_mot_data ) << "\n";
-//
-//                cout << "new str (" << i << ", " << j << ")\n" << jac_str << "\n";
-
-            }
-        }
-        double old_err;
-        if ( verbose ) {
-            old_err = ba.getResidual();
-        }
-        ba.verbose = verbose;
-        ba.run_all();
-        pptr = p;
-//        for ( int j = 0; j < m; j++,pptr+=6 ) {wrapVector<6,double>(pptr) = ba.cameras[j]; cout << wrapVector<6,double>(pptr) << "\n"; }
-//        for ( int i = 0; i < n; i++,pptr+=3 ) {wrapVector<3,double>(pptr) = ba.points[i]; cout << wrapVector<3,double>(pptr) << "\n"; }
-        double new_err;
-        if ( verbose ) {
-            new_err = ba.getResidual();
-            cout << "average error was: " << sqrt(old_err) << "\tnow: " << sqrt(new_err) << "\n";
-        }
-//        for ( int j = 0; j < m; j++ ) cout << ba.cameras[j] << "\n";
-//        for ( int i = 0; i < n; i++ ) cout << ba.points[i] << "\n";
-        return true;
-#endif
-    }
-
-    bool Bundle::_run_str()
-    {
-#ifdef USE_SBA
-        int sba_verbose = 0;
-        double opts[SBA_OPTSSZ] = { SBA_INIT_MU, SBA_STOP_THRESH, SBA_STOP_THRESH, SBA_STOP_THRESH, 0.0 };
-        double info[SBA_INFOSZ];
-        
-        bool done = false;
-        bool should_update = true;
-        
-        while ( !done ) {
-            int niter = sba_str_levmar( n, ncon, m, vmask, p+m*cnp, pnp, x, covx, mnp, proj_str, NULL, this, itmax, sba_verbose, opts, info );
-            
-            done = true;
-            if ( niter < 0 ) {
-                fprintf( stderr, "error: SBA failed.\n" );
-                should_update = false;
-                break;
-            } else if ( info[6] == 5 ) {
-                opts[0] *= 10;
-                done = false;
-            } else if ( info[6] == 7 ) {
-                fprintf( stderr, "warning: Inf or NaN in bundle adjustment.\n" );
-                should_update = false;
-                break;
-            }
-            
-            if ( verbose ) {
-                cout << "average error was: " << sqrt(info[0]/(o*mnp)) << "\tnow: " << sqrt(info[1]/(o*mnp)) << "\n";
-            }
-        }
-        
-        return should_update;
-#else
-        return false;
-#endif
-    }
-
-    bool Bundle::_run_mot()
-    {
-#ifdef USE_SBA
-        int sba_verbose = 0;
-        double opts[SBA_OPTSSZ] = { SBA_INIT_MU, SBA_STOP_THRESH, SBA_STOP_THRESH, SBA_STOP_THRESH, 0.0 };
-        double info[SBA_INFOSZ];
-        
-        bool done = false;
-        bool should_update = true;
-        
-        while ( !done ) {
-            int niter = sba_mot_levmar( n, m, mcon, vmask, p, cnp, x, covx, mnp, proj_mot, NULL, this, itmax, sba_verbose, opts, info );
-               
-            done = true;
-            if ( niter < 0 ) {
-                fprintf( stderr, "error: SBA failed.\n" );
-                should_update = false;
-                break;
-            } else if ( info[6] == 5 ) {
-                opts[0] *= 10;
-                done = false;
-            } else if ( info[6] == 7 ) {
-                fprintf( stderr, "warning: Inf or NaN in bundle adjustment.\n" );
-                should_update = false;
-                break;
-            }
-            
-            if ( verbose ) {
-                cout << "average error was: " << sqrt(info[0]/o) << "\tnow: " << sqrt(info[1]/o) << "\n";
-            }
-        }
-        
-        return should_update;
-#else
-        Node *node = root;
-        while ( node->camera == NULL ) node = (Node*)node->children.begin()->second;
-        MetricPrefixBA ba( node->camera->calibration->focal, node->camera->calibration->center, prefixes );
-        ba.verbose = true;
-        double *pptr = p;
-	ba.mcon = mcon;
-	ba.ncon = ncon;
-        for ( int j = 0; j < m; j++,pptr+=6 ) ba.addCamera( wrapVector<6,double>(pptr) );
-        for ( int i = 0; i < n; i++,pptr+=3 ) ba.addPoint( wrapVector<3,double>(pptr) );
-        double *xptr = x;
-        for ( int i = 0; i < n; i++ ) {
-            for ( int j = 0; j < m; j++ ) {
-                if ( getVisibility(i, j) == 0 ) continue;
-                ba.addObservation( j, i, wrapVector<2,double>(xptr) );
-                xptr += 2;
-            }
-        }
-        double old_err;
-        if ( verbose ) {
-            cout << "STARTING MOT\n";
-            old_err = ba.getResidual();
-        }
-        ba.run_mot();
-        pptr = p;
-        for ( int j = 0; j < m; j++,pptr+=6 ) wrapVector<6,double>(pptr) = ba.cameras[j];
-        double new_err;
-        if ( verbose ) {
-            //new_err = ba.getResidual();
-            cout << "average error was: " << sqrt(old_err) << "\tnow: " << sqrt(new_err) << "\n";
-        }
-        
-        return true;
-#endif
-    }
-
     void applyScale( Node *root, double factor )
     {
         ElementList::iterator it;
@@ -681,7 +441,7 @@ namespace vrlt
 
         while ( true )
         {
-            Bundle bundle( rootnode, r->upright, true );
+            Bundle bundle( rootnode, true );
             bool good = bundle.run();
             if ( !good ) return false;
             
