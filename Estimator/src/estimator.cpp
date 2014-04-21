@@ -14,7 +14,6 @@
 #include "perspective_three_point.h"
 
 #include <algorithm>
-#include <ext/algorithm>
 
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>
@@ -844,6 +843,31 @@ namespace vrlt {
         return count;
     }
 
+    // from http://stackoverflow.com/questions/311703/algorithm-for-sampling-without-replacement
+    // Algorithm 3.4.2S from D. Knuth, "Seminumeric Algorithms."
+    template<typename T>
+    void random_sample( T begin, int N, T sample_begin, int n )
+    {
+        int t = 0; // total input records dealt with
+        int m = 0; // number of items selected so far
+        double u;
+        
+        while (m < n)
+        {
+            u = rand()/RAND_MAX; // call a uniform(0,1) random number generator
+            
+            if ( (N - t)*u >= n - m )
+            {
+                t++;
+            }
+            else
+            {
+                *(sample_begin+m) = *(begin+t);
+                t++; m++;
+            }
+        }
+    }
+
     int PROSAC::compute( PointPairList::iterator begin, PointPairList::iterator end, Estimator &estimator, std::vector<bool> &inliers )
     {
         int bestNInliers = 0;
@@ -886,10 +910,10 @@ namespace vrlt {
             }
             
             if (T_n_prime < t) {
-                __gnu_cxx::random_sample(begin, begin + n, random_subset.begin(), random_subset.begin() + m );
+                random_sample(begin, n, random_subset.begin(), m );
             }
             else {
-                __gnu_cxx::random_sample(begin, begin + n-1, random_subset.begin(), random_subset.begin() + m - 1 );
+                random_sample(begin, n-1, random_subset.begin(), m - 1 );
                 random_subset[m-1] = *(begin+(n-1));
             }
             
@@ -979,10 +1003,10 @@ namespace vrlt {
             }
             
             if (T_n_prime < t) {
-                __gnu_cxx::random_sample(begin, begin + n, random_subset.begin(), random_subset.begin() + m );
+                random_sample(begin, n, random_subset.begin(), m );
             }
             else {
-                __gnu_cxx::random_sample(begin, begin + n-1, random_subset.begin(), random_subset.begin() + m - 1 );
+                random_sample(begin, n-1, random_subset.begin(), m - 1 );
                 random_subset[m-1] = *(begin+(n-1));
             }
             

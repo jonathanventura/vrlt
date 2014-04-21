@@ -60,6 +60,7 @@ namespace vrlt {
         /** Returns whether the compute() function can refine an estimate using all pairs in the list. */
         virtual bool canRefine();
         Estimator() : scoreType( Pixel ) { }
+        virtual ~Estimator() { }
     };
     
     /** \brief Five point estimation
