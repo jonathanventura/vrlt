@@ -41,7 +41,7 @@ namespace vrlt {
         uchar r = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
                                  + (img.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[2] * a) * c);
         
-        return cv::Vec3b(b, g, r);
+        return cv::Vec3b(r, g, b);
     }
 
     static uchar getGraySubpix(const cv::Mat& img, cv::Point2f pt)
