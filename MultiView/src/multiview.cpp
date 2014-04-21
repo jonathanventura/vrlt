@@ -53,7 +53,7 @@ namespace vrlt
         point[1] = ( location[1] - center[1] ) / focal;
         if ( type == Spherical ) return sphericalUnproject( point );
         if ( type == Cylindrical ) return cylindricalUnproject( point );
-        return unproject( point );
+        return vrlt::unproject( point );
     }
     
     void Calibration::makeK()
