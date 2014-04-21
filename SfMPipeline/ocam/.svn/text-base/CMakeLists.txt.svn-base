@@ -1,0 +1,1 @@
+add_library (ocam rpoly.cpp world2cam.cpp ocam_functions.cpp)

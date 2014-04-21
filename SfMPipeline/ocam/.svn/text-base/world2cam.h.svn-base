@@ -1,0 +1,9 @@
+
+#ifndef WORLD2CAM_H
+#define WORLD2CAM_H
+
+#include <TooN/TooN.h>
+
+void myworld2cam(TooN::Vector<2> &point2D, const TooN::Vector<3> &point3D, struct ocam_model *myocam_model);
+
+#endif
