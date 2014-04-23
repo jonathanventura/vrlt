@@ -71,10 +71,67 @@ namespace vrlt
         double focal, x, y;
     };
 
+    struct UprightReprojectionError
+    {
+        UprightReprojectionError( const Sophus::SE3d &_prefix, double _focal, double _x, double _y )
+        : focal(_focal), x(_x), y(_y)
+        {
+            Eigen::Map<Eigen::Vector3d> ptrvec(prefix);
+            ptrvec = _prefix.translation();
+            ceres::RotationMatrixToAngleAxis( _prefix.so3().matrix().data(), prefix+3 );
+        }
+        
+        template <typename T>
+        bool operator()(const T* const camera,
+                        const T* const point,
+                        T* residuals) const
+        {
+            // camera pose
+            // [0;camera[3];0] is the angle-axis rotation.
+            T p[3];
+            T myrot[3];
+            myrot[0] = T(0);
+            myrot[1] = camera[3];
+            myrot[2] = T(0);
+            ceres::AngleAxisRotatePoint(myrot, point, p);
+            // camera[0,1,2] are the translation.
+            p[0] += camera[0]; p[1] += camera[1]; p[2] += camera[2];
+            
+            // prefix pose (e.g. internal camera in panoramic head)
+            T myprefix[6];
+            myprefix[0] = T(prefix[0]);
+            myprefix[1] = T(prefix[1]);
+            myprefix[2] = T(prefix[2]);
+            myprefix[3] = T(prefix[3]);
+            myprefix[4] = T(prefix[4]);
+            myprefix[5] = T(prefix[5]);
+            T pp[3];
+            ceres::AngleAxisRotatePoint(myprefix+3, p, pp);
+            pp[0] += myprefix[0]; pp[1] += myprefix[1]; pp[2] += myprefix[2];
+            
+            // projection
+            T xp = pp[0] / pp[2];
+            T yp = pp[1] / pp[2];
+            
+            // intrinsics
+            T fxp = T(focal) * xp;
+            T fyp = T(focal) * yp;
+            
+            // residuals
+            residuals[0] = fxp - T(x);
+            residuals[1] = fyp - T(y);
+            
+            return true;
+        }
+        
+        double prefix[6];
+        double focal, x, y;
+    };
+    
     class BundleInternal
     {
     public:
-        BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose = false );
+        BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose = false, bool _upright = false );
         ~BundleInternal();
         
         bool run();
@@ -86,6 +143,7 @@ namespace vrlt
         ElementList fixedPoints;
         
         bool verbose;
+        bool upright;
         int itmax;
         
         ceres::Problem problem;
@@ -134,14 +192,14 @@ namespace vrlt
         int mnp;
     };
     
-    Bundle::Bundle( Node *_root, bool _verbose )
+    Bundle::Bundle( Node *_root, bool _verbose, bool _upright )
     {
-        internal = new BundleInternal( _root, ElementList(), ElementList(), _verbose );
+        internal = new BundleInternal( _root, ElementList(), ElementList(), _verbose, _upright );
     }
     
-    Bundle::Bundle( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose )
+    Bundle::Bundle( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose, bool _upright )
     {
-        internal = new BundleInternal( _root, _fixedNodes, _fixedPoints, _verbose );
+        internal = new BundleInternal( _root, _fixedNodes, _fixedPoints, _verbose, _upright );
     }
     
     Bundle::~Bundle()
@@ -154,11 +212,16 @@ namespace vrlt
         return internal->run();
     }
     
-    BundleInternal::BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose )
-    : root( _root ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints ), verbose( _verbose ), itmax( 100 )
+    BundleInternal::BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose, bool _upright )
+    : root( _root ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints ), verbose( _verbose ), upright( _upright ), itmax( 100 )
     {
         // # camera params
-        cnp = 6;
+        if ( upright )
+        {
+            cnp = 4;
+        } else {
+            cnp = 6;
+        }
         
         // # point params
         pnp = 3;                
@@ -288,11 +351,17 @@ namespace vrlt
         {
             Node *node = nodes[j];
             
-//            Eigen::Map< Eigen::Matrix<double,6,1> > ptrvec(ptr);
-//            ptrvec = node->pose.log();
             Eigen::Map<Eigen::Vector3d> ptrvec(ptr);
             ptrvec = node->pose.translation();
-            ceres::RotationMatrixToAngleAxis( node->pose.so3().matrix().data(), ptr+3 );
+            
+            if ( upright )
+            {
+                ptr[3] = node->pose.so3().log()[1];
+            }
+            else
+            {
+                ceres::RotationMatrixToAngleAxis( node->pose.so3().matrix().data(), ptr+3 );
+            }
         }
     }
     
@@ -303,11 +372,19 @@ namespace vrlt
         {
             Node *node = nodes[j];
             
-//            node->pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >(ptr) );
             node->pose.translation() = Eigen::Map<Eigen::Vector3d>(ptr);
-            Eigen::Matrix3d R;
-            ceres::AngleAxisToRotationMatrix(ptr+3, R.data());
-            node->pose.so3() = Sophus::SO3d(R);
+            if ( upright )
+            {
+                Eigen::Vector3d r;
+                r << 0,ptr[3],0;
+                node->pose.so3() = Sophus::SO3d::exp(r);
+            }
+            else
+            {
+                Eigen::Matrix3d R;
+                ceres::AngleAxisToRotationMatrix(ptr+3, R.data());
+                node->pose.so3() = Sophus::SO3d(R);
+            }
         }
     }
     
@@ -335,13 +412,26 @@ namespace vrlt
                 getVisibility( i, j ) = 1;
                 getFeature( i, j ) = feature;
                 
-                ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i],
-                                                               camera->calibration->focal,
-                                                               feature->location[0]-camera->calibration->center[0],
-                                                               feature->location[1]-camera->calibration->center[1]);
-                
-                ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(reproj_error);
-                problem.AddResidualBlock(cost_function, NULL, p+j*cnp, p+m*cnp+i*pnp );
+                if ( upright )
+                {
+                    UprightReprojectionError *reproj_error = new UprightReprojectionError(prefixes[j][i],
+                                                                            camera->calibration->focal,
+                                                                            feature->location[0]-camera->calibration->center[0],
+                                                                            feature->location[1]-camera->calibration->center[1]);
+                    
+                    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<UprightReprojectionError, 2, 4, 3>(reproj_error);
+                    problem.AddResidualBlock(cost_function, NULL, p+j*cnp, p+m*cnp+i*pnp );
+                }
+                else
+                {
+                    ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i],
+                                                                   camera->calibration->focal,
+                                                                   feature->location[0]-camera->calibration->center[0],
+                                                                   feature->location[1]-camera->calibration->center[1]);
+                    
+                    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(reproj_error);
+                    problem.AddResidualBlock(cost_function, NULL, p+j*cnp, p+m*cnp+i*pnp );
+                }
                 
                 if ( j < mcon ) problem.SetParameterBlockConstant( p+j*cnp );
                 if ( i < ncon ) problem.SetParameterBlockConstant( p+m*cnp+i*pnp );
@@ -458,7 +548,7 @@ namespace vrlt
 
         while ( true )
         {
-            Bundle bundle( rootnode, true );
+            Bundle bundle( rootnode, true, r->upright );
             bool good = bundle.run();
             if ( !good ) return false;
             

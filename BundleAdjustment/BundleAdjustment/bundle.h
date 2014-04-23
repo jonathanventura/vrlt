@@ -16,8 +16,8 @@ namespace vrlt
     class Bundle
     {
     public:
-        Bundle( Node *_root, bool _verbose = false );
-        Bundle( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose = false );
+        Bundle( Node *_root, bool _verbose = false, bool _upright = false );
+        Bundle( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose = false, bool _upright = false );
         ~Bundle();
         
         bool run();
