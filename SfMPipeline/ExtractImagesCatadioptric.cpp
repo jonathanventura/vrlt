@@ -237,8 +237,8 @@ public:
 
 int main( int argc, char **argv )
 {
-    if ( argc != 7 ) {
-        fprintf( stderr, "usage: %s <ocam file> <image directory> <begin index> <step> <end index> <file out>\n", argv[0] );
+    if ( argc != 7 && argc != 8 ) {
+        fprintf( stderr, "usage: %s <ocam file> <image directory> <begin index> <step> <end index> [<file in>] <file out>\n", argv[0] );
         exit(1);
     }
     
@@ -247,10 +247,14 @@ int main( int argc, char **argv )
     int begin_index = atoi(argv[3]);
     int step_index = atoi(argv[4]);
     int end_index = atoi(argv[5]);
-
+    bool use_previous = ( argc == 8 );
+    
     std::string pathout = std::string(argv[argc-1]);
     
     Reconstruction r;
+    if ( use_previous ){
+        XML::read( r, argv[argc-2] );
+    }
     
     int base_height = 768;
 
@@ -266,9 +270,12 @@ int main( int argc, char **argv )
 
     Catadioptric *catadioptric = NULL;
     
-    std::cout << "creating catadioptric unwarper...\n";
-    catadioptric = new Catadioptric( pathocam, calibration, sz, NFACES );
-    std::cout << "done.\n";
+    if ( !use_previous )
+    {
+        std::cout << "creating catadioptric unwarper...\n";
+        catadioptric = new Catadioptric( pathocam, calibration, sz, NFACES );
+        std::cout << "done.\n";
+    }
     
     std::vector<ReconstructionThread*> threads;
     for ( int i = begin_index; i <= end_index; i += step_index )
@@ -279,13 +286,28 @@ int main( int argc, char **argv )
         
         ExtractThread *mythread = NULL;
         
-        mythread = new ExtractThread( catadioptric, imagedir, i );
+        if ( use_previous ) {
+            char nodename[256];
+            sprintf( nodename, "%s.node%05d", imagedir.c_str(), i );
+            if ( r.nodes.count( nodename ) == 0 ) {
+                fprintf( stderr, "could not find node %s\n", nodename );
+                continue;
+            }
+            Node *node = (Node *)r.nodes[nodename];
+            
+            std::cout << "creating catadioptric unwarper for " << nodename << "...\n";
+            Catadioptric *mycatadioptric = new Catadioptric( pathocam, calibration, sz, NFACES, node->pose.so3() );
+            std::cout << "done.\n";
+            mythread = new ExtractThread( mycatadioptric, imagedir, i, true, "u" );
+        } else {
+            mythread = new ExtractThread( catadioptric, imagedir, i );
+        }
         
         threads.push_back( mythread );
     }
     finishThreads( r, threads );
     
-    delete catadioptric;
+    if ( !use_previous ) delete catadioptric;
     
     XML::write( r, pathout );
 }
