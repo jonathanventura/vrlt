@@ -62,6 +62,7 @@ public:
         catadioptricpts = new cv::Mat[nfaces];
         for ( int i = 0; i < nfaces; i++ ) catadioptricpts[i].create( sz, CV_64FC2 );
         R = new Sophus::SO3d[nfaces];
+        Ry = new Sophus::SO3d[nfaces];
         
         // create intrinsic matrix
         Eigen::Matrix3d Kinv = Eigen::Matrix3d::Identity();
@@ -92,8 +93,8 @@ public:
             Sophus::SO3d Rcatadioptric = Sophus::SO3d::exp( rcatadioptric );
             Eigen::Vector3d ry;
             ry << 0, i * 2. * M_PI / nfaces, 0;
-            Sophus::SO3d Ry = Sophus::SO3d::exp(ry);
-            R[i] = rot_in * Ry;
+            Ry[i] = Sophus::SO3d::exp(ry);
+            R[i] = rot_in * Ry[i];
             
             // get points
             for ( int y = 0; y < sz.height; y++ )
@@ -140,6 +141,7 @@ public:
     {
         delete [] catadioptricpts;
         delete [] R;
+        delete [] Ry;
     }
     
     cv::Size sz;
@@ -147,6 +149,7 @@ public:
     
     cv::Mat *catadioptricpts;
     Sophus::SO3d *R;
+    Sophus::SO3d *Ry;
     Sophus::SO3d rot_in;
     
     Calibration *calibration;
@@ -205,7 +208,7 @@ public:
             child->camera = camera;
             camera->node = child;
             
-            child->pose.so3() = catadioptric->R[i].inverse();
+            child->pose.so3() = catadioptric->Ry[i].inverse();
         }
     }
     
