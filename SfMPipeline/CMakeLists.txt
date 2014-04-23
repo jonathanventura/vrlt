@@ -2,6 +2,10 @@
 add_executable( ExtractImagesCatadioptric ExtractImagesCatadioptric.cpp ocam/ocam_functions.cpp ocam/rpoly.cpp ocam/world2cam.cpp )
 target_link_libraries( ExtractImagesCatadioptric vrlt_multiview )
 
+add_executable( EstimateVertical EstimateVertical.cpp lines.cpp lines.h )
+target_link_libraries( EstimateVertical vrlt_multiview )
+target_link_libraries( EstimateVertical vrlt_estimator  )
+
 add_executable( ExtractSIFT ExtractSIFT.cpp )
 target_link_libraries( ExtractSIFT vrlt_multiview )
 target_link_libraries( ExtractSIFT vrlt_features )
