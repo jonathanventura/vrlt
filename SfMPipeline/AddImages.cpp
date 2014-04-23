@@ -426,7 +426,7 @@ struct ImageAdder
         
         // bundle to improve camera locations
 		if ( !newNodes.empty() ) {
-            Bundle *bundle = new Bundle( rootnode, oldNodes, oldPoints, false );
+            Bundle *bundle = new Bundle( rootnode, oldNodes, oldPoints, true, r.upright );
             bundle->run();
             delete bundle;
         }
@@ -446,7 +446,7 @@ struct ImageAdder
         if ( newNodes.empty() ) return 0;
         
 		if ( !newNodes.empty() || !newPoints.empty() ) {
-            Bundle *bundle = new Bundle( rootnode, oldNodes, oldPoints, r.upright );
+            Bundle *bundle = new Bundle( rootnode, oldNodes, oldPoints, true, r.upright );
             bundle->run();
             delete bundle;
         }
