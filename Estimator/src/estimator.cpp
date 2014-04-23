@@ -262,7 +262,6 @@ namespace vrlt {
         return bestpose;
     }
 
-    /*
     int UprightEssential::sampleSize()
     {
         return 5;
@@ -311,15 +310,17 @@ namespace vrlt {
         {
             case Pixel:
             {
-                pair<double,double> scores = tag::essential_reprojection_errors_squared( E, x1, x2 );
-                scoresq = scores.first;
+                x2 /= x2[2];
+                Eigen::Vector3d line = E * x1;
+                double d = x2.dot( line );
+                scoresq = (d*d) / (line[0]*line[0] + line[1]*line[1]);
                 break;
             }
                 
             case Angle:
             {
                 Eigen::Vector3d line = E * x1;
-                double angle = asin( x2 * line / norm(x2) / norm(line) ) * 180. / M_PI;
+                double angle = asin( x2.dot( line ) / x2.norm() / line.norm() ) * 180. / M_PI;
                 scoresq = angle*angle;
                 break;
             }
@@ -330,37 +331,43 @@ namespace vrlt {
     
     Sophus::SE3d UprightEssential::getPose( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        vector< Sophus::SE3d > poses = tag::se3_from_E( E );
+        Eigen::Matrix3d Rlist[4];
+        Eigen::Vector3d tlist[4];
+        Eigen::Vector3d null_space;
+        theia::EfficientSVDDecomp(E,&null_space,Rlist,tlist);
         
         Sophus::SE3d bestpose;
         int bestcount = 0;
-        for ( int i = 0; i < poses.size(); i++ ) {
-            Sophus::SE3d pose = poses[i];
+        for ( int i = 0; i < 4; i++ ) {
+            Sophus::SE3d pose;
+            pose.so3() = Rlist[i];
+            pose.translation() = tlist[i];
             
-            Eigen::Vector3d newup = pose.get_rotation() * makeVector( 0, 1, 0 );
+            Eigen::Vector3d up;
+            up << 0, 1, 0;
+            Eigen::Vector3d newup = pose.so3() * up;
             if ( newup[1] < 0 ) continue;
-
-            Eigen::Vector3d old_rot = pose.get_rotation().ln();
-            pose.get_rotation() = Sophus::SO3d::exp( makeVector( 0, old_rot[1], 0 ) );
+            
+            Eigen::Vector3d old_trans = pose.translation();
+            pose.translation() = old_trans / old_trans.norm();
             
             int count = 0;
             
             PointPairList::iterator it;
-            for ( it = begin; it != end; it++ ) 
+            for ( it = begin; it != end; it++ )
             {
                 Eigen::Vector4d X = triangulate( pose, *it );
                 Eigen::Vector3d Xproj = project(X);
                 
-                if ( Xproj * it->first > 0 ) count++;
+                if ( Xproj.dot( it->first ) > 0 ) count++;
             }
             
             if ( count > bestcount ) {
                 bestcount = count;
                 bestpose = pose;
             }
-            
         }
-
+        
         return bestpose;
     }
     
@@ -371,10 +378,10 @@ namespace vrlt {
     
     int UprightPose::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        int N = (int) distance( begin, end );
+        int N = (int) std::distance( begin, end );
         int numrows = 2 * N;
         if ( N == 3 ) numrows = 5;
-        Matrix<> A( numrows, 6 );
+        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> A( numrows, 6 );
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ )
@@ -382,13 +389,13 @@ namespace vrlt {
             Eigen::Vector3d X = it->first;
             Eigen::Vector3d x = it->second;
             
-            A[n++] = makeVector( -x[2]*X[0]+X[2]*x[0], -x[2]*X[2]-X[0]*x[0], -x[2], 0, 0, x[0] );
+            A.row(n++) << -x[2]*X[0]+X[2]*x[0], -x[2]*X[2]-X[0]*x[0], -x[2], 0, 0, x[0];
             if ( n == numrows ) break;
-            A[n++] = makeVector( X[2]*x[1], -X[0]*x[1], 0, -x[2]*X[1], -x[2], x[1] );
+            A.row(n++) << X[2]*x[1], -X[0]*x[1], 0, -x[2]*X[1], -x[2], x[1];
         }
 
-        SVD<> svdA( A );
-        Vector<6> sol = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
+        Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdA( A, Eigen::ComputeFullV );
+        Eigen::Matrix<double,6,1> sol = svdA.matrixV().row( svdA.matrixV().cols() - 1 );
         if ( sol[3] == 0 ) return 0;
         sol = sol / sol[3];
         
@@ -396,13 +403,14 @@ namespace vrlt {
         sol[0] /= factor;
         sol[1] /= factor;
         
-        Matrix<3> R;
-        R[0] = makeVector( sol[0], 0, sol[1] );
-        R[1] = makeVector( 0, sol[3], 0 );
-        R[2] = makeVector( -sol[1], 0, sol[0] );
+        Eigen::Matrix3d R;
+        R <<
+        sol[0], 0, sol[1],
+        0, sol[3], 0,
+        -sol[1], 0, sol[0];
         
-        pose.get_rotation() = Sophus::SO3d( R );
-        pose.get_translation() = makeVector( sol[2], sol[4], sol[5] );
+        pose.so3() = Sophus::SO3d( R );
+        pose.translation() << sol[2], sol[4], sol[5];
         
         return 1;
     }
@@ -419,13 +427,13 @@ namespace vrlt {
             case Pixel:
             {
                 Eigen::Vector2d diff = project(projray) - project(obsray);
-                scoresq = diff*diff;
+                scoresq = diff.dot(diff);
                 break;
             }
                 
             case Angle:
             {
-                double angle = acos( projray * obsray / norm(projray) / norm(obsray) ) * 180. / M_PI;
+                double angle = acos( projray.dot(obsray) / projray.norm() / obsray.norm() ) * 180. / M_PI;
                 scoresq = angle*angle;
                 break;
             }
@@ -433,7 +441,7 @@ namespace vrlt {
         
         return scoresq;
     }
-    */
+    
     /*
     int SixPointPose::sampleSize()
     {
