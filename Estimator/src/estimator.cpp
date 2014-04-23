@@ -723,7 +723,6 @@ namespace vrlt {
     }
     */
     
-    /*
     int VerticalVanishingPoint::sampleSize()
     {
         return 2;
@@ -731,39 +730,46 @@ namespace vrlt {
     
     int VerticalVanishingPoint::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
-        int N = (int) distance( begin, end );
+        int N = (int) std::distance( begin, end );
         
-        Matrix<> A( N, 3 );
+        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> A( N, 3 );
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ )
         {
             Eigen::Vector3d coeffs = it->first;
-            A[n++] = coeffs;
+            A.row(n++) = coeffs;
         }
         
         if ( N == 2 ) {
-            Eigen::Vector3d coeffs1 = A[0];
-            Eigen::Vector3d coeffs2 = A[1];
-            vp = coeffs1 ^ coeffs2;
+            Eigen::Vector3d coeffs1 = A.row(0);
+            Eigen::Vector3d coeffs2 = A.row(1);
+            vp = coeffs1.cross( coeffs2 );
         } else {
-            SVD<> svdA( A );
-            vp = svdA.get_VT()[ svdA.get_VT().num_rows() - 1 ];
+            Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdA( A, Eigen::ComputeFullV );
+            vp = svdA.matrixV().col( svdA.matrixV().cols() - 1 );
         }
-        normalize( vp );
+        vp.normalize();
         
         // ensure pointing up
         if ( vp[1] < 0 ) vp = -vp;
         
         // find rotation axis to make vertical
-        Eigen::Vector3d axis = vp ^ makeVector(0,1,0);
-        normalize( axis );
+        Eigen::Vector3d up;
+        up << 0, 1, 0;
+        Eigen::Vector3d axis = vp.cross( up );
+        if ( axis.norm() < 1e-10 )
+        {
+            R = Sophus::SO3d();
+            return 1;
+        }
+        axis.normalize();
         
         // find angle
         double angle = acos( vp[1] );
         
         // get rotation
-        R = Sophus::SO3d( axis * angle );
+        R = Sophus::SO3d::exp( axis * angle );
         
         return 1;
     }
@@ -772,7 +778,7 @@ namespace vrlt {
     {
         Eigen::Vector3d coeffs = it->first;
         
-        double angle = asin( coeffs * vp ) * 180. / M_PI;
+        double angle = asin( coeffs.dot( vp ) ) * 180. / M_PI;
         return angle * angle;
     }
     
@@ -780,7 +786,6 @@ namespace vrlt {
     {
         return true;
     }
-     */
     
     
 
