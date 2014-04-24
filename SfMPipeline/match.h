@@ -22,10 +22,11 @@ namespace vrlt {
         std::vector<bool> inliers;
         Estimator *estimator;
         int ninliers;
+        bool upright;
 		bool deleteFM;
         
     public:
-        MatchThread( FeatureMatcher *_fm, Node *_node1, Node *_node2, double _threshold, bool _deleteFM = false );
+        MatchThread( FeatureMatcher *_fm, Node *_node1, Node *_node2, double _threshold, bool _upright = false, bool _deleteFM = false );
 		~MatchThread();
         
         void run();

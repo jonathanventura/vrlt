@@ -166,17 +166,33 @@ struct Tester
             my_point_pairs.push_back( point_pair );
         }
         
-
-        FivePointEssential essential;
-
+        Estimator *estimator;
+        
+        if ( r.upright )
+        {
+            estimator = new UprightEssential;
+        }
+        else
+        {
+            estimator = new FivePointEssential;
+        }
+        
         double thresh = width * .006 / focal;
         PROSAC prosac;
         prosac.min_num_inliers = (int) my_point_pairs.size();
         prosac.inlier_threshold = thresh;
         std::vector<bool> inliers;
-        int ninliers = prosac.compute( my_point_pairs.begin(), my_point_pairs.end(), essential, inliers );
+        int ninliers = prosac.compute( my_point_pairs.begin(), my_point_pairs.end(), *(estimator), inliers );
         std::cout << ninliers << " / " << my_point_pairs.size() << " inliers\n";
-        Sophus::SE3d pose = essential.getPose( my_point_pairs.begin(), my_point_pairs.end() );
+        Sophus::SE3d pose;
+        if ( r.upright )
+        {
+            pose = ((UprightEssential*)estimator)->getPose( my_point_pairs.begin(), my_point_pairs.end() );
+        }
+        else
+        {
+            pose = ((FivePointEssential*)estimator)->getPose( my_point_pairs.begin(), my_point_pairs.end() );
+        }
         return pose;
     }
     

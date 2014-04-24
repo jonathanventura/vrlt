@@ -10,8 +10,8 @@
 
 namespace vrlt
 {
-    MatchThread::MatchThread( FeatureMatcher *_fm, Node *_node1, Node *_node2, double _threshold, bool _deleteFM )
-    : fm( _fm ), node1( _node1 ), node2( _node2 ), threshold( _threshold ), deleteFM( _deleteFM )
+    MatchThread::MatchThread( FeatureMatcher *_fm, Node *_node1, Node *_node2, double _threshold, bool _upright, bool _deleteFM )
+    : fm( _fm ), node1( _node1 ), node2( _node2 ), threshold( _threshold ), upright( _upright ), deleteFM( _deleteFM )
     {
         
     }
@@ -56,9 +56,16 @@ namespace vrlt
         prosac.inlier_threshold = threshold;
         prosac.min_num_inliers = point_pairs.size();
         
-        estimator = new FivePointEssential;
+        if ( upright )
+        {
+            estimator = new UprightEssential;
+        }
+        else
+        {
+            estimator = new FivePointEssential;
+        }
         
-        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), *estimator, inliers );
+        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), (*estimator), inliers );
     }
     
     void MatchThread::finish( Reconstruction &r )
@@ -92,7 +99,14 @@ namespace vrlt
         nodepair->name = name;
         nodepair->node1 = node1;
         nodepair->node2 = node2;
-        nodepair->pose = ((FivePointEssential*)estimator)->getPose( inlier_point_pairs.begin(), inlier_point_pairs.end() );
+        if ( upright )
+        {
+            nodepair->pose = ((UprightEssential*)estimator)->getPose( inlier_point_pairs.begin(), inlier_point_pairs.end() );
+        }
+        else
+        {
+            nodepair->pose = ((FivePointEssential*)estimator)->getPose( inlier_point_pairs.begin(), inlier_point_pairs.end() );
+        }
 
         nodepair->nmatches = (int)inlier_point_pairs.size();
         

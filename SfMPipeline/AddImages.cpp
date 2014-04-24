@@ -51,7 +51,6 @@ struct ImageAdder
         ElementList::iterator camerait = r.cameras.begin();
         Camera *camera = (Camera*)camerait->second;
         cv::Mat image = cv::imread( camera->path, cv::IMREAD_GRAYSCALE );
-        int width = image.size().width;
         switch ( camera->calibration->type )
         {
             case Calibration::Perspective:
@@ -191,7 +190,14 @@ struct ImageAdder
         // estimate pose
         Estimator *estimator;
         
-        estimator = new ThreePointPose;
+        if ( r.upright )
+        {
+            estimator = new UprightPose;
+        }
+        else
+        {
+            estimator = new ThreePointPose;
+        }
 
         PROSAC prosac;
         prosac.num_trials = 2000;
@@ -202,7 +208,14 @@ struct ImageAdder
         
         std::cout << node->name << " ninliers: " << ninliers << " / " << point_pairs.size() << "\n";
         
-        pose = ((ThreePointPose*)estimator)->pose;
+        if ( r.upright )
+        {
+            pose = ((UprightPose*)estimator)->pose;
+        }
+        else
+        {
+            pose = ((ThreePointPose*)estimator)->pose;
+        }
         
         std::cout << "pose:\n";
         std::cout << pose.log() << "\n";
@@ -271,7 +284,6 @@ struct ImageAdder
             
             // triangulate point
             Eigen::Vector4d pt = triangulate( feature, best_feature );
-            double inv_dist = fabs(pt[3]) / pt.head(3).norm();
             
             // add point
             Point *point = new Point;

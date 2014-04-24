@@ -67,7 +67,7 @@ int main( int argc, char **argv )
             if ( node1->root() == node2->root() ) continue;
 			std::cout << "\t" << node2->name << "\n";
             
-            MatchThread *thread = new MatchThread( &fm1, node1, node2, threshold );
+            MatchThread *thread = new MatchThread( &fm1, node1, node2, threshold, r.upright );
 
 			threads.push_back( thread );
         }

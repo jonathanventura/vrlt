@@ -63,7 +63,7 @@ int main( int argc, char **argv )
             Node *node2 = (Node*) nodeit2->second;
             if ( node1->root() == node2->root() ) continue;
             
-            MatchThread *thread = new MatchThread( &fm1, node1, node2, threshold );
+            MatchThread *thread = new MatchThread( &fm1, node1, node2, threshold, r.upright );
             
             threads.push_back( thread );
         }
