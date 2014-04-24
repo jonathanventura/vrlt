@@ -282,7 +282,6 @@ namespace vrlt {
         }
         
         Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdA( A, Eigen::ComputeFullV );
-
         Eigen::VectorXd sol = svdA.matrixV().col( svdA.cols() - 1 );
         
         E <<
@@ -379,9 +378,7 @@ namespace vrlt {
     int UprightPose::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
         int N = (int) std::distance( begin, end );
-        int numrows = 2 * N;
-        if ( N == 3 ) numrows = 5;
-        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> A( numrows, 6 );
+        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> A( 2 * N, 6 );
         int n = 0;
         PointPairList::iterator it;
         for ( it = begin; it != end; it++ )
@@ -390,12 +387,11 @@ namespace vrlt {
             Eigen::Vector3d x = it->second;
             
             A.row(n++) << -x[2]*X[0]+X[2]*x[0], -x[2]*X[2]-X[0]*x[0], -x[2], 0, 0, x[0];
-            if ( n == numrows ) break;
             A.row(n++) << X[2]*x[1], -X[0]*x[1], 0, -x[2]*X[1], -x[2], x[1];
         }
 
         Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdA( A, Eigen::ComputeFullV );
-        Eigen::Matrix<double,6,1> sol = svdA.matrixV().row( svdA.matrixV().cols() - 1 );
+        Eigen::Matrix<double,6,1> sol = svdA.matrixV().col( svdA.matrixV().cols() - 1 );
         if ( sol[3] == 0 ) return 0;
         sol = sol / sol[3];
         
@@ -989,7 +985,6 @@ namespace vrlt {
                     best_subset = random_subset;
                     best_soln = soln;
                     bestNInliers = K;
-                    std::cout << "bestNInliers: " << bestNInliers << " / " << N << "\n";
                 }
             }
             if ( bestNInliers >= Kthresh ) break;
