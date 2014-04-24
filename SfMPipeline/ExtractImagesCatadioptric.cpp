@@ -208,7 +208,7 @@ public:
             child->camera = camera;
             camera->node = child;
             
-            child->pose.so3() = catadioptric->Ry[i].inverse();
+            child->pose.so3() = catadioptric->R[i].inverse();
         }
     }
     
