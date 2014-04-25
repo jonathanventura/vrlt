@@ -32,18 +32,29 @@ int main( int argc, char **argv )
     double diagonal = imsize.norm();
     double min_length = .025 * diagonal;
     
-    std::vector<Node*> oldNodes;
-    std::vector<Node*> newNodes;
-    
-    ElementList::iterator nodeit;
-    for ( nodeit = r.nodes.begin(); nodeit != r.nodes.end(); nodeit++ ) {
-        Node *node = (Node*) nodeit->second;
-        
-        Sophus::SO3d R = rectify( node, min_length );
-        node->pose.so3() = R.inverse();
+    if ( r.nodes.find("root") != r.nodes.end() )
+    {
+        Node *root = (Node*)r.nodes["root"];
+        Sophus::SO3d R = rectify( root, min_length );
+        Sophus::SE3d P;
+        P.so3() = R.inverse();
+        root->pose = P * root->pose;
     }
-    
-    r.upright = true;
+    else
+    {
+        std::vector<Node*> oldNodes;
+        std::vector<Node*> newNodes;
+        
+        ElementList::iterator nodeit;
+        for ( nodeit = r.nodes.begin(); nodeit != r.nodes.end(); nodeit++ ) {
+            Node *node = (Node*) nodeit->second;
+            
+            Sophus::SO3d R = rectify( node, min_length );
+            node->pose.so3() = R.inverse();
+        }
+        
+        r.upright = true;
+    }
     
     XML::write( r, pathout );
 }
