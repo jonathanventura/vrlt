@@ -238,6 +238,24 @@ namespace vrlt
         }
     }
     
+    void transformPoints( Node *node, Sophus::SE3d &pose )
+    {
+        for ( ElementList::iterator it = node->points.begin(); it != node->points.end(); it++ )
+        {
+            Point *point = (Point*)it->second;
+            
+            point->position.head(3) = pose * ( point->position.head(3) / point->position[3] );
+            point->position[3] = 1.;
+        }
+        
+        for ( ElementList::iterator it = node->children.begin(); it != node->children.end(); it++ )
+        {
+            Node *child = (Node*)it->second;
+            
+            child->pose = child->pose * pose.inverse();
+        }
+    }
+    
     void removeCameraFeatures( Reconstruction &r, Camera *camera )
     {
         ElementList::iterator it;

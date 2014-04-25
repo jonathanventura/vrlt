@@ -279,6 +279,7 @@ namespace vrlt {
         void clearPairs( Node *root );
     };
     
+    void transformPoints( Node *node, Sophus::SE3d &pose );
     void removeCameraFeatures( Reconstruction &r, Camera *camera );
     Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const cv::Mat &image, const Sophus::SE3d &pose );
     
