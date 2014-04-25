@@ -37,8 +37,9 @@ int main( int argc, char **argv )
         Node *root = (Node*)r.nodes["root"];
         Sophus::SO3d R = rectify( root, min_length );
         Sophus::SE3d P;
-        P.so3() = R.inverse();
-        root->pose = P * root->pose;
+        P.so3() = R;
+        
+        transformPoints( root, P );
     }
     else
     {
