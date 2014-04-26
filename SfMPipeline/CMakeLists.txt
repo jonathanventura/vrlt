@@ -38,6 +38,10 @@ target_link_libraries( AddImages vrlt_multiview )
 target_link_libraries( AddImages vrlt_estimator )
 target_link_libraries( AddImages vrlt_bundleadjustment )
 
+add_executable( EstimateGround EstimateGround.cpp )
+target_link_libraries( EstimateGround vrlt_multiview )
+target_link_libraries( EstimateGround vrlt_estimator  )
+
 add_executable( MakePLY MakePLY.cpp )
 target_link_libraries( MakePLY vrlt_multiview )
 
