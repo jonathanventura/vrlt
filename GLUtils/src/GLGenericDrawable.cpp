@@ -70,25 +70,25 @@ void GLGenericDrawable::AddAttrib( GLuint attribID, GLuint attribSize ) {
 	elemSize += attribSize;
 }
 
-void GLGenericDrawable::AddElem( const Eigen::VectorXd &attrib0 ) {
+void GLGenericDrawable::AddElem( const Eigen::VectorXf &attrib0 ) {
 	GLfloat *elem = PushElem();
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 }
 
-void GLGenericDrawable::AddElem( const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1 ) {
+void GLGenericDrawable::AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1 ) {
 	GLfloat *elem = PushElem();
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 	for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
 }
 
-void GLGenericDrawable::AddElem( const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1, const Eigen::VectorXd &attrib2 ) {
+void GLGenericDrawable::AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2 ) {
 	GLfloat *elem = PushElem();
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 	for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
 	for ( GLuint i = 0; i < attribSizes[2]; i++,elem++ ) *elem = attrib2[i];
 }
 
-void GLGenericDrawable::AddElem( const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1, const Eigen::VectorXd &attrib2, const Eigen::VectorXd &attrib3 ) {
+void GLGenericDrawable::AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2, const Eigen::VectorXf &attrib3 ) {
 	GLfloat *elem = PushElem();
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 	for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
@@ -107,18 +107,18 @@ void GLGenericDrawable::Commit() {
 	}
 }
 
-void GLGenericDrawable::SetElem( size_t index, const Eigen::VectorXd &attrib0 ) {
+void GLGenericDrawable::SetElem( size_t index, const Eigen::VectorXf &attrib0 ) {
 	GLfloat *elem = data + elemSize * index;
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 }
 
-void GLGenericDrawable::SetElem( size_t index, const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1 ) {
+void GLGenericDrawable::SetElem( size_t index, const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1 ) {
 	GLfloat *elem = data + elemSize * index;
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 	for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
 }
 
-void GLGenericDrawable::SetElem( size_t index, const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1, const Eigen::VectorXd &attrib2 ) {
+void GLGenericDrawable::SetElem( size_t index, const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2 ) {
 	GLfloat *elem = data + elemSize * index;
 	for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
 	for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];

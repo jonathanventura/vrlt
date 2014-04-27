@@ -305,7 +305,7 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
                     if ( !current_texture->rotated ) texCoord = texCoords[t-1];
                     else texCoord = rotateVector( texCoords[t-1] );
                     normal = normals[n-1];
-                    model->drawable->AddElem( vertex, texCoord, scaleOffset, normal );
+                    model->drawable->AddElem( vertex.cast<float>(), texCoord.cast<float>(), scaleOffset.cast<float>(), normal.cast<float>() );
                 }
             } else {
                 for ( int i = 0; i < 3; i++ ) {
@@ -316,7 +316,7 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
                     else if ( i == 1 ) texCoord << 1, 0;
                     else if ( i == 2 ) texCoord << 0, 1;
                     normal = normals[n-1];
-                    model->drawable->AddElem( vertex, texCoord, scaleOffset, normal );
+                    model->drawable->AddElem( vertex.cast<float>(), texCoord.cast<float>(), scaleOffset.cast<float>(), normal.cast<float>() );
                 }
             }
             
@@ -345,7 +345,7 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
                 vertex = vertices[i];
                 if ( !current_texture->rotated ) texCoord = texCoords[i];
                 else texCoord = rotateVector( texCoords[i] );
-                model->drawable->AddElem( vertex, texCoord, scaleOffset );
+                model->drawable->AddElem( vertex.cast<float>(), texCoord.cast<float>(), scaleOffset.cast<float>() );
             }
             model->objects.back().length = vertices.size();
         }

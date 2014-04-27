@@ -63,23 +63,23 @@ public:
 	 */
 	void AddAttrib( GLuint attribID, GLuint attribSize );
 	/** Add an element with one attribute */
-	void AddElem( const Eigen::VectorXd &attrib0 );
+	void AddElem( const Eigen::VectorXf &attrib0 );
 	/** Add an element with two attributes */
-	void AddElem( const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1 );
+	void AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1 );
 	/** Add an element with three attributes */
-	void AddElem( const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1, const Eigen::VectorXd &attrib2 );
+	void AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2 );
 	/** Add an element with four attributes */
-	void AddElem( const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1, const Eigen::VectorXd &attrib2, const Eigen::VectorXd &attrib3 );
+	void AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2, const Eigen::VectorXf &attrib3 );
 	/** Copy the data to the vertex buffer object
 	 * This must be called after adding elements and before drawing.
 	 */
 	void Commit();
     /** Update the data in a specific element with one attribute */
-    void SetElem( size_t index, const Eigen::VectorXd &attrib0 );
+    void SetElem( size_t index, const Eigen::VectorXf &attrib0 );
     /** Update the data in a specific element with two attributes */
-    void SetElem( size_t index, const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1 );
+    void SetElem( size_t index, const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1 );
     /** Update the data in a specific element with three attributes */
-    void SetElem( size_t index, const Eigen::VectorXd &attrib0, const Eigen::VectorXd &attrib1, const Eigen::VectorXd &attrib2 );
+    void SetElem( size_t index, const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2 );
     /** Update the data in the vertex buffer object
      * This must be called after setting elements and before drawing.
      */
