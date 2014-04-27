@@ -42,6 +42,12 @@ add_executable( EstimateGround EstimateGround.cpp )
 target_link_libraries( EstimateGround vrlt_multiview )
 target_link_libraries( EstimateGround vrlt_estimator  )
 
+find_library( Geographic Geographic REQUIRED )
+add_executable( AlignOSM AlignOSM.cpp osm_xml_reader.h osm_xml_reader.cpp )
+target_link_libraries( AlignOSM vrlt_multiview )
+target_link_libraries( AlignOSM vrlt_glutils )
+target_link_libraries( AlignOSM ${Geographic} )
+
 add_executable( MakePLY MakePLY.cpp )
 target_link_libraries( MakePLY vrlt_multiview )
 
