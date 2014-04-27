@@ -113,6 +113,7 @@ int main( int argc, char **argv )
             if ( !good ) continue;
                     
             Eigen::Vector3d X = project( point->position );
+            if ( X.norm() > 1000 ) continue;
             
             Eigen::Vector3d N = point->normal;
             N.normalize();
