@@ -31,8 +31,6 @@ namespace vrlt {
         
         delete flannindex;
         flannindex = new cv::flann::GenericIndex< cv::flann::L2<unsigned char> >( trainDescriptors, params );
-        
-        std::cout << "veclen: " << flannindex->veclen() << "\n";
     }
     
     ApproxNN::~ApproxNN()
