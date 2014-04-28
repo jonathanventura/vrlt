@@ -434,6 +434,68 @@ namespace vrlt {
     }
     */
     
+    int extractORB( cv::Mat &image, std::vector<Feature*> &features, int nfeatures )
+    {
+        cv::Mat gray_image;
+        if ( image.channels() == 3 )
+        {
+            cv::cvtColor( image, gray_image, cv::COLOR_RGB2GRAY );
+        }
+        else
+        {
+            gray_image = image;
+        }
+        
+        std::vector<cv::KeyPoint> keypoints;
+        cv::Mat descriptors;
+        
+        cv::ORB orb( nfeatures );
+        orb( gray_image, cv::noArray(), keypoints );
+        
+        cv::SIFT sift;
+        sift( gray_image, cv::noArray(), keypoints, descriptors, true );
+        
+        float *floatdata = (float*)descriptors.ptr();
+        
+        features.clear();
+        features.reserve( keypoints.size() );
+        for ( size_t i = 0; i < keypoints.size(); i++,floatdata+=128 )
+        {
+            Feature *feature = new Feature;
+            feature->location[0] = keypoints[i].pt.x;
+            feature->location[1] = keypoints[i].pt.y;
+            feature->scale = keypoints[i].size;
+            feature->orientation = keypoints[i].angle;
+            
+            if ( image.channels() == 3 )
+            {
+                cv::Vec3b color = getColorSubpix( image, keypoints[i].pt );
+                feature->color[0] = color[0];
+                feature->color[1] = color[1];
+                feature->color[2] = color[2];
+            }
+            else
+            {
+                uchar gray = getGraySubpix( image, keypoints[i].pt );
+                feature->color[0] = gray;
+                feature->color[1] = gray;
+                feature->color[2] = gray;
+            }
+            
+            normalizeFloats( floatdata );
+            
+            feature->descriptor = new unsigned char[128];
+            for ( int k = 0; k < 128; k++ ) {
+                float val = floatdata[k] * 512.f;
+                if ( val > 255.f ) val = 255.f;
+                feature->descriptor[k] = (unsigned char) val;
+            }
+            features.push_back( feature );
+        }
+        
+        return features.size();
+    }
+    
     int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min, double contrast_thresh )
     {
         cv::Mat gray_image;

@@ -26,6 +26,7 @@ namespace vrlt {
 //    int detectFAST( ImagePyramid &image, std::vector<Feature*> &features );
     
 //    int extractPatchDescriptors( cv::Mat &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
+    int extractORB( cv::Mat &image, std::vector<Feature*> &features, int nfeatures = 500 );
     
 //    int extractSIFTdescriptors( cv::Mat &image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
     int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min = 0, double contrast_thresh = 0.04 );
