@@ -129,7 +129,7 @@ namespace vrlt
         
         return X;
     }
-    
+
     Node* Node::root()
     {
         Node *myroot = this;
@@ -374,4 +374,29 @@ namespace vrlt
         return camera;
     }
     
+    cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt)
+    {
+        assert(!img.empty());
+        assert(img.channels() == 3);
+        
+        int x = (int)pt.x;
+        int y = (int)pt.y;
+        
+        int x0 = cv::borderInterpolate(x,   img.cols, cv::BORDER_REFLECT_101);
+        int x1 = cv::borderInterpolate(x+1, img.cols, cv::BORDER_REFLECT_101);
+        int y0 = cv::borderInterpolate(y,   img.rows, cv::BORDER_REFLECT_101);
+        int y1 = cv::borderInterpolate(y+1, img.rows, cv::BORDER_REFLECT_101);
+        
+        float a = pt.x - (float)x;
+        float c = pt.y - (float)y;
+        
+        uchar b = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c)
+                                 + (img.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[0] * a) * c);
+        uchar g = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c)
+                                 + (img.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[1] * a) * c);
+        uchar r = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
+                                 + (img.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[2] * a) * c);
+        
+        return cv::Vec3b(b, g, r);
+    }
 }

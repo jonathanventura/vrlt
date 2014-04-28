@@ -125,14 +125,6 @@ namespace vrlt {
         return Xin.head(d-1)/Xin[d-1];
     }
 
-//    Eigen::Vector2d project( const Eigen::Vector3d &Xin )
-//    {
-//        Eigen::Vector2d Xout;
-//        Xout[0] = Xin[0]/Xin[2];
-//        Xout[1] = Xin[1]/Xin[2];
-//        return Xout;
-//    }
-
     template<int d,typename T>
     inline Eigen::Matrix<T,d+1,1> unproject( const Eigen::Matrix<T,d,1> &Xin )
     {
@@ -147,7 +139,7 @@ namespace vrlt {
     
     Eigen::Vector2d cylindricalProject( const Eigen::Vector3d &X );
     Eigen::Vector3d cylindricalUnproject( const Eigen::Vector2d &pt );
-
+    
     struct Track;
     /** \brief An interest point
      *
@@ -282,7 +274,8 @@ namespace vrlt {
     void transformPoints( Node *node, Sophus::SE3d &pose );
     void removeCameraFeatures( Reconstruction &r, Camera *camera );
     Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const cv::Mat &image, const Sophus::SE3d &pose );
-    
+    cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt);
+
     /** @}
      */
 }
