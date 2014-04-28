@@ -121,7 +121,7 @@ namespace vrlt
             }
         }
         
-        //drawLines( node, inlier_lines );
+        drawLines( node, inlier_lines );
         
         return Rvert;
     }

@@ -57,6 +57,7 @@ void showMatches( Reconstruction &r, Camera *camera1, Camera *camera2 )
     
     char path[256];
     sprintf( path, "Output/%s.%s.jpg", camera1->name.c_str(), camera2->name.c_str() );
+    std::cout << path << "\n";
     cv::imwrite( path, imageout );
 }
 
