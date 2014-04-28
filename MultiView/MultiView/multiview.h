@@ -275,6 +275,7 @@ namespace vrlt {
     void removeCameraFeatures( Reconstruction &r, Camera *camera );
     Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const cv::Mat &image, const Sophus::SE3d &pose );
     cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt);
+    uchar getGraySubpix(const cv::Mat& img, cv::Point2f pt);
 
     /** @}
      */
