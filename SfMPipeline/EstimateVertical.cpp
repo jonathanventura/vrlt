@@ -14,13 +14,14 @@ using namespace vrlt;
 
 int main( int argc, char **argv )
 {
-    if ( argc != 3 ) {
-        fprintf( stderr, "usage: %s <file in> <file out>\n", argv[0] );
+    if ( argc != 3 && argc != 4 ) {
+        fprintf( stderr, "usage: %s <file in> <file out> [<rotated>]\n", argv[0] );
         exit(1);
     }
     
     std::string pathin = std::string(argv[1]);
     std::string pathout = std::string(argv[2]);
+    bool rotated = ( argc == 4 );
     
     Reconstruction r;
     XML::read( r, pathin );
@@ -35,7 +36,7 @@ int main( int argc, char **argv )
     if ( r.nodes.find("root") != r.nodes.end() )
     {
         Node *root = (Node*)r.nodes["root"];
-        Sophus::SO3d R = rectify( root, min_length );
+        Sophus::SO3d R = rectify( root, min_length, rotated );
         Sophus::SE3d P;
         P.so3() = R;
         
@@ -50,7 +51,7 @@ int main( int argc, char **argv )
         for ( nodeit = r.nodes.begin(); nodeit != r.nodes.end(); nodeit++ ) {
             Node *node = (Node*) nodeit->second;
             
-            Sophus::SO3d R = rectify( node, min_length );
+            Sophus::SO3d R = rectify( node, min_length, rotated );
             node->pose.so3() = R.inverse();
         }
         

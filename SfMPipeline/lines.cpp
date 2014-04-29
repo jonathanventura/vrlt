@@ -77,11 +77,21 @@ namespace vrlt
         }
     }
     
-    Sophus::SO3d rectify( Node *node, double min_length )
+    Sophus::SO3d rectify( Node *node, double min_length, bool rotated )
     {
         // extract lines
         std::vector<Line> vert_lines, horz_lines;
-        extractLines( node, vert_lines, horz_lines, min_length );
+        Eigen::Vector3d up;
+        if ( rotated )
+        {
+            extractLines( node, horz_lines, vert_lines, min_length );
+            up << 0, 0, 1;
+        }
+        else
+        {
+            extractLines( node, vert_lines, horz_lines, min_length );
+            up << 0, 1, 0;
+        }
         std::sort( vert_lines.begin(), vert_lines.end(), SortLines() );
         
         PROSAC prosac;
@@ -99,7 +109,7 @@ namespace vrlt
         }
         
         // estimate vertical vanishing point
-        VerticalVanishingPoint vvp;
+        VanishingPoint vvp( up );
         int ninliers = prosac.compute( line_list.begin(), line_list.end(), vvp, inliers );
         
         std::cout << node->name << " vertical estimation: " << ninliers << " / " << vert_lines.size() << "\n";
@@ -123,6 +133,16 @@ namespace vrlt
         
         drawLines( node, inlier_lines );
         
+        if ( rotated )
+        {
+            Eigen::Matrix3d Z_to_negY;
+            Z_to_negY <<
+            1,0,0,
+            0,0,-1,
+            0,1,0;
+            Rvert = Sophus::SO3d(Z_to_negY)*Rvert;
+        }
+
         return Rvert;
     }
 }

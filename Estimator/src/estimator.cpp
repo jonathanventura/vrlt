@@ -719,12 +719,12 @@ namespace vrlt {
     }
     */
     
-    int VerticalVanishingPoint::sampleSize()
+    int VanishingPoint::sampleSize()
     {
         return 2;
     }
     
-    int VerticalVanishingPoint::compute( PointPairList::iterator begin, PointPairList::iterator end )
+    int VanishingPoint::compute( PointPairList::iterator begin, PointPairList::iterator end )
     {
         int N = (int) std::distance( begin, end );
         
@@ -748,11 +748,9 @@ namespace vrlt {
         vp.normalize();
         
         // ensure pointing up
-        if ( vp[1] < 0 ) vp = -vp;
         
         // find rotation axis to make vertical
-        Eigen::Vector3d up;
-        up << 0, 1, 0;
+        if ( up.dot(vp) < 0 ) vp = -vp;
         Eigen::Vector3d axis = vp.cross( up );
         if ( axis.norm() < 1e-10 )
         {
@@ -762,7 +760,7 @@ namespace vrlt {
         axis.normalize();
         
         // find angle
-        double angle = acos( vp[1] );
+        double angle = acos( up.dot(vp) );
         
         // get rotation
         R = Sophus::SO3d::exp( axis * angle );
@@ -770,7 +768,7 @@ namespace vrlt {
         return 1;
     }
     
-    double VerticalVanishingPoint::score( PointPairList::iterator it )
+    double VanishingPoint::score( PointPairList::iterator it )
     {
         Eigen::Vector3d coeffs = it->first;
         
@@ -778,7 +776,7 @@ namespace vrlt {
         return angle * angle;
     }
     
-    bool VerticalVanishingPoint::canRefine()
+    bool VanishingPoint::canRefine()
     {
         return true;
     }

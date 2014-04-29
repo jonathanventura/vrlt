@@ -170,18 +170,20 @@ namespace vrlt {
         Eigen::Matrix3d H;
     };
     
-    /** \brief Vertical vanishing point
+    /** \brief Vanishing point
      *
-     * Vertical vanishing point estimation.
+     * Vanishing point estimation.
      */
-    struct VerticalVanishingPoint : public Estimator
+    struct VanishingPoint : public Estimator
     {
+        Eigen::Vector3d up;
         int sampleSize();
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
         Eigen::Vector3d vp;
         Sophus::SO3d R; // R*vp = [0 1 0]'
         bool canRefine();
+        VanishingPoint( const Eigen::Vector3d &_up ) : up( _up ) { }
     };
 
     /** \brief PROSAC implementation

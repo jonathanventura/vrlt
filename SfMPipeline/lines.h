@@ -32,7 +32,7 @@ namespace vrlt
     
     void drawLines( Node *node, std::vector<Line> &lines );
     void extractLines( Node *node, std::vector<Line> &vert_lines, std::vector<Line> &horz_lines, double min_length );
-    Sophus::SO3d rectify( Node *node, double min_length );
+    Sophus::SO3d rectify( Node *node, double min_length, bool rotated = false );
     
 }
 
