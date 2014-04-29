@@ -12,13 +12,15 @@ using namespace vrlt;
 
 int main( int argc, char **argv )
 {
-    if ( argc != 3 ) {
-        fprintf( stderr, "usage: %s <file in> <file out>\n", argv[0] );
+    if ( argc != 3 && argc != 4 ) {
+        fprintf( stderr, "usage: %s <file in> <file out> [<percentile>]\n", argv[0] );
         exit(1);
     }
     
     std::string pathin = std::string(argv[1]);
     std::string pathout = std::string(argv[2]);
+    double percentile = 0.8;
+    if ( argc == 4 ) percentile = atof(argv[3]);
     
     Reconstruction r;
     XML::read( r, pathin );
@@ -44,7 +46,7 @@ int main( int argc, char **argv )
     
     std::sort( Yvalues.begin(), Yvalues.end() );
     
-    double ground_height = Yvalues[Yvalues.size()*.8];
+    double ground_height = Yvalues[Yvalues.size()*percentile];
     
     Sophus::SE3d P;
     P.translation() << 0,-ground_height,0;
