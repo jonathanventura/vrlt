@@ -1,4 +1,7 @@
 
+add_executable( InitializeFromFile InitializeFromFile.cpp )
+target_link_libraries( InitializeFromFile vrlt_multiview )
+
 add_executable( ExtractImagesCatadioptric ExtractImagesCatadioptric.cpp ocam/ocam_functions.cpp ocam/rpoly.cpp ocam/world2cam.cpp extract_images.h extract_images.cpp )
 target_link_libraries( ExtractImagesCatadioptric vrlt_multiview )
 
