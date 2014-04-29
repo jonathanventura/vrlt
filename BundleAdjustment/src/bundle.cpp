@@ -128,11 +128,23 @@ namespace vrlt
         double focal, x, y;
     };
     
+    class GlogInitializer
+    {
+    public:
+        GlogInitializer()
+        {
+            char argv0[] = "vrlt_bundleadjsutment";
+            google::InitGoogleLogging(argv0);
+        }
+    };
+    
     class BundleInternal
     {
+        static GlogInitializer glog_initializer;
     public:
         BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose = false, bool _upright = false );
         ~BundleInternal();
+        
         
         bool run();
         void run_str();
@@ -147,6 +159,7 @@ namespace vrlt
         int itmax;
         
         ceres::Problem problem;
+        ceres::LossFunction *lossFunction;
         
         void init();
         
@@ -192,6 +205,8 @@ namespace vrlt
         int mnp;
     };
     
+    GlogInitializer BundleInternal::glog_initializer;
+    
     Bundle::Bundle( Node *_root, bool _verbose, bool _upright )
     {
         internal = new BundleInternal( _root, ElementList(), ElementList(), _verbose, _upright );
@@ -213,7 +228,7 @@ namespace vrlt
     }
     
     BundleInternal::BundleInternal( Node *_root, const ElementList &_fixedNodes, const ElementList &_fixedPoints, bool _verbose, bool _upright )
-    : root( _root ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints ), verbose( _verbose ), upright( _upright ), itmax( 100 )
+    : root( _root ), fixedNodes( _fixedNodes ), fixedPoints( _fixedPoints ), verbose( _verbose ), upright( _upright ), itmax( 100 ), lossFunction( NULL )
     {
         // # camera params
         if ( upright )
@@ -393,6 +408,9 @@ namespace vrlt
         Camera *camera = node->camera;
         if ( camera != NULL )
         {
+            Calibration *calibration = camera->calibration;
+            if ( lossFunction == NULL ) lossFunction = new ceres::HuberLoss( 4.0/calibration->focal );
+            
             ElementList::iterator featureit;
             for ( featureit = camera->features.begin(); featureit != camera->features.end(); featureit++ )
             {
@@ -420,7 +438,7 @@ namespace vrlt
                                                                             feature->location[1]-camera->calibration->center[1]);
                     
                     ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<UprightReprojectionError, 2, 4, 3>(reproj_error);
-                    problem.AddResidualBlock(cost_function, NULL, p+j*cnp, p+m*cnp+i*pnp );
+                    problem.AddResidualBlock(cost_function, lossFunction, p+j*cnp, p+m*cnp+i*pnp );
                 }
                 else
                 {
@@ -430,7 +448,7 @@ namespace vrlt
                                                                    feature->location[1]-camera->calibration->center[1]);
                     
                     ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(reproj_error);
-                    problem.AddResidualBlock(cost_function, NULL, p+j*cnp, p+m*cnp+i*pnp );
+                    problem.AddResidualBlock(cost_function, lossFunction, p+j*cnp, p+m*cnp+i*pnp );
                 }
                 
                 if ( j < mcon ) problem.SetParameterBlockConstant( p+j*cnp );
@@ -546,17 +564,11 @@ namespace vrlt
         
         Node *rootnode = (Node*)r->nodes["root"];
 
-        while ( true )
-        {
-            Bundle bundle( rootnode, true, r->upright );
-            bool good = bundle.run();
-            if ( !good ) return false;
-            
-            fixScale( rootnode );
-            
-            int numRemoved = removeOutliers( r, rootnode );
-            if ( numRemoved == 0 ) break;
-        }
+        Bundle bundle( rootnode, true, r->upright );
+        bool good = bundle.run();
+        if ( !good ) return false;
+        
+        fixScale( rootnode );
         
         return true;
     }

@@ -254,8 +254,6 @@ struct Tester
             
             r.link( rootnode, point );
         }
-        
-        removeOutliers( &r, rootnode, 4 );
     }
     
     Reconstruction &r;

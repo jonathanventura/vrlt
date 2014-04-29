@@ -453,8 +453,6 @@ struct ImageAdder
         
         std::cout << "added " << newPoints.size() << " points\n";
         
-        removeOutliers( &r, rootnode );
-        
         if ( newNodes.empty() ) return 0;
         
 		if ( !newNodes.empty() || !newPoints.empty() ) {
