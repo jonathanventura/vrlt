@@ -213,9 +213,6 @@ void optimizeAlignment()
 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
-    //if ( verbose ) options.minimizer_progress_to_stdout = true;
-//    options.function_tolerance = 1e-20;
-//    options.parameter_tolerance = 1e-20;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport() << "\n";
@@ -428,16 +425,6 @@ int main( int argc, char **argv )
     mapimage = cv::Mat( cv::Size( size, size ), CV_8UC1, cv::Scalar(255) );
     
     cv::namedWindow( "AlignOSM" );
-    
-    pointTransformation.centerX = -11.32974699999999935;
-    pointTransformation.centerZ = -11.90225299999999997;
-    pointTransformation.angle = -2.89724655831057909;
-    pointTransformation.scale = 0.98195500402885083;
-
-    osmTransformation.centerX = 724966.11403917614370584;
-    osmTransformation.centerZ = 5032273.32152573019266129;
-    osmTransformation.angle = 0.00000000000000000;
-    osmTransformation.scale = 1.00000000000000000;
     
     bool should_render = true;
     bool should_quit = false;
