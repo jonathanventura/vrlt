@@ -49,7 +49,7 @@ Eigen::Matrix4d makeTranslation( const Eigen::Vector3d &translation )
     return mat;
 }
 
-Eigen::Matrix4d makeRotation( const Eigen::Matrix3d &rotation )
+Eigen::Matrix4d makeRotation( const Sophus::SO3d &rotation )
 {
     Eigen::Matrix4d mat = Eigen::Matrix4d::Identity();
     mat.block<3,3>(0,0) = rotation.matrix();
