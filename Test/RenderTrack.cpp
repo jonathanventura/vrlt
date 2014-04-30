@@ -17,20 +17,12 @@
 #include <GLUtils/GLSLHelpers.h>
 #include <GLUtils/GLSLPrograms.h>
 
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
 #include <OpenGL/OpenGL.h>
 #include <GLUT/GLUT.h>
-#include <cvd/vision.h>
-#include <cvd/timer.h>
-#include <cvd/random.h>
 
-#include <TooN/svd.h>
+#include <iostream>
 
 using namespace vrlt;
-using namespace std;
-using namespace CVD;
-using namespace TooN;
 
 GLModelShader modelShader;
 GLModel *model = NULL;
@@ -62,21 +54,19 @@ bool paused = false;
 bool recordingOn = false;
 
 int width, height;
-TooN::Matrix<4> scale;
-TooN::Matrix<4> proj;
-TooN::Vector<3> lightDirection;
-TooN::Matrix<4> modelRotation;
-TooN::Matrix<4> modelOffset;
-TooN::Matrix<4> modelView;
-TooN::Matrix<4> modelViewProj;
-TooN::Matrix<4> modelScale;
-TooN::Vector<4> plane;
+Eigen::Matrix4d scale;
+Eigen::Matrix4d proj;
+Eigen::Vector3d lightDirection;
+Eigen::Matrix4d modelRotation;
+Eigen::Matrix4d modelOffset;
+Eigen::Matrix4d modelView;
+Eigen::Matrix4d modelViewProj;
+Eigen::Matrix4d modelScale;
+Eigen::Vector4d plane;
 
 bool haveModel = false;
-vector< TooN::Matrix<4> > modelOffsets;
-vector< TooN::Matrix<4> > modelRotations;
-
-cvd_timer last_time;
+std::vector< Eigen::Matrix4d > modelOffsets;
+std::vector< Eigen::Matrix4d > modelRotations;
 
 bool wroteFrame = false;
 
@@ -90,10 +80,10 @@ void saveImage()
     static int mycounter = 1;
     char path[256];
     sprintf( path, "Output/frame%04d.jpg", mycounter++ );
-    Image< Rgb<byte> > image( ImageRef( width, height ) );
-    glReadPixels( 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image.data() );
-    flipVertical( image );
-    img_save( image, path, ImageType::JPEG );
+    cv::Mat image( cv::Size( width, height ), CV_8UC3 );
+    glReadPixels( 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image.data );
+    cv::flip( image, image, 0 );
+    cv::imwrite( path, image );
 }
 
 void renderBitmapString( float x, float y, void *font, const char *string ) {
@@ -142,7 +132,9 @@ void display()
     if ( tracked ) {
         if ( showPoints ) {
             pointShader.shaderProgram.Use();
-            pointShader.SetColor( makeVector( 1, 0, 0 ) );
+            Eigen::Vector3d color;
+            color << 1, 0, 0;
+            pointShader.SetColor( color );
             pointDrawable.PushClientState();
             pointDrawable.Draw( GL_POINTS );
             pointDrawable.PopClientState();
@@ -151,7 +143,9 @@ void display()
         if ( annotations != NULL )
         {
             pointShader.shaderProgram.Use();
-            pointShader.SetColor( makeVector( 0, 1, 0 ) );
+            Eigen::Vector3d color;
+            color << 0, 1, 0;
+            pointShader.SetColor( color );
             annotationsDrawable.PushClientState();
             annotationsDrawable.Draw( GL_POINTS );
             annotationsDrawable.PopClientState();
@@ -159,7 +153,9 @@ void display()
         
         if ( showGrid ) {
             pointShader.shaderProgram.Use();
-            pointShader.SetColor( makeVector( 1, 1, 0 ) );
+            Eigen::Vector3d color;
+            color << 1, 1, 0;
+            pointShader.SetColor( color );
             gridDrawable.PushClientState();
             gridDrawable.Draw( GL_LINES );
             gridDrawable.PopClientState();
@@ -171,7 +167,7 @@ void display()
             model->drawable->PushClientState();
             
             for ( int i = 0; i < modelOffsets.size(); i++ ) {
-                Matrix<4> my_modelViewProj = modelViewProj * modelOffsets[i] * modelRotations[i] * modelScale;
+                Eigen::Matrix4d my_modelViewProj = modelViewProj * modelOffsets[i] * modelRotations[i] * modelScale;
                 modelShader.shaderProgram.Use();
                 modelShader.SetModelViewProj( my_modelViewProj );
                 model->Render();
@@ -217,10 +213,10 @@ void keyboard( unsigned char key, int x, int y )
             static int snapshotCounter = 0;
             char path[256];
             sprintf( path, "Output/snapshot%04d.png", snapshotCounter++ );
-            Image< Rgb<byte> > image( ImageRef( width, height ) );
-            glReadPixels( 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image.data() );
-            flipVertical( image );
-            img_save( image, path, ImageType::PNG );
+            cv::Mat image( cv::Size( width, height ), CV_8UC3 );
+            glReadPixels( 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image.data );
+            cv::flip( image, image, 0 );
+            cv::imwrite( path, image );
             break;
         }
             
@@ -258,21 +254,22 @@ void setPlanePoint( int x, int y )
     if ( node->parent == NULL ) return;
     
     // intersect with ground plane
-    Vector<4> ground_plane = plane;//makeVector( 0, -1, 0, 0 );
+    Eigen::Vector4d ground_plane = plane;//makeVector( 0, -1, 0, 0 );
     
-    Vector<2> screen_pos = makeVector( x/levelscale, y/levelscale );
+    Eigen::Vector2d screen_pos;
+    screen_pos << x/levelscale, y/levelscale;
     
-    Vector<3> origin = -( node->pose.get_rotation().inverse() * node->pose.get_translation() );
-    Vector<3> ray = node->pose.get_rotation().inverse() * camera->calibration->unproject( screen_pos );
+    Eigen::Vector3d origin = -( node->pose.so3().inverse() * node->pose.translation() );
+    Eigen::Vector3d ray = node->pose.so3().inverse() * camera->calibration->unproject( screen_pos );
     
     // N * ( x0 + r * t ) + D = 0
     // N * x0 + N * r * t + D = 0
     // t = ( - D - N * x0 ) / ( N * r )
     
-    double t = ( - ground_plane[3] - ground_plane.slice<0,3>() * origin ) / ( ground_plane.slice<0,3>() * ray );
-    Vector<3> point = origin + t * ray;
+    double t = ( - ground_plane[3] - ground_plane.head(3).dot( origin ) ) / ( ground_plane.head(3).dot( ray ) );
+    Eigen::Vector3d point = origin + t * ray;
     
-    cout << "point: " << point << "\n";
+    std::cout << "point: " << point << "\n";
     
     modelOffset = makeTranslation( point );
 }
@@ -285,7 +282,7 @@ void remakeMatrices()
     if ( node == NULL ) return;
     if ( node->parent == NULL ) return;
     
-    SE3<> pose = node->globalPose();
+    Sophus::SE3d pose = node->globalPose();
     modelView = makeModelView( pose );
     modelViewProj = proj * scale * modelView;
     pointShader.shaderProgram.Use();
@@ -325,8 +322,7 @@ void idle()
 {
     if ( paused ) return;
     
-    if ( last_time.get_time() < 1./30. ) return;
-    last_time.reset();
+    // need to add some code to keep this at 30 Hz
     
     queryit++;
     if ( queryit == query.cameras.end() ) {
@@ -337,9 +333,9 @@ void idle()
     Camera *camera = (Camera*)queryit->second;
     Node *node = camera->node;
     
-    Image< Rgb<byte> > im = img_load( camera->path );
+    cv::Mat im = cv::imread( camera->path, cv::IMREAD_COLOR );
     glBindTexture( GL_TEXTURE_2D, texID );
-    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, im.data() );
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, im.data );
     
     //    Camera *firstcamera = (Camera*)r.cameras.begin()->second;
     //    camera->node->pose = firstcamera->node->pose;
@@ -363,16 +359,16 @@ void setupGL()
     glClearColor( 0.0, 0.0, 0.0, 0.0 );
 
     Camera *camera = (Camera*)queryit->second;
-    Image< Rgb<byte> > im = img_load( camera->path );
+    cv::Mat im = cv::imread( camera->path, cv::IMREAD_COLOR );
 
-    width = im.size().x;
-    height = im.size().y;
+    width = im.size().width;
+    height = im.size().height;
     
     glViewport( 0, 0, width*levelscale, height*levelscale );
 
     Calibration *calibration = camera->calibration;
     
-    TooN::Vector<4> params;
+    Eigen::Vector4d params;
     params[0] = calibration->focal;
     params[1] = -calibration->focal;
     params[2] = calibration->center[0];
@@ -383,7 +379,7 @@ void setupGL()
     params[3] = ( params[3] + 0.5f ) * levelscale - 0.5f;
     proj = makeProj( params, width*levelscale, height*levelscale, 0.1, 1000 );
     
-    scale = Identity;
+    scale = Eigen::Matrix4d::Identity();
     scale(2,2) = -1;
     
     glGenTextures( 1, &texID );
@@ -399,10 +395,10 @@ void setupGL()
     imageDrawable.Create();
     imageDrawable.AddAttrib( 0, 2 );
     imageDrawable.AddAttrib( 1, 2 );
-    imageDrawable.AddElem( TooN::makeVector(-1,-1 ), TooN::makeVector( 0, 1 ) );
-    imageDrawable.AddElem( TooN::makeVector( 1,-1 ), TooN::makeVector( 1, 1 ) );
-    imageDrawable.AddElem( TooN::makeVector(-1, 1 ), TooN::makeVector( 0, 0 ) );
-    imageDrawable.AddElem( TooN::makeVector( 1, 1 ), TooN::makeVector( 1, 0 ) );
+    imageDrawable.AddElem( makeVector(-1.f,-1.f ), makeVector( 0.f, 1.f ) );
+    imageDrawable.AddElem( makeVector( 1.f,-1.f ), makeVector( 1.f, 1.f ) );
+    imageDrawable.AddElem( makeVector(-1.f, 1.f ), makeVector( 0.f, 0.f ) );
+    imageDrawable.AddElem( makeVector( 1.f, 1.f ), makeVector( 1.f, 0.f ) );
     imageDrawable.Commit();
 
 //    lightDirection = makeVector( -1, 1, 0.5 );
@@ -443,15 +439,15 @@ void setupGL()
 //    cout << ( SO3<>( makeVector( -M_PI/2., 0, 0 ) ) * SO3<>( makeVector( 0, 0, M_PI / 2. ) ) * SO3<>( makeVector( 0, -M_PI, 0 ) ) ).ln() << "\n";
 
     // for shuttle
-    lightDirection = makeVector( -1, 1, 0.5 );
-    plane = makeVector( 0, -1, 0, 0 );
+    lightDirection = makeVector( -1., 1., 0.5 );
+    plane = makeVector( 0., -1., 0., 0. );
 //    plane = makeVector( 1, 0, 0, 0 );
 //    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.005 ); // inches to meters
-    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.2 ); // inches to meters
+    modelScale = makeScale( makeVector( 1., 1., 1. ) * 0.0254 * 0.2 ); // inches to meters
 //    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.5 ); // inches to meters
-    modelRotation = makeRotation( SO3<>( makeVector( 0, -M_PI, 0 ) ) );
+    modelRotation = makeRotation( Sophus::SO3d::exp( makeVector( 0., -M_PI, 0. ) ) );
 //    modelRotation = makeRotation( SO3<>( makeVector( 0, 0, -M_PI / 2. ) ) * SO3<>( makeVector( 0, -M_PI, 0 ) ) );
-    modelOffset = makeTranslation( makeVector( 0, 0, 0 ) );
+    modelOffset = makeTranslation( Eigen::Vector3d::Zero() );
 
 //    modelOffsets.push_back( makeTranslation( makeVector( 35.1645, 0, 0.0557605 ) ) );
 //    modelRotations.push_back( modelRotation );
@@ -495,20 +491,20 @@ void setupGL()
 
     modelShader.Create();
     modelShader.shaderProgram.Use();
-    normalize( lightDirection );
+    lightDirection.normalize();
     modelShader.SetLightDirection( lightDirection );
     modelShader.SetAmbient( .4 );
     
     shadowShader.Create( true );
     shadowShader.shaderProgram.Use();
     shadowShader.SetLightDirection( lightDirection );
-    shadowShader.SetColor( makeVector( 0, 0, 0, .2 ) );
+    shadowShader.SetColor( makeVector( 0., 0., 0., .2 ) );
     shadowShader.SetPlane( plane );
     glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     pointShader.Create();
     pointShader.shaderProgram.Use();
-    pointShader.SetColor( makeVector( 1, 0, 0 ) );
+    pointShader.SetColor( makeVector( 1., 0., 0. ) );
     
     pointDrawable.Create();
     pointDrawable.AddAttrib( 0, 3 );
@@ -518,7 +514,7 @@ void setupGL()
     {
         Point *point = (Point *)it->second;
         
-        pointDrawable.AddElem( project( point->position ) );
+        pointDrawable.AddElem( project( point->position ).cast<float>() );
     }
     pointDrawable.Commit();
     
@@ -529,7 +525,7 @@ void setupGL()
         {
             Point *point = (Point *)it->second;
             
-            annotationsDrawable.AddElem( project( point->position ) );
+            annotationsDrawable.AddElem( project( point->position ).cast<float>() );
         }
     }
     annotationsDrawable.Commit();
@@ -540,16 +536,16 @@ void setupGL()
     {
         for ( int z = -gridradius; z < gridradius; z += gridstep )
         {
-            gridDrawable.AddElem( makeVector( x, 0, z ) );
-            gridDrawable.AddElem( makeVector( x, 0, z+gridstep ) );
+            gridDrawable.AddElem( makeVector( (float)x, 0.f, (float)z ) );
+            gridDrawable.AddElem( makeVector( (float)x, 0.f, (float)(z+gridstep) ) );
         }
     }
     for ( int z = -gridradius; z <= gridradius; z += gridstep )
     {
         for ( int x = -gridradius; x < gridradius; x += gridstep )
         {
-            gridDrawable.AddElem( makeVector( x, 0, z ) );
-            gridDrawable.AddElem( makeVector( x+gridstep, 0, z ) );
+            gridDrawable.AddElem( makeVector( (float)x, 0.f, (float)z ) );
+            gridDrawable.AddElem( makeVector( (float)(x+gridstep), 0.f, (float)z ) );
         }
     }
     gridDrawable.Commit();
@@ -564,20 +560,20 @@ int main( int argc, char **argv )
         return 0;
     }
     
-    string pathin = string(argv[1]);
-    string queryin = string(argv[2]);
-    string objprefix;
-    string objname;
+    std::string pathin = std::string(argv[1]);
+    std::string queryin = std::string(argv[2]);
+    std::string objprefix;
+    std::string objname;
     
     haveModel = false;
     if ( argc == 5 ) {
         haveModel = true;
-        objprefix = string(argv[3]);
-        objname = string(argv[4]);
+        objprefix = std::string(argv[3]);
+        objname = std::string(argv[4]);
     }
     
     r.pathPrefix = pathin;
-    stringstream mypath;
+    std::stringstream mypath;
     mypath << pathin << "/reconstruction.xml";
 //    mypath << pathin << "/updated.xml";
     XML::read( r, mypath.str() );
