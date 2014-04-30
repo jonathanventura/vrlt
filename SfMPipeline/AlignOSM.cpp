@@ -17,6 +17,8 @@
 
 #include <ceres/ceres.h>
 
+#include <sophus/sim3.hpp>
+
 #include <iostream>
 
 using namespace vrlt;
@@ -45,6 +47,24 @@ struct Transformation
         Eigen::Vector4d s;
         s << scale,scale,scale,1;
         return Eigen::DiagonalMatrix<double, 4>(s)*mat;
+    }
+    Sophus::Sim3d sim3()
+    {
+        Sophus::Sim3d T;
+        
+        Eigen::Vector3d r;
+        r << 0, angle, 0;
+        
+        Sophus::SO3d R( Sophus::SO3d::exp(r) );
+        
+        T.rxso3().setScaledRotationMatrix( Eigen::DiagonalMatrix<double, 3>(scale,scale,scale)*R.matrix());
+        
+        Eigen::Vector3d c;
+        c << centerX,0,centerZ;
+        
+        T.translation() = scale*(R*(-c));
+        
+        return T;
     }
 };
 
@@ -323,6 +343,57 @@ void renderOSM( cv::Mat &image )
     }
 }
 
+struct ObjFace
+{
+    size_t v0,v1,v2;
+    ObjFace( size_t _v0, size_t _v1, size_t _v2 ) : v0(_v0), v1(_v1), v2(_v2) { }
+};
+
+void writeOSMObj( const char *path )
+{
+    std::vector<Eigen::Vector3d> vertices;
+    std::vector<ObjFace> faces;
+    
+    std::map<size_t,size_t> nodemap;
+    
+    for ( OSMNodeList::iterator it = osmdata.nodes.begin(); it != osmdata.nodes.end(); it++ )
+    {
+        OSMNode *node = it->second;
+        nodemap[node->ID] = vertices.size();
+        
+        Eigen::Vector4d XYZ;
+        XYZ << node->east,0,node->north,1;
+        XYZ = osmTransformation.matrix() * XYZ;
+
+        vertices.push_back( XYZ.head(3)/XYZ[3] );
+    }
+    
+    for ( OSMWayList::iterator it = osmdata.ways.begin(); it != osmdata.ways.end(); it++ )
+    {
+        OSMWay *way = it->second;
+        if ( way->building == false ) continue;
+        
+        for ( size_t i = 2; i < way->nodeids.size(); i++ )
+        {
+            faces.push_back( ObjFace( nodemap[way->nodeids[i-2]], nodemap[way->nodeids[i-1]], nodemap[way->nodeids[i]] ) );
+        }
+    }
+    
+    FILE *f = fopen(path,"w");
+    
+    for ( size_t i = 0; i < vertices.size(); i++ )
+    {
+        fprintf( f, "v %lf %lf %lf\n", vertices[i][0], vertices[i][1], vertices[i][2] );
+    }
+
+    for ( size_t i = 0; i < faces.size(); i++ )
+    {
+        fprintf( f, "f %lu %lu %lu\n", faces[i].v0+1, faces[i].v1+1, faces[i].v2+1 );
+    }
+
+    fclose(f);
+}
+
 int main( int argc, char **argv )
 {
     if ( argc != 4 ) {
@@ -473,18 +544,23 @@ int main( int argc, char **argv )
         }
     }
     
-    std::cout << "pointTransformation:\n";
-    fprintf( stdout, "%0.17lf\n", pointTransformation.centerX );
-    fprintf( stdout, "%0.17lf\n", pointTransformation.centerZ );
-    fprintf( stdout, "%0.17lf\n", pointTransformation.angle );
-    fprintf( stdout, "%0.17lf\n", pointTransformation.scale );
-
-    std::cout << "osmTransformation:\n";
-    fprintf( stdout, "%0.17lf\n", osmTransformation.centerX );
-    fprintf( stdout, "%0.17lf\n", osmTransformation.centerZ );
-    fprintf( stdout, "%0.17lf\n", osmTransformation.angle );
-    fprintf( stdout, "%0.17lf\n", osmTransformation.scale );
-
+    r.utmZone = osmdata.utm_zone;
+    r.utmNorth = osmdata.utm_north;
+    r.utmCenterEast = osmTransformation.centerX;
+    r.utmCenterNorth = osmTransformation.centerZ;
+    
+    Transformation myOsmTransformation = osmTransformation;
+    myOsmTransformation.centerX = 0;
+    myOsmTransformation.centerZ = 0;
+    
+    Sophus::Sim3d composedTransform = myOsmTransformation.sim3().inverse()*pointTransformation.sim3();
+    
+    transformPoints( root, composedTransform );
+    
+    XML::write( r, pathout );
+    
+    writeOSMObj( "osm.obj" );
+    
     cv::imwrite( "Output/map.png", mapimage );
     
     return 0;

@@ -57,7 +57,6 @@ find_package( Ceres REQUIRED )
 include_directories( ${CERES_INCLUDE_DIRS} )
 add_executable( AlignOSM AlignOSM.cpp osm_xml_reader.h osm_xml_reader.cpp )
 target_link_libraries( AlignOSM vrlt_multiview )
-target_link_libraries( AlignOSM vrlt_glutils )
 target_link_libraries( AlignOSM ${Geographic} )
 target_link_libraries( AlignOSM ${CERES_LIBRARIES} )
 
