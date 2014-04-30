@@ -283,6 +283,30 @@ namespace vrlt {
     cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt);
     uchar getGraySubpix(const cv::Mat& img, cv::Point2f pt);
 
+    template<typename T>
+    Eigen::Matrix<T,2,1> makeVector( T x, T y )
+    {
+        Eigen::Matrix<T,2,1> v;
+        v << x, y;
+        return v;
+    }
+
+    template<typename T>
+    Eigen::Matrix<T,3,1> makeVector( T x, T y, T z )
+    {
+        Eigen::Matrix<T,3,1> v;
+        v << x, y, z;
+        return v;
+    }
+
+    template<typename T>
+    Eigen::Matrix<T,4,1> makeVector( T x, T y, T z, T w )
+    {
+        Eigen::Matrix<T,4,1> v;
+        v << x, y, z, w;
+        return v;
+    }
+
     /** @}
      */
 }
