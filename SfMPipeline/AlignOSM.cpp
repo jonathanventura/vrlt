@@ -22,35 +22,43 @@ using namespace vrlt;
 Reconstruction r;
 Node *root = NULL;
 
-double minX;
-double centerX;
-double maxX;
-double minZ;
-double centerZ;
-double maxZ;
-
-double pointangle = 0.0;
-double pointscale = 1.0;
-
 OSMData osmdata;
 
-double mineast;
-double centereast;
-double maxeast;
-double minnorth;
-double centernorth;
-double maxnorth;
+struct Transformation
+{
+    double centerX;
+    double centerZ;
+    double angle;    // radians
+    double scale;
+    Transformation() : centerX(0),centerZ(0),angle(0),scale(1) { }
+    Eigen::Matrix4d matrix()
+    {
+        Eigen::Vector3d r;
+        r << 0, angle, 0;
+        Eigen::Matrix4d mat( Eigen::Matrix4d::Identity() );
+        mat.block<3,3>(0,0) = Sophus::SO3d::exp(r).matrix();
+        Eigen::Vector3d c;
+        c << centerX,0,centerZ;
+        mat.block<3,1>(0,3) = mat.block<3,3>(0,0)*(-c);
+        Eigen::Vector4d s;
+        s << scale,scale,scale,1;
+        return Eigen::DiagonalMatrix<double, 4>(s)*mat;
+    }
+};
 
-double osmscale = 1.0;
+Transformation pointTransformation;
+Transformation osmTransformation;
+
+double metersToPixels = 1.0;
 
 const int size = 1000;
 
 void getPointLimits()
 {
-    minX = INFINITY;
-    maxX = -INFINITY;
-    minZ = INFINITY;
-    maxZ = -INFINITY;
+    double minX = INFINITY;
+    double maxX = -INFINITY;
+    double minZ = INFINITY;
+    double maxZ = -INFINITY;
     
     std::vector<double> Xvalues;
     std::vector<double> Zvalues;
@@ -66,24 +74,19 @@ void getPointLimits()
         
         Xvalues.push_back( X );
         Zvalues.push_back( Z );
-        
-//        if ( X < minX ) minX = X;
-//        if ( X > maxX ) maxX = X;
-//        if ( Z < minZ ) minZ = Z;
-//        if ( Z > maxZ ) maxZ = Z;
     }
     
     std::sort( Xvalues.begin(), Xvalues.end() );
     std::sort( Zvalues.begin(), Zvalues.end() );
     
     minX = Xvalues[ Xvalues.size() * .1 ];
-    centerX = Xvalues[ Xvalues.size() * .5 ];
+    pointTransformation.centerX = Xvalues[ Xvalues.size() * .5 ];
     maxX = Xvalues[ Xvalues.size() * .9 ];
     minZ = Zvalues[ Zvalues.size() * .1 ];
-    centerZ = Zvalues[ Zvalues.size() * .5 ];
+    pointTransformation.centerZ = Zvalues[ Zvalues.size() * .5 ];
     maxZ = Zvalues[ Zvalues.size() * .9 ];
     
-    pointscale = size/(maxZ-minZ);
+    pointTransformation.scale = 100./(maxZ-minZ);
 }
 
 void renderPoints( cv::Mat &image )
@@ -95,26 +98,22 @@ void renderPoints( cv::Mat &image )
         double X = point->position[0] / point->position[3];
         double Z = point->position[2] / point->position[3];
         
-        Eigen::Vector3d XYZ;
-        XYZ << X,0,Z;
+        Eigen::Vector4d XYZ;
+        XYZ << X,0,Z,1;
         
-        Eigen::Vector3d rotvec;
-        rotvec << 0,pointangle,0;
-        Sophus::SO3d rot = Sophus::SO3d::exp(rotvec);
+        XYZ = pointTransformation.matrix() * XYZ;
         
-        XYZ = rot*XYZ;
-        
-        cv::Point2i pt( size/2 + round(pointscale*(XYZ[0]-centerX)), size/2 - round(pointscale*(XYZ[2]-centerZ)) );
-        cv::circle( image, pt, 2, cv::Scalar(0) );
+        cv::Point2i pt( size/2 + round(metersToPixels*XYZ[0]), size/2 - round(metersToPixels*XYZ[2]) );
+        cv::circle( image, pt, 0, cv::Scalar(0) );
     }
 }
 
 void getOSMLimits()
 {
-    minnorth = INFINITY;
-    maxnorth = -INFINITY;
-    mineast = INFINITY;
-    maxeast = -INFINITY;
+    double minnorth = INFINITY;
+    double maxnorth = -INFINITY;
+    double mineast = INFINITY;
+    double maxeast = -INFINITY;
     
     for ( OSMWayList::iterator it = osmdata.ways.begin(); it != osmdata.ways.end(); it++ )
     {
@@ -132,10 +131,9 @@ void getOSMLimits()
         }
     }
     
-    centereast = mineast+(maxeast-mineast)/2;
-    centernorth = minnorth+(maxnorth-minnorth)/2;
-    osmscale = size/(maxeast-mineast);
-    
+    osmTransformation.centerX = mineast+(maxeast-mineast)/2;
+    osmTransformation.centerZ = minnorth+(maxnorth-minnorth)/2;
+    metersToPixels = size/(maxeast-mineast);
 }
 
 void renderOSM( cv::Mat &image )
@@ -150,8 +148,16 @@ void renderOSM( cv::Mat &image )
             OSMNode *node0 = osmdata.nodes[way->nodeids[i-1]];
             OSMNode *node1 = osmdata.nodes[way->nodeids[i]];
             
-            cv::Point2i pt0( size/2 + round(osmscale*(node0->east-centereast)), size/2 - round(osmscale*(node0->north-centernorth)) );
-            cv::Point2i pt1( size/2 + round(osmscale*(node1->east-centereast)), size/2 - round(osmscale*(node1->north-centernorth)) );
+            Eigen::Vector4d XYZ0;
+            XYZ0 << node0->east,0,node0->north,1;
+            XYZ0 = osmTransformation.matrix() * XYZ0;
+            
+            Eigen::Vector4d XYZ1;
+            XYZ1 << node1->east,0,node1->north,1;
+            XYZ1 = osmTransformation.matrix() * XYZ1;
+
+            cv::Point2i pt0( size/2 + round(metersToPixels*XYZ0[0]), size/2 - round(metersToPixels*XYZ0[2]) );
+            cv::Point2i pt1( size/2 + round(metersToPixels*XYZ1[0]), size/2 - round(metersToPixels*XYZ1[2]) );
             cv::line( image, pt0, pt1, cv::Scalar(0) );
         }
     }
@@ -184,8 +190,8 @@ int main( int argc, char **argv )
     
     getOSMLimits();
     
-    double bigstep = (maxeast-mineast)/100.;
-    double smallstep = (maxeast-mineast)/1000.;
+    double bigstep = 1.;
+    double smallstep = 0.1;
     
     cv::Mat mapimage;
     mapimage = cv::Mat( cv::Size( size, size ), CV_8UC1, cv::Scalar(255) );
@@ -206,72 +212,72 @@ int main( int argc, char **argv )
                 break;
                 
             case 'k':
-                centernorth += bigstep;
+                osmTransformation.centerZ += bigstep;
                 should_render = true;
                 break;
 
             case 'i':
-                centernorth -= bigstep;
+                osmTransformation.centerZ -= bigstep;
                 should_render = true;
                 break;
 
             case 'K':
-                centernorth += smallstep;
+                osmTransformation.centerZ += smallstep;
                 should_render = true;
                 break;
                 
             case 'I':
-                centernorth -= smallstep;
+                osmTransformation.centerZ -= smallstep;
                 should_render = true;
                 break;
 
             case 'j':
-                centereast += bigstep;
+                osmTransformation.centerX += bigstep;
                 should_render = true;
                 break;
                 
             case 'l':
-                centereast -= bigstep;
+                osmTransformation.centerX -= bigstep;
                 should_render = true;
                 break;
                 
             case 'J':
-                centereast += smallstep;
+                osmTransformation.centerX += smallstep;
                 should_render = true;
                 break;
                 
             case 'L':
-                centereast -= smallstep;
+                osmTransformation.centerX -= smallstep;
                 should_render = true;
                 break;
 
             case 'w':
-                osmscale *= 1.05;
+                pointTransformation.scale *= 1.05;
                 should_render = true;
                 break;
                 
             case 's':
-                osmscale /= 1.05;
+                pointTransformation.scale /= 1.05;
                 should_render = true;
                 break;
                 
             case 't':
-                pointangle += M_PI/180.;
+                pointTransformation.angle += M_PI/180.;
                 should_render = true;
                 break;
                 
             case 'r':
-                pointangle -= M_PI/180.;
+                pointTransformation.angle -= M_PI/180.;
                 should_render = true;
                 break;
                 
             case 'a':
-                pointscale *= 2;
+                metersToPixels *= 2;
                 should_render = true;
                 break;
                 
             case 'z':
-                pointscale /= 2;
+                metersToPixels /= 2;
                 should_render = true;
                 break;
 
