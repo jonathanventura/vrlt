@@ -405,11 +405,12 @@ namespace vrlt
     
     void BundleInternal::_addMeasurements( Node *node, int j )
     {
+        if ( lossFunction == NULL ) lossFunction = new ceres::HuberLoss( 4.0 );
+        
         Camera *camera = node->camera;
         if ( camera != NULL )
         {
             Calibration *calibration = camera->calibration;
-            if ( lossFunction == NULL ) lossFunction = new ceres::HuberLoss( 4.0/calibration->focal );
             
             ElementList::iterator featureit;
             for ( featureit = camera->features.begin(); featureit != camera->features.end(); featureit++ )
