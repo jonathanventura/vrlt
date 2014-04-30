@@ -18,6 +18,7 @@
 #include <Eigen/Eigen>
 #include <sophus/so3.hpp>
 #include <sophus/se3.hpp>
+#include <sophus/sim3.hpp>
 #include <opencv2/highgui.hpp>
 
 #include <MultiView/pyramid.h>
@@ -261,7 +262,11 @@ namespace vrlt {
         bool upright;
         std::string pathPrefix;
         std::string featureFileSuffix;
-        Reconstruction() : upright( false ), pathPrefix( "." ), featureFileSuffix( "key" ) { }
+        int utmZone;
+        bool utmNorth;
+        double utmCenterEast;
+        double utmCenterNorth;
+        Reconstruction() : upright( false ), pathPrefix( "." ), featureFileSuffix( "key" ), utmZone(0), utmNorth(true), utmCenterEast(0.), utmCenterNorth(0.) { }
         
         void link( Node *node, Point *point );
         void link( Track *track, Point *point );
@@ -272,6 +277,7 @@ namespace vrlt {
     };
     
     void transformPoints( Node *node, Sophus::SE3d &pose );
+    void transformPoints( Node *node, Sophus::Sim3d &transform );
     void removeCameraFeatures( Reconstruction &r, Camera *camera );
     Camera * addCameraToReconstruction( Reconstruction &r, const Calibration *_calibration, const cv::Mat &image, const Sophus::SE3d &pose );
     cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt);

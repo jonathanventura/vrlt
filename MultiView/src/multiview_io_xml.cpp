@@ -132,14 +132,40 @@ namespace vrlt {
 			if ( text != NULL ) {
 				int val;
 				sscanf(text,"%d",&val);
-				if ( val != 0 ) r.upright = true;
+				r.upright = ( val != 0 );
 			}
 
 			text = root->ToElement()->Attribute("featureFileSuffix");
 			if ( text != NULL ) {
 				r.featureFileSuffix = std::string(text);
 			}
+            
+            text = root->ToElement()->Attribute("utmZone");
+            if ( text != NULL ) {
+                r.utmZone = atoi(text);
+            }
+            
+            text = root->ToElement()->Attribute("utmNorth");
+            if ( text != NULL ) {
+                int val;
+                sscanf(text,"%d",&val);
+                r.utmNorth = ( val != 0 );
+            }
+            
+            text = root->ToElement()->Attribute("utmCenterEast");
+            if ( text != NULL ) {
+                double val;
+                sscanf(text,"%lf",&val);
+                r.utmCenterEast = val;
+            }
 
+            text = root->ToElement()->Attribute("utmCenterNorth");
+            if ( text != NULL ) {
+                double val;
+                sscanf(text,"%lf",&val);
+                r.utmCenterNorth = val;
+            }
+            
 			TiXmlNode *node;
 			
 			node = NULL;
@@ -432,6 +458,21 @@ namespace vrlt {
 			
 			root->SetAttribute( "featureFileSuffix", r.featureFileSuffix.c_str() );
 			
+            if ( r.utmZone != 0 )
+            {
+                sprintf( text, "%d", r.utmZone );
+                root->SetAttribute( "utmZone", text );
+                
+                sprintf( text, "%d", (r.utmNorth) ? 1 : 0 );
+                root->SetAttribute( "utmNorth", text );
+                
+                sprintf( text, "%0.17lf", r.utmCenterEast );
+                root->SetAttribute( "utmCenterEast", text );
+
+                sprintf( text, "%0.17lf", r.utmCenterNorth );
+                root->SetAttribute( "utmCenterNorth", text );
+            }
+            
 			ElementList::iterator it;
 			
 			for ( it = r.calibrations.begin(); it != r.calibrations.end(); it++ ) {

@@ -256,6 +256,35 @@ namespace vrlt
         }
     }
     
+    void transformPoints( Node *node, Sophus::Sim3d &transform )
+    {
+        for ( ElementList::iterator it = node->points.begin(); it != node->points.end(); it++ )
+        {
+            Point *point = (Point*)it->second;
+            
+            point->position.head(3) = transform * ( point->position.head(3) / point->position[3] );
+            point->position[3] = 1.;
+        }
+        
+        Sophus::SE3d unscaled_pose;
+        unscaled_pose.so3() = Sophus::SO3d(transform.rotationMatrix());
+        unscaled_pose.translation() = transform.translation()/transform.scale();
+
+        Sophus::SE3d pose;
+        pose.so3() = Sophus::SO3d(transform.rotationMatrix());
+        pose.translation() = transform.translation();
+
+        for ( ElementList::iterator it = node->children.begin(); it != node->children.end(); it++ )
+        {
+            Node *child = (Node*)it->second;
+            
+            // first apply scale to translation
+            child->pose.translation() *= transform.scale();
+            // then apply inverse unscaled transformation
+            child->pose = child->pose * pose.inverse();
+        }
+    }
+    
     void removeCameraFeatures( Reconstruction &r, Camera *camera )
     {
         ElementList::iterator it;
