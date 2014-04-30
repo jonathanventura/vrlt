@@ -15,6 +15,8 @@
 
 #include <opencv2/highgui.hpp>
 
+#include <ceres/ceres.h>
+
 #include <iostream>
 
 using namespace vrlt;
@@ -53,6 +55,159 @@ double metersToPixels = 1.0;
 
 const int size = 1000;
 
+std::map<Point*,double> point_scores;
+
+struct PointLineError
+{
+    PointLineError( const Eigen::Vector2d &pt, const Eigen::Vector2d &line_pt0, const Eigen::Vector2d &line_pt1 )
+    {
+        x = pt[0];
+        y = pt[1];
+        Eigen::Vector2d v = line_pt0-line_pt1;
+        v.normalize();
+        nx = v[1];
+        ny = -v[0];
+        lx = line_pt0[0];
+        ly = line_pt0[1];
+    }
+    
+    template <typename T>
+    bool operator()(const T* const params,
+                    T* residuals) const
+    {
+        // params: centerX, centerZ, angle, scale
+        
+        // remove center
+        T ptx = T(x)-params[0];
+        T pty = T(y)-params[1];
+        
+        // apply rotation
+        T c = cos(params[2]);
+        T s = sin(params[2]);
+        T Rptx = c*ptx+s*pty;
+        T Rpty = -s*ptx+c*pty;
+        
+        // apply scale
+        T sRptx = params[3]*Rptx;
+        T sRpty = params[3]*Rpty;
+        
+        // compute point-line distance
+        residuals[0] = nx*(lx-sRptx)+ny*(ly-sRpty);
+        
+        return true;
+    }
+
+    double x, y;    // point
+    double nx, ny; // line normal
+    double lx, ly; // line origin
+};
+
+void optimizeAlignment()
+{
+    ceres::Problem problem;
+    
+    std::vector< std::pair<Eigen::Vector2d,Eigen::Vector2d> > lines;
+    
+    for ( OSMWayList::iterator it = osmdata.ways.begin(); it != osmdata.ways.end(); it++ )
+    {
+        OSMWay *way = it->second;
+        if ( way->building == false ) continue;
+        
+        for ( size_t i = 1; i < way->nodeids.size(); i++ )
+        {
+            OSMNode *node0 = osmdata.nodes[way->nodeids[i-1]];
+            OSMNode *node1 = osmdata.nodes[way->nodeids[i]];
+            
+            Eigen::Vector4d XYZ0;
+            XYZ0 << node0->east,0,node0->north,1;
+            XYZ0 = osmTransformation.matrix() * XYZ0;
+            
+            Eigen::Vector4d XYZ1;
+            XYZ1 << node1->east,0,node1->north,1;
+            XYZ1 = osmTransformation.matrix() * XYZ1;
+            
+            Eigen::Vector2d line_pt0;
+            line_pt0 << XYZ0[0], XYZ0[2];
+            Eigen::Vector2d line_pt1;
+            line_pt1 << XYZ1[0], XYZ1[2];
+            
+            lines.push_back( std::make_pair( line_pt0, line_pt1 ) );
+        }
+    }
+    
+    double params[4];
+    params[0] = pointTransformation.centerX;
+    params[1] = pointTransformation.centerZ;
+    params[2] = pointTransformation.angle;
+    params[3] = pointTransformation.scale;
+
+    ceres::HuberLoss *lossFunction = new ceres::HuberLoss(0.5);
+    
+    for ( ElementList::iterator it = root->points.begin(); it != root->points.end(); it++ )
+    {
+        Point *point = (Point*)it->second;
+        
+        Eigen::Vector2d pt;
+        pt << point->position[0] / point->position[3], point->position[2] / point->position[3];
+        
+        Eigen::Vector4d XYZ;
+        XYZ << pt[0],0,pt[1],1;
+        
+        XYZ = pointTransformation.matrix() * XYZ;
+        
+        Eigen::Vector2d transformed_pt;
+        transformed_pt << XYZ[0],XYZ[2];
+        
+        // find nearest line
+        double min_dist = INFINITY;
+        size_t best = 0;
+        for ( size_t i = 0; i < lines.size(); i++ )
+        {
+            Eigen::Vector2d v = lines[i].second - lines[i].first;
+            double d = v.norm();
+            v /= d;
+            
+            Eigen::Vector2d n;
+            n << v[1], -v[0];
+            double dist = fabs(n.dot(transformed_pt-lines[i].first));
+            
+            if ( dist < min_dist )
+            {
+                // check projection onto line
+                double proj = v.dot(transformed_pt-lines[i].first);
+                if ( proj >= 0 && proj <= d )
+                {
+                    min_dist = dist;
+                    best = i;
+                }
+            }
+        }
+        
+        point_scores[point] = min_dist;
+        
+        if ( min_dist > 4. ) continue;
+        
+        PointLineError *err = new PointLineError(pt,lines[best].first,lines[best].second);
+        problem.AddResidualBlock( new ceres::AutoDiffCostFunction<PointLineError, 1, 4>(err), lossFunction, params );
+    }
+
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::DENSE_SCHUR;
+    //if ( verbose ) options.minimizer_progress_to_stdout = true;
+//    options.function_tolerance = 1e-20;
+//    options.parameter_tolerance = 1e-20;
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+    std::cout << summary.FullReport() << "\n";
+    if ( summary.termination_type != ceres::FAILURE )
+    {
+        pointTransformation.centerX = params[0];
+        pointTransformation.centerZ = params[1];
+        pointTransformation.angle = params[2];
+        pointTransformation.scale = params[3];
+    }
+}
+
 void getPointLimits()
 {
     double minX = INFINITY;
@@ -74,6 +229,8 @@ void getPointLimits()
         
         Xvalues.push_back( X );
         Zvalues.push_back( Z );
+        
+        point_scores[point] = 1.;
     }
     
     std::sort( Xvalues.begin(), Xvalues.end() );
@@ -104,7 +261,10 @@ void renderPoints( cv::Mat &image )
         XYZ = pointTransformation.matrix() * XYZ;
         
         cv::Point2i pt( size/2 + round(metersToPixels*XYZ[0]), size/2 - round(metersToPixels*XYZ[2]) );
-        cv::circle( image, pt, 0, cv::Scalar(0) );
+        double score = point_scores[point];
+        
+        if ( score < 1. ) cv::circle( image, pt, 0, cv::Scalar(0) );
+        else cv::circle( image, pt, 0, cv::Scalar(128) );
     }
 }
 
@@ -198,6 +358,15 @@ int main( int argc, char **argv )
     
     cv::namedWindow( "AlignOSM" );
     
+    pointTransformation.centerX = -11.32974699999999935;
+    pointTransformation.centerZ = -11.90225299999999997;
+    pointTransformation.angle = -2.89724655831057909;
+    pointTransformation.scale = 0.98195500402885083;
+
+    osmTransformation.centerX = 724966.11403917614370584;
+    osmTransformation.centerZ = 5032273.32152573019266129;
+    osmTransformation.angle = 0.00000000000000000;
+    osmTransformation.scale = 1.00000000000000000;
     
     bool should_render = true;
     bool should_quit = false;
@@ -280,7 +449,12 @@ int main( int argc, char **argv )
                 metersToPixels /= 2;
                 should_render = true;
                 break;
-
+                
+            case 'b':
+                optimizeAlignment();
+                should_render = true;
+                break;
+                
             default:
                 break;
         }
@@ -299,6 +473,18 @@ int main( int argc, char **argv )
         }
     }
     
+    std::cout << "pointTransformation:\n";
+    fprintf( stdout, "%0.17lf\n", pointTransformation.centerX );
+    fprintf( stdout, "%0.17lf\n", pointTransformation.centerZ );
+    fprintf( stdout, "%0.17lf\n", pointTransformation.angle );
+    fprintf( stdout, "%0.17lf\n", pointTransformation.scale );
+
+    std::cout << "osmTransformation:\n";
+    fprintf( stdout, "%0.17lf\n", osmTransformation.centerX );
+    fprintf( stdout, "%0.17lf\n", osmTransformation.centerZ );
+    fprintf( stdout, "%0.17lf\n", osmTransformation.angle );
+    fprintf( stdout, "%0.17lf\n", osmTransformation.scale );
+
     cv::imwrite( "Output/map.png", mapimage );
     
     return 0;
