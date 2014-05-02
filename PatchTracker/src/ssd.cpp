@@ -198,14 +198,17 @@ namespace vrlt {
 #else
         float score = 0;
         
-        ImageRef loc = ImageRef( 0, 0 );
-        do {
-            float templateVal = templatePatch[loc];
-            float targetVal = targetPatch[loc];
-            float diff = templateVal - targetVal;
-            score += diff * diff;
-            if ( score > matchThreshold ) break;
-        } while ( loc.next( templatePatch.size() ) );
+        for ( int y = 0; y < templatePatch.size().height; y++ )
+        {
+            for ( int x = 0; x < templatePatch.size().width; x++ )
+            {
+                float templateVal = templatePatch.at<float>(y,x);
+                float targetVal = targetPatch.at<float>(y,x);
+                float diff = templateVal - targetVal;
+                score += diff * diff;
+                if ( score > matchThreshold ) break;
+            }
+        }
         
         return score;
 #endif
