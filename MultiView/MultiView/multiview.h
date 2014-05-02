@@ -117,7 +117,7 @@ namespace vrlt {
         /** Cached matrix for perspective patch projection. */
         Eigen::Matrix3f KAKinv;
         /** Cached matrix for perspective patch projection. */
-        Eigen::Matrix3f Ka;
+        Eigen::Vector3f Ka;
     };
     
     template<int d,typename T>
