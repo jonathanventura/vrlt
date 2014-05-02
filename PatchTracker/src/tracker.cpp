@@ -116,7 +116,7 @@ namespace vrlt
         Sophus::SE3d poseinv = mynode->pose.inverse();
         Sophus::SE3d rel_pose = source->node->precomputedGlobalPose * poseinv;
         source->KAKinv = source->calibration->K * rel_pose.so3().matrix().cast<float>() * target->calibration->Kinv;
-        source->Ka.col(0) = source->calibration->K * rel_pose.translation().cast<float>();
+        source->Ka = source->calibration->K * rel_pose.translation().cast<float>();
     }
     
     void Tracker::updateMatrices( Camera *target )
@@ -126,7 +126,7 @@ namespace vrlt
         {
             Sophus::SE3d rel_pose = cameras[i]->node->precomputedGlobalPose * poseinv;
             cameras[i]->KAKinv = cameras[i]->calibration->K * rel_pose.so3().matrix().cast<float>() * target->calibration->Kinv;
-            cameras[i]->Ka.col(0) = cameras[i]->calibration->K * rel_pose.translation().cast<float>();
+            cameras[i]->Ka = cameras[i]->calibration->K * rel_pose.translation().cast<float>();
         }
     }
     
@@ -187,7 +187,7 @@ namespace vrlt
         vDSP_dotpr( PN.data(), 1, PX.data(), 1, &D, 3 );
         D = -D;
 #else
-        D = -(PN * PX);
+        D = -(PN.dot(PX));
 #endif
         
         // choose source image
