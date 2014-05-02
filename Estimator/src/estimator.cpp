@@ -660,7 +660,7 @@ namespace vrlt {
 #else
         Eigen::Vector3d poseX = pose * it->first;
         //if ( poseX[2] < 0 ) return INFINITY;
-        if ( poseX * it->second < 0 ) return INFINITY;
+        if ( poseX.dot( it->second ) < 0 ) return INFINITY;
         
         Eigen::Vector2d x = project( it->second );
         //Eigen::Vector2d x = it->second.slice<0,2>();
