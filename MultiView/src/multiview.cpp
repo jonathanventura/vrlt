@@ -246,6 +246,8 @@ namespace vrlt
             
             point->position.head(3) = pose * ( point->position.head(3) / point->position[3] );
             point->position[3] = 1.;
+            
+            point->normal = pose.so3() * point->normal;
         }
         
         for ( ElementList::iterator it = node->children.begin(); it != node->children.end(); it++ )
@@ -264,12 +266,10 @@ namespace vrlt
             
             point->position.head(3) = transform * ( point->position.head(3) / point->position[3] );
             point->position[3] = 1.;
+            
+            point->normal = transform.rxso3().rotationMatrix() * point->normal;
         }
         
-        Sophus::SE3d unscaled_pose;
-        unscaled_pose.so3() = Sophus::SO3d(transform.rotationMatrix());
-        unscaled_pose.translation() = transform.translation()/transform.scale();
-
         Sophus::SE3d pose;
         pose.so3() = Sophus::SO3d(transform.rotationMatrix());
         pose.translation() = transform.translation();
@@ -280,7 +280,7 @@ namespace vrlt
             
             // first apply scale to translation
             child->pose.translation() *= transform.scale();
-            // then apply inverse unscaled transformation
+            // then apply inverse pose
             child->pose = child->pose * pose.inverse();
         }
     }
