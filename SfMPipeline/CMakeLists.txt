@@ -52,6 +52,9 @@ add_executable( EstimateGround EstimateGround.cpp )
 target_link_libraries( EstimateGround vrlt_multiview )
 target_link_libraries( EstimateGround vrlt_estimator  )
 
+add_executable( EstimateNormals EstimateNormals.cpp )
+target_link_libraries( EstimateNormals vrlt_multiview )
+
 find_library( Geographic Geographic REQUIRED )
 find_package( Ceres REQUIRED )
 include_directories( ${CERES_INCLUDE_DIRS} )
