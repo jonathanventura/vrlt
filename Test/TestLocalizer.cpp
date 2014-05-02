@@ -12,7 +12,7 @@
 #include <MultiView/multiview_io_xml.h>
 #include <Localizer/localizer.h>
 #include <Localizer/nnlocalizer.h>
-#include <FeatureMatcher/bruteforce.h>
+#include <FeatureMatcher/approxnn.h>
 #include <FeatureExtraction/features.h>
 
 #include <opencv2/highgui.hpp>
@@ -83,7 +83,7 @@ int main( int argc, char **argv )
     
     NN *index = NULL;
 
-    index = new BruteForceNN;
+    index = new ApproxNN;
     
     NNLocalizer *localizer = new NNLocalizer( root, index );
     localizer->verbose = true;
@@ -96,7 +96,6 @@ int main( int argc, char **argv )
     localizer->thresh = 0.006 * width / camera->calibration->focal;
     localizer->tracker->minnumpoints = 100;
     
-    Calibration *mycalibration = new Calibration;
     Camera *mycamera = new Camera;
     Node *mynode = new Node;
     mycamera->calibration = calibration;
