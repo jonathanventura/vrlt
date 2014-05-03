@@ -36,7 +36,6 @@ public:
     ~Catadioptric()
     {
         delete [] catadioptricpts;
-        delete [] R;
         delete [] Ry;
     }
     
@@ -105,34 +104,21 @@ public:
         initialized = true;
     }
     
-    void extractImage( cv::Mat &catadioptric_image, int face, cv::Mat &output_image ) const
+    void extractImage( cv::Mat &input_image, int face, cv::Mat &output_image ) const
     {
         for ( int y = 0; y < sz.height; y++ )
         {
             for ( int x = 0; x < sz.width; x++ )
             {
                 cv::Vec2d pos = catadioptricpts[face].at<cv::Vec2d>(y,x);
-                cv::Point2f pt( pos[0], pos[1] );
-                output_image.at<cv::Vec3b>(y,x) = getColorSubpix( catadioptric_image, pt );
+                float xmul = (float) input_image.size().width / 3840.f;
+                float ymul = (float) input_image.size().height / 2160.f;
+                cv::Point2f pt( pos[0]*xmul, pos[1]*ymul );
+                output_image.at<cv::Vec3b>(y,x) = getColorSubpix( input_image, pt );
             }
         }
     }
 
-    void extractImage( cv::Mat &catadioptric_image, int face, cv::Mat &output_image, float xmul, float ymul ) const
-    {
-        for ( int y = 0; y < sz.height; y++ )
-        {
-            for ( int x = 0; x < sz.width; x++ )
-            {
-                cv::Vec2d pos = catadioptricpts[face].at<cv::Vec2d>(y,x);
-                pos[0] *= xmul;
-                pos[1] *= ymul;
-                cv::Point2f pt( pos[0], pos[1] );
-                output_image.at<cv::Vec3b>(y,x) = getColorSubpix( catadioptric_image, pt );
-            }
-        }
-    }
-    
     std::string getPath( const std::string &imagedir, int index )
     {
         char path[256];

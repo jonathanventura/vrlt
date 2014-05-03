@@ -110,22 +110,7 @@ public:
             }
         }
     }
-    
-    void extractImage( cv::Mat &input_image, int face, cv::Mat &output_image, float xmul, float ymul ) const
-    {
-        for ( int y = 0; y < sz.height; y++ )
-        {
-            for ( int x = 0; x < sz.width; x++ )
-            {
-                cv::Vec2d pos = sphericalpts[face].at<cv::Vec2d>(y,x);
-                pos[0] *= xmul;
-                pos[1] *= ymul;
-                cv::Point2f pt( pos[0], pos[1] );
-                output_image.at<cv::Vec3b>(y,x) = getColorSubpix( input_image, pt );
-            }
-        }
-    }
-    
+        
     std::string getPath( const std::string &imagedir, int index )
     {
         char path[256];

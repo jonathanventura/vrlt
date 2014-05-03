@@ -45,9 +45,6 @@ namespace vrlt
         
         input_image = cv::imread( path.c_str(), cv::IMREAD_COLOR );
         
-//        float xmul = (float) input_image.size().width / 3840.f;
-//        float ymul = (float) input_image.size().height / 2160.f;
-        
         for ( int i = 0; i < extractor->getNumFaces(); i++ )
         {
             char path[256];

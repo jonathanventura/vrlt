@@ -18,7 +18,6 @@ namespace vrlt
         
         virtual void create() { }
         virtual void extractImage( cv::Mat &input_image, int face, cv::Mat &output_image ) const { };
-        virtual void extractImage( cv::Mat &input_image, int face, cv::Mat &output_image, float xmul, float ymul ) const { };
         
         int getNumFaces() { return nfaces; }
         cv::Size getSize() { return sz; }
