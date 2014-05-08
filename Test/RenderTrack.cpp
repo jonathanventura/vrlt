@@ -81,7 +81,7 @@ void saveImage()
     char path[256];
     sprintf( path, "Output/frame%04d.jpg", mycounter++ );
     cv::Mat image( cv::Size( width, height ), CV_8UC3 );
-    glReadPixels( 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image.data );
+    glReadPixels( 0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, image.data );
     cv::flip( image, image, 0 );
     cv::imwrite( path, image );
 }
@@ -107,7 +107,7 @@ void drawText( const char* string, float xpos, float ypos )
     glLoadIdentity();
     
     glColor3f(0, 0, 1.0);
-    //renderBitmapString( xpos, ypos, GLUT_BITMAP_9_BY_15, string );
+    renderBitmapString( xpos, ypos, GLUT_BITMAP_9_BY_15, string );
     glPointSize( 100. );
     glBegin( GL_POINTS );
     glVertex2f( xpos, ypos );
@@ -161,7 +161,6 @@ void display()
             gridDrawable.PopClientState();
         }
         
-//        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
         if ( showModel && haveModel ) {
             glEnable( GL_DEPTH_TEST );
             model->drawable->PushClientState();
@@ -184,8 +183,6 @@ void display()
             model->drawable->PopClientState();
             glDisable( GL_DEPTH_TEST );
         }
-//        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-        
     }
     
     glutSwapBuffers();
@@ -214,7 +211,7 @@ void keyboard( unsigned char key, int x, int y )
             char path[256];
             sprintf( path, "Output/snapshot%04d.png", snapshotCounter++ );
             cv::Mat image( cv::Size( width, height ), CV_8UC3 );
-            glReadPixels( 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image.data );
+            glReadPixels( 0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, image.data );
             cv::flip( image, image, 0 );
             cv::imwrite( path, image );
             break;
@@ -254,7 +251,7 @@ void setPlanePoint( int x, int y )
     if ( node->parent == NULL ) return;
     
     // intersect with ground plane
-    Eigen::Vector4d ground_plane = plane;//makeVector( 0, -1, 0, 0 );
+    Eigen::Vector4d ground_plane = plane;
     
     Eigen::Vector2d screen_pos;
     screen_pos << x/levelscale, y/levelscale;
@@ -287,12 +284,6 @@ void remakeMatrices()
     modelViewProj = proj * scale * modelView;
     pointShader.shaderProgram.Use();
     pointShader.SetModelViewProj( modelViewProj );
-//    
-//    modelViewProj = modelViewProj * modelOffset * modelRotation * modelScale;
-//    modelShader.shaderProgram.Use();
-//    modelShader.SetModelViewProj( modelViewProj );
-//    shadowShader.shaderProgram.Use();
-//    shadowShader.SetModelViewProj( modelViewProj );
 }
 
 void mouse( int button, int state, int x, int y )
@@ -301,10 +292,7 @@ void mouse( int button, int state, int x, int y )
         if ( state == GLUT_DOWN ) {
             setPlanePoint( x, y );
             modelOffsets.push_back( modelOffset );
-            
-//            modelRotations.push_back( makeRotation( SO3<>( makeVector( 0, rand_u()*2*M_PI, 0 ) ) ) );
             modelRotations.push_back( modelRotation );
-//            remakeMatrices();
         }
     }
 }
@@ -315,7 +303,6 @@ void motion( int x, int y )
     
     setPlanePoint( x, y );
     modelOffsets.back() = modelOffset;
-//    remakeMatrices();
 }
 
 void idle()
@@ -335,10 +322,7 @@ void idle()
     
     cv::Mat im = cv::imread( camera->path, cv::IMREAD_COLOR );
     glBindTexture( GL_TEXTURE_2D, texID );
-    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, im.data );
-    
-    //    Camera *firstcamera = (Camera*)r.cameras.begin()->second;
-    //    camera->node->pose = firstcamera->node->pose;
+    glTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, im.data );
     
     tracked = false;
     if ( node != NULL ) {
@@ -349,15 +333,14 @@ void idle()
     }
     
     wroteFrame = false;
-    
-//    glutPostRedisplay();
-    //paused = true;
 }
 
 void setupGL()
 {
     glClearColor( 0.0, 0.0, 0.0, 0.0 );
 
+    plane << 0, -1, 0, 0;
+    
     Camera *camera = (Camera*)queryit->second;
     cv::Mat im = cv::imread( camera->path, cv::IMREAD_COLOR );
 
@@ -400,94 +383,6 @@ void setupGL()
     imageDrawable.AddElem( makeVector(-1.f, 1.f ), makeVector( 0.f, 0.f ) );
     imageDrawable.AddElem( makeVector( 1.f, 1.f ), makeVector( 1.f, 0.f ) );
     imageDrawable.Commit();
-
-//    lightDirection = makeVector( -1, 1, 0.5 );
-//    plane = makeVector( 0, -1, 0, 0 );
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) );
-//    modelRotation = makeRotation( SO3<>( makeVector( 0, 0, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, 0, 0 ) );
-//
-//    modelOffsets.push_back( makeTranslation( makeVector( 0, 0, 0 ) ) );
-//    modelRotations.push_back( modelRotation );
-
-    // for logo (physicalsci)
-//    lightDirection = makeVector( -1, 1, 1 );
-//    plane = makeVector( 0, -1, 0, 0 );
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * .2 ); // inches to meters
-//    modelRotation = makeRotation( SO3<>( makeVector( 0, M_PI/2, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, 0, 0 ) );
-
-    // for pinetree
-//    lightDirection = makeVector( 1, 1, -1 );
-//    lightDirection = makeVector( 1, 1, 1 );
-//    plane = makeVector( 0, -1, 0, 0 );
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * .75 ); // inches to meters
-//    modelRotation = makeRotation( SO3<>( makeVector( 0, 0, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, 0, 0 ) );
-
-    // for lamp
-//    lightDirection = makeVector( 1, 1, -1 );
-//    //    plane = makeVector( 0, -1, 0, 0 );
-//    plane = makeVector( 1, 0, 0, 0 );
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.5 ); // inches to meters
-////    modelScale = makeScale( makeVector( 1, 1, 1 )  ); // inches to meters
-//    //    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.5 ); // inches to meters
-//    modelRotation = makeRotation( SO3<>( makeVector( -M_PI/2., 0, 0 ) ) * SO3<>( makeVector( 0, 0, M_PI / 2. ) ) * SO3<>( makeVector( 0, -M_PI, 0 ) ) );
-////    modelRotation = makeRotation( SO3<>() );//SO3<>( makeVector( 0, 0, -M_PI / 2. ) ) * SO3<>( makeVector( 0, -M_PI, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, 0, 0 ) );
-//    
-//    cout << ( SO3<>( makeVector( -M_PI/2., 0, 0 ) ) * SO3<>( makeVector( 0, 0, M_PI / 2. ) ) * SO3<>( makeVector( 0, -M_PI, 0 ) ) ).ln() << "\n";
-
-    // for shuttle
-    lightDirection = makeVector( -1., 1., 0.5 );
-    plane = makeVector( 0., -1., 0., 0. );
-//    plane = makeVector( 1, 0, 0, 0 );
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.005 ); // inches to meters
-    modelScale = makeScale( makeVector( 1., 1., 1. ) * 0.0254 * 0.2 ); // inches to meters
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.5 ); // inches to meters
-    modelRotation = makeRotation( Sophus::SO3d::exp( makeVector( 0., -M_PI, 0. ) ) );
-//    modelRotation = makeRotation( SO3<>( makeVector( 0, 0, -M_PI / 2. ) ) * SO3<>( makeVector( 0, -M_PI, 0 ) ) );
-    modelOffset = makeTranslation( Eigen::Vector3d::Zero() );
-
-//    modelOffsets.push_back( makeTranslation( makeVector( 35.1645, 0, 0.0557605 ) ) );
-//    modelRotations.push_back( modelRotation );
-
-    // for arcde
-//    lightDirection = makeVector( .5, -1, -.5 );
-//    lightDirection = makeVector( 0, -1, 0 );
-//    plane = makeVector( 0, -1, 0, 0 );
-//    //    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * 0.005 ); // inches to meters
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 0.0254 * .5 ); // inches to meters
-//    modelRotation = makeRotation( SO3<>( makeVector( M_PI, 0, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, 0, 0 ) );
-//
-////    modelOffsets.push_back( makeTranslation( makeVector( 0.705318, 0, 0.196767 ) ) );
-//    modelOffsets.push_back( makeTranslation( makeVector( 2.65334, 0, 0.260111 ) ) );
-//
-//    modelRotations.push_back( modelRotation );
-    
-    // for shuttle
-//    lightDirection = makeVector( 0, 1, 0 );
-//    modelScale = makeScale( makeVector( 1, 1, 1 ) * 1 );
-//    //modelScale = makeScale( makeVector( 2., 2., 2. ) );
-//    modelRotation = makeRotation( SO3<>() );
-//    modelOffset = makeTranslation ( makeVector( 0, 0, 20 ) );
-////    modelOffset = makeTranslation( makeVector( 7.5, 0, -5. ) );
-//    plane = makeVector( 0, -1, 0, 3 );
-    
-    // for hartley and bunny
-//    lightDirection = makeVector( 0, -1, 1 );
-//    modelScale = makeScale( makeVector( 5, 5, 5 ) );
-//    modelRotation = makeRotation( SO3<>( makeVector( -M_PI/2, 0, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, -.4, 3.25 ) );
-//    plane = makeVector( 0, 1, 0, 0 );
-
-    // for magazine and bunny
-//    lightDirection = makeVector( 0, -1, 1 );
-//    modelScale = makeScale( makeVector( 20, 20, 20 ) );
-//    modelRotation = makeRotation( SO3<>( makeVector( -M_PI/2, 0, 0 ) ) );
-//    modelOffset = makeTranslation( makeVector( 0, -.4, 5. ) );
-//    plane = makeVector( 0, 1, 0, 0 );
 
     modelShader.Create();
     modelShader.shaderProgram.Use();
