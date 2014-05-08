@@ -96,8 +96,8 @@ namespace vrlt
         
         std::vector<Match*> matches;
         
-        //findMatches( (*fm), features, matches );
-        findUniqueMatches( (*fm), features, 0.8, matches );
+        findMatches( (*fm), features, matches );
+        //findUniqueMatches( (*fm), features, 0.8, matches );
 
         std::vector<bool> inliers;
         
