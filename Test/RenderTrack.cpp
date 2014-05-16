@@ -64,6 +64,9 @@ Eigen::Matrix4d modelViewProj;
 Eigen::Matrix4d modelScale;
 Eigen::Vector4d plane;
 
+bool haveGPS = false;
+std::vector< Eigen::Vector2d > waypoints;
+
 bool haveModel = false;
 std::vector< Eigen::Matrix4d > modelOffsets;
 std::vector< Eigen::Matrix4d > modelRotations;
@@ -266,7 +269,7 @@ void setPlanePoint( int x, int y )
     double t = ( - ground_plane[3] - ground_plane.head(3).dot( origin ) ) / ( ground_plane.head(3).dot( ray ) );
     Eigen::Vector3d point = origin + t * ray;
     
-    std::cout << "point: " << point << "\n";
+//    std::cout << "point: " << point << "\n";
     
     modelOffset = makeTranslation( point );
 }
@@ -340,7 +343,12 @@ void setupGL()
     glClearColor( 0.0, 0.0, 0.0, 0.0 );
 
     plane << 0, -1, 0, 0;
+    lightDirection << 0, 1, 0;
     
+    modelScale  = makeScale( makeVector( 1., 1., 1. )*0.0002 );
+    modelRotation = makeRotation( Sophus::SO3d() );
+    modelOffset = makeTranslation( makeVector( 0., 0., 0. ) );
+
     Camera *camera = (Camera*)queryit->second;
     cv::Mat im = cv::imread( camera->path, cv::IMREAD_COLOR );
 
@@ -450,8 +458,8 @@ void setupGL()
 
 int main( int argc, char **argv )
 {
-    if ( argc != 3 && argc != 5 ) {
-        fprintf( stderr, "usage: %s <reconstruction> <tracked query> [<OBJ file prefix> <OBJ filename>]\n", argv[0] );
+    if ( argc != 3 && argc != 4 && argc != 5 ) {
+        fprintf( stderr, "usage: %s <reconstruction> <tracked query> [<GPSX file> | <OBJ file prefix> <OBJ filename>]\n", argv[0] );
         return 0;
     }
     
@@ -459,9 +467,14 @@ int main( int argc, char **argv )
     std::string queryin = std::string(argv[2]);
     std::string objprefix;
     std::string objname;
+    std::string gpsname;
     
+    haveGPS = false;
     haveModel = false;
-    if ( argc == 5 ) {
+    if ( argc == 4 ) {
+        haveGPS = true;
+        gpsname = std::string(argv[3]);
+    } else if ( argc == 5 ) {
         haveModel = true;
         objprefix = std::string(argv[3]);
         objname = std::string(argv[4]);
