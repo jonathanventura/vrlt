@@ -63,6 +63,18 @@ target_link_libraries( AlignOSM vrlt_multiview )
 target_link_libraries( AlignOSM ${Geographic} )
 target_link_libraries( AlignOSM ${CERES_LIBRARIES} )
 
+find_library( Geographic Geographic REQUIRED )
+add_executable( RefineAlignOSM RefineAlignOSM.cpp osm_xml_reader.h osm_xml_reader.cpp )
+target_link_libraries( RefineAlignOSM vrlt_multiview )
+target_link_libraries( RefineAlignOSM vrlt_bundleadjustment )
+target_link_libraries( RefineAlignOSM ${Geographic} )
+
 add_executable( MakePLY MakePLY.cpp )
 target_link_libraries( MakePLY vrlt_multiview )
+
+add_executable( Organize Organize.cpp )
+target_link_libraries( Organize vrlt_multiview )
+
+add_executable( ExportPoses ExportPoses.cpp )
+target_link_libraries( ExportPoses vrlt_multiview )
 
