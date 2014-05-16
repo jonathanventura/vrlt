@@ -11,7 +11,7 @@ using namespace vrlt;
 class TrackMaker
 {
 public:
-    TrackMaker() : num_inconsistent( 0 ), num_too_small( 0 ), count( 0 ) { }
+    TrackMaker( int _min_track_size = 3 ) : min_track_size( _min_track_size ), num_inconsistent( 0 ), num_too_small( 0 ), count( 0 ) { }
     
     Track* make( Feature *feature_in )
     {
@@ -63,7 +63,7 @@ public:
             return NULL;
         }
         
-        if ( track->features.size() < 3 )
+        if ( track->features.size() < min_track_size )
         {
             num_too_small++;
             delete track;
@@ -80,6 +80,7 @@ public:
     size_t num_inconsistent;
     size_t num_too_small;
 protected:
+    int min_track_size;
     std::set<Feature*> visited_features;
     std::set<Node*> visited_nodes;
     std::set<Camera*> visited_cameras;
@@ -123,18 +124,20 @@ protected:
 
 int main( int argc, char **argv )
 {
-    if ( argc != 3 ) {
-        fprintf( stderr, "usage: %s <file in> <file out>\n", argv[0] );
+    if ( argc != 3 && argc != 4 ) {
+        fprintf( stderr, "usage: %s <file in> <file out> [<min track size>]\n", argv[0] );
         exit(1);
     }
     
     std::string pathin = std::string(argv[1]);
     std::string pathout = std::string(argv[2]);
+    int min_track_size = 3;
+    if ( argc == 4 ) min_track_size = atoi(argv[3]);
     
     Reconstruction r;
     XML::read( r, pathin );
     
-    TrackMaker trackMaker;
+    TrackMaker trackMaker( min_track_size );
     
     ElementList::iterator it;
     for ( it = r.features.begin(); it != r.features.end(); it++ )
