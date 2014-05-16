@@ -142,7 +142,7 @@ int main( int argc, char **argv )
     int base_height = 768;
     
 //    cv::Size sz( base_height * .6, base_height );
-    cv::Size sz( base_height, base_height * .6 );
+    cv::Size sz( base_height, base_height );//* .6 );
     
     Calibration *calibration = new Calibration;
     calibration->name = "calibration";
