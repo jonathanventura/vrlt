@@ -71,6 +71,77 @@ namespace vrlt
         double focal, x, y;
     };
 
+    struct PlanePointReprojectionError
+    {
+        PlanePointReprojectionError( const Sophus::SE3d &_prefix,
+                                    const Eigen::Vector3d &_planeOrigin,
+                                    const Eigen::Vector3d &_planeX,
+                                    const Eigen::Vector3d &_planeY,
+                                    double _focal, double _x, double _y )
+        : focal(_focal), x(_x), y(_y)
+        {
+            Eigen::Map<Eigen::Vector3d> originvec(planeOrigin);
+            originvec = _planeOrigin;
+            Eigen::Map<Eigen::Vector3d> xvec(planeX);
+            xvec = _planeX;
+            Eigen::Map<Eigen::Vector3d> yvec(planeY);
+            yvec = _planeY;
+            Eigen::Map<Eigen::Vector3d> tvec(prefix);
+            tvec = _prefix.translation();
+            ceres::RotationMatrixToAngleAxis( _prefix.so3().matrix().data(), prefix+3 );
+        }
+        
+        template <typename T>
+        bool operator()(const T* const camera,
+                        const T* const point_xy,
+                        T* residuals) const
+        {
+            T point[3];
+            point[0] = planeOrigin[0] + point_xy[0] * planeX[0] + point_xy[1] * planeY[0];
+            point[1] = planeOrigin[1] + point_xy[0] * planeX[1] + point_xy[1] * planeY[1];
+            point[2] = planeOrigin[2] + point_xy[0] * planeX[2] + point_xy[1] * planeY[2];
+            
+            // camera pose
+            // camera[3,4,5] are the angle-axis rotation.
+            T p[3];
+            ceres::AngleAxisRotatePoint(camera+3, point, p);
+            // camera[0,1,2] are the translation.
+            p[0] += camera[0]; p[1] += camera[1]; p[2] += camera[2];
+            
+            // prefix pose (e.g. internal camera in panoramic head)
+            T myprefix[6];
+            myprefix[0] = T(prefix[0]);
+            myprefix[1] = T(prefix[1]);
+            myprefix[2] = T(prefix[2]);
+            myprefix[3] = T(prefix[3]);
+            myprefix[4] = T(prefix[4]);
+            myprefix[5] = T(prefix[5]);
+            T pp[3];
+            ceres::AngleAxisRotatePoint(myprefix+3, p, pp);
+            pp[0] += myprefix[0]; pp[1] += myprefix[1]; pp[2] += myprefix[2];
+            
+            // projection
+            T xp = pp[0] / pp[2];
+            T yp = pp[1] / pp[2];
+            
+            // intrinsics
+            T fxp = T(focal) * xp;
+            T fyp = T(focal) * yp;
+            
+            // residuals
+            residuals[0] = fxp - T(x);
+            residuals[1] = fyp - T(y);
+            
+            return true;
+        }
+        
+        double planeOrigin[3];
+        double planeX[3];
+        double planeY[3];
+        double prefix[6];
+        double focal, x, y;
+    };
+
     struct UprightReprojectionError
     {
         UprightReprojectionError( const Sophus::SE3d &_prefix, double _focal, double _x, double _y )
@@ -133,7 +204,7 @@ namespace vrlt
     public:
         GlogInitializer()
         {
-            char argv0[] = "vrlt_bundleadjsutment";
+            char argv0[] = "vrlt_bundleadjustment";
             google::InitGoogleLogging(argv0);
         }
     };
@@ -316,8 +387,21 @@ namespace vrlt
         for ( int i = 0; i < n; i++,ptr+=pnp )
         {
             Point *point = points[i];
-            Eigen::Map<Eigen::Vector3d> ptrvec(ptr);
-            ptrvec = project( point->position );
+            
+            if ( point->plane == NULL )
+            {
+                Eigen::Map<Eigen::Vector3d> ptrvec(ptr);
+                ptrvec = project( point->position );
+            }
+            else
+            {
+                // project point onto plane
+                Plane *plane = point->plane;
+                Eigen::Vector3d pos = project(point->position);
+                ptr[0] = plane->X.dot(pos-plane->origin);
+                ptr[1] = plane->Y.dot(pos-plane->origin);
+                ptr[2] = 1;
+            }
         }
     }
     
@@ -327,7 +411,16 @@ namespace vrlt
         for ( int i = 0; i < n; i++,ptr+=pnp )
         {
             Point *point = points[i];
-            point->position << ptr[0], ptr[1], ptr[2], 1.;
+            if ( point->plane == NULL )
+            {
+                point->position << ptr[0], ptr[1], ptr[2], 1.;
+            }
+            else
+            {
+                Plane *plane = point->plane;
+                Eigen::Vector3d pos = plane->origin + ptr[0] * plane->X + ptr[1] * plane->Y;
+                point->position = unproject( pos );
+            }
         }
     }
     
@@ -435,21 +528,39 @@ namespace vrlt
                 {
                     UprightReprojectionError *reproj_error = new UprightReprojectionError(prefixes[j][i],
                                                                             camera->calibration->focal,
-                                                                            feature->location[0]-camera->calibration->center[0],
-                                                                            feature->location[1]-camera->calibration->center[1]);
+                                                                            feature->location[0]-calibration->center[0],
+                                                                            feature->location[1]-calibration->center[1]);
                     
                     ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<UprightReprojectionError, 2, 4, 3>(reproj_error);
                     problem.AddResidualBlock(cost_function, lossFunction, p+j*cnp, p+m*cnp+i*pnp );
                 }
                 else
                 {
-                    ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i],
-                                                                   camera->calibration->focal,
-                                                                   feature->location[0]-camera->calibration->center[0],
-                                                                   feature->location[1]-camera->calibration->center[1]);
-                    
-                    ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(reproj_error);
-                    problem.AddResidualBlock(cost_function, lossFunction, p+j*cnp, p+m*cnp+i*pnp );
+                    if ( point->plane == NULL )
+                    {
+                        ReprojectionError *reproj_error = new ReprojectionError(prefixes[j][i],
+                                                                       camera->calibration->focal,
+                                                                       feature->location[0]-calibration->center[0],
+                                                                       feature->location[1]-calibration->center[1]);
+                        
+                        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6, 3>(reproj_error);
+                        problem.AddResidualBlock(cost_function, lossFunction, p+j*cnp, p+m*cnp+i*pnp );
+                    }
+                    else
+                    {
+                        Plane *plane = point->plane;
+                        
+                        PlanePointReprojectionError *reproj_error = new PlanePointReprojectionError(prefixes[j][i],
+                                                                                                    plane->origin,
+                                                                                                    plane->X,
+                                                                                                    plane->Y,
+                                                                                                    camera->calibration->focal,
+                                                                                                    feature->location[0]-calibration->center[0],
+                                                                                                    feature->location[1]-calibration->center[1]);
+                        
+                        ceres::CostFunction* cost_function = new ceres::AutoDiffCostFunction<PlanePointReprojectionError, 2, 6, 2>(reproj_error);
+                        problem.AddResidualBlock(cost_function, lossFunction, p+j*cnp, p+m*cnp+i*pnp );
+                    }
                 }
                 
                 if ( j < mcon ) problem.SetParameterBlockConstant( p+j*cnp );
@@ -517,6 +628,7 @@ namespace vrlt
     {
         ceres::Solver::Options options;
         options.linear_solver_type = ceres::DENSE_SCHUR;
+        options.max_num_iterations = 1000;
         //if ( verbose ) options.minimizer_progress_to_stdout = true;
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);

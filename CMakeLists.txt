@@ -72,6 +72,11 @@ include_directories( $(vrlt)/PatchTracker )
 add_subdirectory( PatchTracker )
 endif()
 
+if ( BUILD_BUNDLEADJUSTMENT )
+include_directories( $(vrlt)/BundleAdjustment )
+add_subdirectory( BundleAdjustment )
+endif()
+
 if( BUILD_LOCALIZER )
 include_directories( $(vrlt)/Localizer )
 include_directories( $(vrlt)/LocalizerClient )
@@ -84,11 +89,6 @@ endif()
 if ( BUILD_IMAGECACHE )
 include_directories( $(vrlt)/ImageCache )
 add_subdirectory( ImageCache )
-endif()
-
-if ( BUILD_BUNDLEADJUSTMENT )
-include_directories( $(vrlt)/BundleAdjustment )
-add_subdirectory( BundleAdjustment )
 endif()
 
 if ( BUILD_SFMPIPELINE )
