@@ -355,15 +355,37 @@ struct ImageAdder
         }
     }
     
-    void retriangulate()
+    int retriangulate()
     {
+        int nadded = 0;
         ElementList::iterator it;
-        for ( it = rootnode->points.begin(); it != rootnode->points.end(); it++ )
+        for ( it = r.tracks.begin(); it != r.tracks.end(); it++ )
         {
-            Point *point = (Point *)it->second;
-            Track *track = point->track;
-            triangulate( rootnode, track );
+            Track *track = (Track*)it->second;
+            Point *point = track->point;
+            if ( point == NULL )
+            {
+                point = new Point;
+                char name[256];
+                sprintf( name, "newpoint.%d", nadded++ );
+                point->name = std::string(name);
+                track->point = point;
+                point->track = track;
+                rootnode->points[point->name] = point;
+            }
+            bool success = triangulate_robust( rootnode, track, thresh );
+            if ( !success )
+            {
+                rootnode->points.erase(point->name);
+                track->point = NULL;
+                point->track = NULL;
+                delete point;
+                nadded--;
+            } else {
+                std::cout << project(point->position).transpose() << "\n";
+            }
         }
+        return nadded;
     }
     
     int addImages()
@@ -540,9 +562,18 @@ int main( int argc, char **argv )
     XML::read( r, pathin );
     
     ImageAdder imageAdder( r );
-    imageAdder.run();
 
+    imageAdder.run();
+    
     Node *root = (Node*)r.nodes["root"];
+    
+//    int nremoved = removeOutliers( &r, root, 4.0 );
+//    std::cout << "removed " << nremoved << " outlier tracks\n";
+    
+//    int nadded = imageAdder.retriangulate();
+//    std::cout << "added " << nadded << " points in final re-triangulation\n";
+//    runBundle( &r );
+    
     r.clearPairs( root );
     XML::write( r, pathout );
 
