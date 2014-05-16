@@ -8,7 +8,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include <LocalizerClient/Client.h>
+#include <LocalizerClient/client.h>
 
 namespace vrlt {
     
