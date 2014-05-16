@@ -16,6 +16,9 @@
 #include <opencv2/imgproc.hpp>
 
 #include <PatchTracker/robustlsq.h>
+#include <BundleAdjustment/updatepose.h>
+
+#include <GeographicLib/UTMUPS.hpp>
 
 #include <iostream>
 
@@ -64,16 +67,57 @@ void drawPoints( Node *root, Camera *camera, bool good )
     */
 }
 
+void loadGPS( const std::string &path, std::vector<Eigen::Vector2d> &gps_locations )
+{
+    FILE *f = fopen( path.c_str(), "r" );
+    if ( f == NULL )
+    {
+        std::cerr << "error: could not read GPS file at " << path << "\n";
+        return;
+    }
+    
+    while ( !feof( f ) )
+    {
+        double lat, lon;
+        int nread = fscanf( f, "%lf,%lf\n",&lat,&lon);
+        if ( nread != 2 ) break;
+        
+        int utm_zone;
+        bool utm_north;
+        double east;
+        double north;
+        double gamma;
+        double k;
+        GeographicLib::UTMUPS::Forward(lat, lon,
+                                       utm_zone, utm_north,
+                                       east, north,
+                                       gamma, k );
+        
+        gps_locations.push_back( makeVector( east, north ) );
+    }
+    
+    fclose(f);
+}
+
 int main( int argc, char **argv )
 {
     if ( argc != 3 && argc != 4 ) {
-        fprintf( stderr, "usage: %s <reconstruction> <localized query>\n", argv[0] );
+        fprintf( stderr, "usage: %s <reconstruction> <localized query> [<gps file>]\n", argv[0] );
         exit(1);
     }
     
     std::string pathin = std::string(argv[1]);
     std::string queryin = std::string(argv[2]);
-    
+    bool have_gps = ( argc == 4 );
+    std::vector<Eigen::Vector2d> gps_locations;
+    std::vector<Eigen::Vector2d> tracker_locations;
+    if ( have_gps )
+    {
+        std::string gpsin = std::string(argv[3]);
+        loadGPS( gpsin, gps_locations );
+        std::cout << "read " << gps_locations.size() << " GPS locations\n";
+    }
+
     // load reconstruction
     Reconstruction r;
     r.pathPrefix = pathin;
@@ -202,7 +246,8 @@ int main( int argc, char **argv )
 		int ntracked = 0;
 		float newratio = (float)tracker.nnew / (float)tracker.ntracked;
 		if ( good ) {
-            good = robustlsq.run( trackercamera, 10 );
+            good = robustlsq.run( trackercamera );
+            good = updatePose( root, trackercamera );
             if ( good ) {
                 ElementList::iterator it;
                 for ( it = root->points.begin(); it != root->points.end(); it++ )
@@ -211,10 +256,11 @@ int main( int argc, char **argv )
                     if ( point->tracked ) ntracked++;
                 }
                 float ratio = (float) ntracked / tracker.nattempted;
+                std::cout << "after optimization, tracked: " << ntracked << " / " << tracker.nattempted << " (" << ntracked / (float) tracker.nattempted << ")\n";
                 good = ( ratio > tracker.minratio );
             }
         }
-        
+
         if ( good ) {
             nlost = 0;
             
@@ -273,7 +319,34 @@ int main( int argc, char **argv )
             }
         }
         
+        if ( good && have_gps )
+        {
+            Sophus::SE3d pose = querycamera->node->globalPose();
+            Eigen::Vector3d center = -(pose.so3().inverse()*pose.translation());
+            Eigen::Vector2d location = makeVector(center[0],center[2]);
+            tracker_locations.push_back( location );
+        }
+        
         //drawPoints( root, trackercamera, good );
+    }
+    
+    if ( have_gps )
+    {
+        FILE *f = NULL;
+        
+        f = fopen("gps_locations.obj","w");
+        for ( size_t i = 0; i < gps_locations.size(); i++ )
+        {
+            fprintf( f, "v %.17lf 0 %.17lf\n", gps_locations[i][0]-r.utmCenterEast, gps_locations[i][1]-r.utmCenterNorth );
+        }
+        fclose(f);
+        
+        f = fopen("tracker_locations.obj","w");
+        for ( size_t i = 0; i < tracker_locations.size(); i++ )
+        {
+            fprintf( f, "v %.17lf 0 %.17lf\n", tracker_locations[i][0], tracker_locations[i][1] );
+        }
+        fclose(f);
     }
     
     // move tracked cameras to root
