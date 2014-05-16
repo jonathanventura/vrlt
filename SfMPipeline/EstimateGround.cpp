@@ -47,6 +47,7 @@ int main( int argc, char **argv )
     std::sort( Yvalues.begin(), Yvalues.end() );
     
     double ground_height = Yvalues[Yvalues.size()*percentile];
+    std::cout << "estimated ground height: " << ground_height << "\n";
     
     Sophus::SE3d P;
     P.translation() << 0,-ground_height,0;
