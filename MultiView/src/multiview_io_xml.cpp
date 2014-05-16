@@ -78,6 +78,50 @@ namespace vrlt {
 				}
 				
 				TiXmlNode *child = NULL;
+                while ( (child = node->IterateChildren("plane",child)) )
+                {
+                    TiXmlElement *childelem = child->ToElement();
+					
+					Plane *plane = new Plane;
+                    
+                    text = childelem->Attribute("name");
+					if ( text != NULL ) {
+						plane->name = std::string(text);
+					}
+
+					text = childelem->Attribute("normal");
+					if ( text != NULL ) {
+						double val[3];
+						sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
+						plane->normal = Eigen::Map<Eigen::Vector3d>( val );
+					}
+                    
+                    text = childelem->Attribute("origin");
+					if ( text != NULL ) {
+						double val[3];
+						sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
+						plane->origin = Eigen::Map<Eigen::Vector3d>( val );
+					}
+
+                    text = childelem->Attribute("X");
+					if ( text != NULL ) {
+						double val[3];
+						sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
+						plane->X = Eigen::Map<Eigen::Vector3d>( val );
+					}
+
+                    text = childelem->Attribute("Y");
+					if ( text != NULL ) {
+						double val[3];
+						sscanf( text, "%lf %lf %lf", &val[0], &val[1], &val[2] );
+						plane->Y = Eigen::Map<Eigen::Vector3d>( val );
+					}
+
+                    mynode->planes[plane->name] = plane;
+                    plane->node = mynode;
+                }
+                
+                child = NULL;
 				while ( (child = node->IterateChildren("point",child)) )
 				{
 					TiXmlElement *childelem = child->ToElement();
@@ -107,6 +151,11 @@ namespace vrlt {
 					if ( text != NULL ) {
 						point->track = (Track*)r->tracks[std::string(text)];
 						point->track->point = point;
+					}
+                    
+                    text = childelem->Attribute("plane");
+					if ( text != NULL ) {
+						point->plane = (Plane*)mynode->planes[std::string(text)];
 					}
 					
 					mynode->points[point->name] = point;
@@ -413,6 +462,30 @@ namespace vrlt {
 				{
 					elem->SetAttribute( "scaleFixed", "1" );
 				}
+                
+                ElementList::iterator planeit;
+				for ( planeit = node->planes.begin(); planeit != node->planes.end(); planeit++ )
+				{
+					Plane *plane = (Plane *)planeit->second;
+					
+					TiXmlElement *childelem = new TiXmlElement( "plane" );
+                    
+					childelem->SetAttribute( "name", plane->name.c_str() );
+					
+					sprintf( text, "%lf %lf %lf", plane->normal[0], plane->normal[1], plane->normal[2] );
+					childelem->SetAttribute( "normal", text );
+                    
+					sprintf( text, "%lf %lf %lf", plane->origin[0], plane->origin[1], plane->origin[2] );
+					childelem->SetAttribute( "origin", text );
+
+                    sprintf( text, "%lf %lf %lf", plane->X[0], plane->X[1], plane->X[2] );
+					childelem->SetAttribute( "X", text );
+
+                    sprintf( text, "%lf %lf %lf", plane->Y[0], plane->Y[1], plane->Y[2] );
+					childelem->SetAttribute( "Y", text );
+
+					elem->LinkEndChild( childelem );
+				}
 				
 				ElementList::iterator pointit;
 				for ( pointit = node->points.begin(); pointit != node->points.end(); pointit++ )
@@ -433,6 +506,11 @@ namespace vrlt {
 					{
 						childelem->SetAttribute( "track", point->track->name.c_str() );
 					}
+                    
+                    if ( point->plane != NULL )
+                    {
+                        childelem->SetAttribute( "plane", point->plane->name.c_str() );
+                    }
 					
 					elem->LinkEndChild( childelem );
 				}

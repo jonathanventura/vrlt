@@ -186,6 +186,7 @@ namespace vrlt {
     };
     
     struct Point;
+    struct Plane;
     /** \brief Feature track
      *
      * A track of features across several images.
@@ -221,6 +222,7 @@ namespace vrlt {
         Sophus::SE3d globalPose( Node *root = NULL );
         Sophus::SO3d globalRotation( Node *root = NULL );
         ElementList points;
+        ElementList planes;
         ElementList children;
         Node *root();
         Node() : fixed( false ), scaleFixed( false ), parent( NULL ), camera( NULL ) { }
@@ -233,14 +235,28 @@ namespace vrlt {
     struct Point : public Element {
         Node *node;
         Track *track;
+        Plane *plane;
         Eigen::Vector2f location;
         Eigen::Vector4d position;
         Eigen::Vector3d normal;
-        Point() : node( NULL ), track( NULL ), normal( Eigen::Vector3d::Zero() ), cov( Eigen::Matrix2f::Identity() ) { }
+        Point() : node( NULL ), track( NULL ), plane( NULL ), normal( Eigen::Vector3d::Zero() ), cov( Eigen::Matrix2f::Identity() ) { }
         bool tracked;
         int bestLevel;
         Eigen::Matrix2f cov;
         Eigen::Matrix2f invcov;
+    };
+    
+    /** \brief 3D plane
+     *
+     * A 3D plane used as a constraint for the reconstruction (e.g. a building wall or the ground).
+     */
+    struct Plane : public Element {
+        Node *node;
+        Eigen::Vector3d normal;
+        Eigen::Vector3d origin;
+        Eigen::Vector3d X;
+        Eigen::Vector3d Y;
+        Plane() : node( NULL ), normal( Eigen::Vector3d::Zero() ), origin( Eigen::Vector3d::Zero() ), X( Eigen::Vector3d::Zero() ), Y( Eigen::Vector3d::Zero() ) { }
     };
     
     /** \brief Container for all SfM data
@@ -306,6 +322,8 @@ namespace vrlt {
         v << x, y, z, w;
         return v;
     }
+    
+    void getGluLookAtVectors( const Sophus::SE3d &pose, Eigen::Vector3d &eye, Eigen::Vector3d &center, Eigen::Vector3d &up );
 
     /** @}
      */

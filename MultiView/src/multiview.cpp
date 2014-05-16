@@ -10,6 +10,8 @@
 
 #include <MultiView/multiview.h>
 
+#include <opencv2/imgproc/imgproc.hpp>
+
 namespace vrlt
 {
     Eigen::Vector3d Feature::unproject()
@@ -405,49 +407,27 @@ namespace vrlt
     
     cv::Vec3b getColorSubpix(const cv::Mat& img, cv::Point2f pt)
     {
-        assert(!img.empty());
-        assert(img.channels() == 3);
-        
-        int x = (int)pt.x;
-        int y = (int)pt.y;
-        
-        int x0 = cv::borderInterpolate(x,   img.cols, cv::BORDER_REFLECT_101);
-        int x1 = cv::borderInterpolate(x+1, img.cols, cv::BORDER_REFLECT_101);
-        int y0 = cv::borderInterpolate(y,   img.rows, cv::BORDER_REFLECT_101);
-        int y1 = cv::borderInterpolate(y+1, img.rows, cv::BORDER_REFLECT_101);
-        
-        float a = pt.x - (float)x;
-        float c = pt.y - (float)y;
-        
-        uchar b = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[0] * a) * (1.f - c)
-                                 + (img.at<cv::Vec3b>(y1, x0)[0] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[0] * a) * c);
-        uchar g = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[1] * a) * (1.f - c)
-                                 + (img.at<cv::Vec3b>(y1, x0)[1] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[1] * a) * c);
-        uchar r = (uchar)cvRound((img.at<cv::Vec3b>(y0, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y0, x1)[2] * a) * (1.f - c)
-                                 + (img.at<cv::Vec3b>(y1, x0)[2] * (1.f - a) + img.at<cv::Vec3b>(y1, x1)[2] * a) * c);
-        
-        return cv::Vec3b(b, g, r);
+        cv::Mat color( 1, 1, CV_8UC3 );
+        cv::getRectSubPix( img, cv::Size(1,1), pt, color );
+        return color.at<cv::Vec3b>(0,0);
     }
     
     uchar getGraySubpix(const cv::Mat& img, cv::Point2f pt)
     {
-        assert(!img.empty());
-        assert(img.channels() == 1);
+        cv::Mat gray( 1, 1, CV_8UC1 );
+        cv::getRectSubPix( img, cv::Size(1,1), pt, gray );
+        return gray.at<uchar>(0,0);
+    }
+    
+    void getGluLookAtVectors( const Sophus::SE3d &pose, Eigen::Vector3d &eye, Eigen::Vector3d &center, Eigen::Vector3d &up )
+    {
+        // eye is camera position
+        eye = -( pose.so3().inverse() * pose.translation() );
         
-        int x = (int)pt.x;
-        int y = (int)pt.y;
+        // center is point camera is looking at
+        center = pose.so3().inverse() * makeVector( 0., 0., 1. );
         
-        int x0 = cv::borderInterpolate(x,   img.cols, cv::BORDER_REFLECT_101);
-        int x1 = cv::borderInterpolate(x+1, img.cols, cv::BORDER_REFLECT_101);
-        int y0 = cv::borderInterpolate(y,   img.rows, cv::BORDER_REFLECT_101);
-        int y1 = cv::borderInterpolate(y+1, img.rows, cv::BORDER_REFLECT_101);
-        
-        float a = pt.x - (float)x;
-        float c = pt.y - (float)y;
-        
-        uchar b = (uchar)cvRound((img.at<uchar>(y0, x0) * (1.f - a) + img.at<uchar>(y0, x1) * a) * (1.f - c)
-                                 + (img.at<uchar>(y1, x0) * (1.f - a) + img.at<uchar>(y1, x1) * a) * c);
-        
-        return b;
+        // up is up vector of camera
+        up = pose.so3().inverse() * makeVector( 0., -1., 0. );
     }
 }
