@@ -13,11 +13,8 @@
 #include <PatchTracker/tracker.h>
 #include <PatchTracker/robustlsq.h>
 #include <BundleAdjustment/updatepose.h>
-#include <FeatureMatcher/bruteforce.h>
 
 #include <opencv2/imgproc.hpp>
-
-#include <dispatch/dispatch.h>
 
 #include <iostream>
 
