@@ -11,7 +11,7 @@
 #ifndef BRUTE_FORCE_NN_H
 #define BRUTE_FORCE_NN_H
 
-#include "NN.h"
+#include "nn.h"
 
 #include <opencv2/features2d.hpp>
 #include <opencv2/flann.hpp>
