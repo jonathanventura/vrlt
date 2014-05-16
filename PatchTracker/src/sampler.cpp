@@ -20,7 +20,7 @@
 
 namespace vrlt {
 
-    bool Sampler::samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch )
+    bool Sampler::samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, cv::Mat &templatePatch )
     {
         cv::getRectSubPix( sourceImage, templatePatch.size(), cv::Point2f( center[0], center[1] ), templatePatch );
         return true;

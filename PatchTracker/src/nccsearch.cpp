@@ -182,7 +182,7 @@ namespace vrlt
         for ( int y = lower; y < upper; y++ ) {
             for ( int x = lower; x < upper; x++ ) {
                 if ( searcher->subsample ) {
-                    Eigen::Vector2d pt;
+                    Eigen::Vector2f pt;
                     pt[0] = center[0] + x;
                     pt[1] = center[1] + y;
                     bool good = patch->sampler.samplePatch( patch->target->image, pt, targetPatch );

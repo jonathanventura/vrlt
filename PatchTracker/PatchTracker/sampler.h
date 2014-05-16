@@ -23,7 +23,7 @@ namespace vrlt {
 
     struct Sampler
     {
-        virtual bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2d &center, cv::Mat &templatePatch );
+        virtual bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, cv::Mat &templatePatch );
         virtual bool samplePatch( cv::Mat &sourceImage, const Eigen::Vector2f &center, const Eigen::Matrix3f &warp, float scale, cv::Mat &templatePatch );
     };
 
