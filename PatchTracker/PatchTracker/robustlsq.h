@@ -27,9 +27,9 @@ namespace vrlt {
         {
         }
 
-        bool updatePose( Camera *camera_in, int count, int iter, float eps );
+        bool updatePose( Camera *camera_in, int iter, float eps );
 
-        bool run( Camera *camera_in, int count );
+        bool run( Camera *camera_in );
     };
 }
 

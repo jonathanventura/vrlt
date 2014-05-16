@@ -46,7 +46,7 @@ namespace vrlt
       return ( ksq / 6. ) * ( 1. - pow( 1. - (residsq/ksq), 3. ) );
     }
 
-    bool RobustLeastSq::updatePose( Camera *camera_in, int count, int iter, float eps )
+    bool RobustLeastSq::updatePose( Camera *camera_in, int iter, float eps )
     {
         Eigen::Matrix<float,6,6> FtF = Eigen::Matrix<float,6,6>::Zero();
         Eigen::Matrix<float,6,1> Fte = Eigen::Matrix<float,6,1>::Zero();
@@ -69,7 +69,7 @@ namespace vrlt
 
                 Eigen::Vector2f x = f * project(PX) + center;
                 Eigen::Vector2f e = point->location - x;
-
+                
                 residualsqs.push_back( e.dot(e) );
             }
             if ( residualsqs.size() > 0 ) {
@@ -96,11 +96,11 @@ namespace vrlt
             A *= f / (PX[2] * PX[2]);
 
             Eigen::Matrix<float,3,6> J;
-
+            
             for ( int m = 0; m < 6; m++ ) {
                 J.col(m) = ( Sophus::SE3f::generator( m ) * unproject(PX) ).head(3);
             }
-
+            
             Eigen::Matrix<float,2,6> Fn = A * J;
 
             Eigen::Vector2f x = f * project(PX) + center;
@@ -146,9 +146,9 @@ namespace vrlt
             Eigen::Vector2f pos = point->location;
             Eigen::Vector2f e = pos - x;
 
-            if ( weights[i] == 0 ) {
-                point->tracked = false;
-            }
+//            if ( weights[i] == 0 ) {
+//                point->tracked = false;
+//            }
 
             float residsq = e.dot(e);
             newerr += computeTukeyObjectiveFunction( ksq, residsq );
@@ -166,17 +166,17 @@ namespace vrlt
         return false;
     }
 
-    bool RobustLeastSq::run( Camera *camera_in, int count )
+    bool RobustLeastSq::run( Camera *camera_in )
     {
         float eps = 1e-3;
         int iter = 0;
         bool good_once = false;
         for ( int i = 0; i < niter; i++ ) {
-            bool good = updatePose( camera_in, count, iter++, eps );
+            bool good = updatePose( camera_in, iter++, eps );
             if ( !good ) eps *= 10.;
             else good_once = true;
         }
         return good_once;
     }
-
+    
 }
