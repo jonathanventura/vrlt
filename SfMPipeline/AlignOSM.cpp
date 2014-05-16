@@ -16,6 +16,7 @@
 #include <opencv2/highgui.hpp>
 
 #include <ceres/ceres.h>
+#include <ceres/rotation.h>
 
 #include <sophus/sim3.hpp>
 
@@ -57,7 +58,7 @@ struct Transformation
         
         Sophus::SO3d R( Sophus::SO3d::exp(r) );
         
-        T.rxso3().setScaledRotationMatrix( Eigen::DiagonalMatrix<double, 3>(scale,scale,scale)*R.matrix());
+        T.rxso3().setScaledRotationMatrix( scale*R.matrix());
         
         Eigen::Vector3d c;
         c << centerX,0,centerZ;
@@ -67,8 +68,9 @@ struct Transformation
         return T;
     }
 };
+//typedef Sophus::Sim3d Transformation;
 
-Transformation pointTransformation;
+Sophus::Sim3d pointTransformation;
 Transformation osmTransformation;
 
 double metersToPixels = 1.0;
@@ -77,49 +79,90 @@ const int size = 1000;
 
 std::map<Point*,double> point_scores;
 
-struct PointLineError
+//struct PointLineError
+//{
+//    PointLineError( const Eigen::Vector2d &pt, const Eigen::Vector2d &line_pt0, const Eigen::Vector2d &line_pt1 )
+//    {
+//        x = pt[0];
+//        y = pt[1];
+//        Eigen::Vector2d v = line_pt0-line_pt1;
+//        v.normalize();
+//        nx = v[1];
+//        ny = -v[0];
+//        lx = line_pt0[0];
+//        ly = line_pt0[1];
+//    }
+//    
+//    template <typename T>
+//    bool operator()(const T* const params,
+//                    T* residuals) const
+//    {
+//        // params: centerX, centerZ, angle, scale
+//        
+//        // remove center
+//        T ptx = T(x)-params[0];
+//        T pty = T(y)-params[1];
+//        
+//        // apply rotation
+//        T c = cos(params[2]);
+//        T s = sin(params[2]);
+//        T Rptx = c*ptx+s*pty;
+//        T Rpty = -s*ptx+c*pty;
+//        
+//        // apply scale
+//        T sRptx = params[3]*Rptx;
+//        T sRpty = params[3]*Rpty;
+//        
+//        // compute point-line distance
+//        residuals[0] = nx*(lx-sRptx)+ny*(ly-sRpty);
+//        
+//        return true;
+//    }
+//
+//    double x, y;    // point
+//    double nx, ny; // line normal
+//    double lx, ly; // line origin
+//};
+
+struct PointPlaneError
 {
-    PointLineError( const Eigen::Vector2d &pt, const Eigen::Vector2d &line_pt0, const Eigen::Vector2d &line_pt1 )
+    PointPlaneError( const Eigen::Vector3d &pt, const Eigen::Vector3d &normal, const Eigen::Vector3d &origin )
     {
         x = pt[0];
         y = pt[1];
-        Eigen::Vector2d v = line_pt0-line_pt1;
-        v.normalize();
-        nx = v[1];
-        ny = -v[0];
-        lx = line_pt0[0];
-        ly = line_pt0[1];
+        z = pt[2];
+        nx = normal[0];
+        ny = normal[1];
+        nz = normal[2];
+        ox = origin[0];
+        oy = origin[1];
+        oz = origin[2];
     }
     
     template <typename T>
     bool operator()(const T* const params,
                     T* residuals) const
     {
-        // params: centerX, centerZ, angle, scale
-        
-        // remove center
-        T ptx = T(x)-params[0];
-        T pty = T(y)-params[1];
-        
-        // apply rotation
-        T c = cos(params[2]);
-        T s = sin(params[2]);
-        T Rptx = c*ptx+s*pty;
-        T Rpty = -s*ptx+c*pty;
-        
-        // apply scale
-        T sRptx = params[3]*Rptx;
-        T sRpty = params[3]*Rpty;
+        T p[3];
+        p[0] = T(x);
+        p[1] = T(y);
+        p[2] = T(z);
+        T pp[3];
+        // params: rx, ry, rz, tx, ty, tz, s
+        ceres::AngleAxisRotatePoint( params, p, pp );
+        pp[0] = params[6] * pp[0] + params[3];
+        pp[1] = params[6] * pp[1] + params[4];
+        pp[2] = params[6] * pp[2] + params[5];
         
         // compute point-line distance
-        residuals[0] = nx*(lx-sRptx)+ny*(ly-sRpty);
+        residuals[0] = nx*(ox-pp[0])+ny*(oy-pp[1])+nz*(oz-pp[2]);
         
         return true;
     }
-
-    double x, y;    // point
-    double nx, ny; // line normal
-    double lx, ly; // line origin
+    
+    double x, y, z;    // point
+    double nx, ny, nz; // plane normal
+    double ox, oy, oz; // plane origin
 };
 
 void optimizeAlignment()
@@ -155,23 +198,38 @@ void optimizeAlignment()
         }
     }
     
-    double params[4];
-    params[0] = pointTransformation.centerX;
-    params[1] = pointTransformation.centerZ;
-    params[2] = pointTransformation.angle;
-    params[3] = pointTransformation.scale;
-
+//    double params[4];
+//    params[0] = pointTransformation.centerX;
+//    params[1] = pointTransformation.centerZ;
+//    params[2] = pointTransformation.angle;
+//    params[3] = pointTransformation.scale;
+    double params[7];
+    Sophus::SO3d R( pointTransformation.rxso3().rotationMatrix() );
+    Eigen::Vector3d r( R.log() );
+    params[0] = r[0];
+    params[1] = r[1];
+    params[2] = r[2];
+    params[3] = pointTransformation.translation()[0];
+    params[4] = pointTransformation.translation()[1];
+    params[5] = pointTransformation.translation()[2];
+    params[6] = pointTransformation.scale();
+    
     ceres::HuberLoss *lossFunction = new ceres::HuberLoss(0.5);
     
     for ( ElementList::iterator it = root->points.begin(); it != root->points.end(); it++ )
     {
         Point *point = (Point*)it->second;
         
-        Eigen::Vector2d pt;
-        pt << point->position[0] / point->position[3], point->position[2] / point->position[3];
+//        Eigen::Vector2d pt;
+//        pt << point->position[0] / point->position[3], point->position[2] / point->position[3];
+        
+        Eigen::Vector3d pt = project( point->position );
+        
+//        Eigen::Vector4d XYZ;
+//        XYZ << pt[0],0,pt[1],1;
         
         Eigen::Vector4d XYZ;
-        XYZ << pt[0],0,pt[1],1;
+        XYZ << pt[0], pt[1], pt[2], 1;
         
         XYZ = pointTransformation.matrix() * XYZ;
         
@@ -189,12 +247,24 @@ void optimizeAlignment()
             
             Eigen::Vector2d n;
             n << v[1], -v[0];
-            double dist = fabs(n.dot(transformed_pt-lines[i].first));
+            
+            Eigen::Vector2d o = lines[i].first;
+            
+            double dist = fabs(n.dot(transformed_pt-o));
+            
+//            Eigen::Vector3d myn;
+//            myn << n[0], 0, n[1];
+//            Eigen::Vector3d myo;
+//            myo << o[0], 0, o[1];
+//            PointPlaneError err(pt,myn,myo);
+//            double mydist;
+//            err(params,&mydist);
+//            std::cout << "correct: " << dist << "   ceres: " << mydist << "\n";
             
             if ( dist < min_dist )
             {
                 // check projection onto line
-                double proj = v.dot(transformed_pt-lines[i].first);
+                double proj = v.dot(transformed_pt-o);
                 if ( proj >= 0 && proj <= d )
                 {
                     min_dist = dist;
@@ -205,10 +275,31 @@ void optimizeAlignment()
         
         point_scores[point] = min_dist;
         
-        if ( min_dist > 4. ) continue;
-        
-        PointLineError *err = new PointLineError(pt,lines[best].first,lines[best].second);
-        problem.AddResidualBlock( new ceres::AutoDiffCostFunction<PointLineError, 1, 4>(err), lossFunction, params );
+        if ( min_dist <= 4. ) {
+            Eigen::Vector2d v = lines[best].second - lines[best].first;
+            double d = v.norm();
+            v /= d;
+            
+            Eigen::Vector2d n;
+            n << v[1], -v[0];
+            
+            Eigen::Vector2d o = lines[best].first;
+            
+            Eigen::Vector3d myn;
+            myn << n[0], 0, n[1];
+            Eigen::Vector3d myo;
+            myo << o[0], 0, o[1];
+            PointPlaneError *err = new PointPlaneError(pt,myn,myo);
+            problem.AddResidualBlock( new ceres::AutoDiffCostFunction<PointPlaneError, 1, 7>(err), lossFunction, params );
+        } else if ( fabs(XYZ[1])<0.5 ) {
+            point_scores[point] = fabs(XYZ[1]);
+            Eigen::Vector3d myn;
+            myn << 0, -1, 0;
+            Eigen::Vector3d myo;
+            myo << 0, 0, 0;
+            PointPlaneError *err = new PointPlaneError(pt,myn,myo);
+            problem.AddResidualBlock( new ceres::AutoDiffCostFunction<PointPlaneError, 1, 7>(err), lossFunction, params );
+        }
     }
 
     ceres::Solver::Options options;
@@ -218,11 +309,25 @@ void optimizeAlignment()
     std::cout << summary.FullReport() << "\n";
     if ( summary.termination_type != ceres::FAILURE )
     {
-        pointTransformation.centerX = params[0];
-        pointTransformation.centerZ = params[1];
-        pointTransformation.angle = params[2];
-        pointTransformation.scale = params[3];
+//        pointTransformation.centerX = params[0];
+//        pointTransformation.centerZ = params[1];
+//        pointTransformation.angle = params[2];
+//        pointTransformation.scale = params[3];
+        
+        std::cout << "rotation: " << params[0] << " " << params[1] << " " << params[2] << "\n";
+        std::cout << "translation: " << params[3] << " " << params[4] << " " << params[5] << "\n";
+        std::cout << "scale: " << params[6] << "\n";
+        
+        Eigen::Vector3d r;
+        r << params[0], params[1], params[2];
+        double s;
+        s = params[6];
+        pointTransformation.rxso3().setScaledRotationMatrix( s*Sophus::SO3d::exp(r).matrix() );
+        Eigen::Vector3d t;
+        t << params[3], params[4], params[5];
+        pointTransformation.translation() = t;
     }
+
 }
 
 void getPointLimits()
@@ -253,14 +358,21 @@ void getPointLimits()
     std::sort( Xvalues.begin(), Xvalues.end() );
     std::sort( Zvalues.begin(), Zvalues.end() );
     
+    Eigen::Vector3d center;
+    center << Xvalues[Xvalues.size() * .5],0,Zvalues[ Zvalues.size() * .9 ];
+    
     minX = Xvalues[ Xvalues.size() * .1 ];
-    pointTransformation.centerX = Xvalues[ Xvalues.size() * .5 ];
+//    pointTransformation.centerX = Xvalues[ Xvalues.size() * .5 ];
     maxX = Xvalues[ Xvalues.size() * .9 ];
     minZ = Zvalues[ Zvalues.size() * .1 ];
-    pointTransformation.centerZ = Zvalues[ Zvalues.size() * .5 ];
+//    pointTransformation.centerZ = Zvalues[ Zvalues.size() * .5 ];
     maxZ = Zvalues[ Zvalues.size() * .9 ];
     
-    pointTransformation.scale = 100./(maxZ-minZ);
+    pointTransformation.translation() = -center;
+    
+//    pointTransformation.scale = 100./(maxZ-minZ);
+    double s = 100./(maxZ-minZ);
+    pointTransformation.rxso3().setScaledRotationMatrix( s*Eigen::Matrix3d::Identity() );
 }
 
 void renderPoints( cv::Mat &image )
@@ -393,14 +505,16 @@ void writeOSMObj( const char *path )
 
 int main( int argc, char **argv )
 {
-    if ( argc != 4 ) {
-        fprintf( stderr, "usage: %s <reconstruction> <osm xml file> <output>\n", argv[0] );
+    if ( argc != 4 && argc != 5 ) {
+        fprintf( stderr, "usage: %s <reconstruction> <osm xml file> <output> [<max height>]\n", argv[0] );
         return 0;
     }
     
     std::string pathin = std::string(argv[1]);
     std::string osmin = std::string(argv[2]);
     std::string pathout = std::string(argv[3]);
+    double max_height = 10;
+    if ( argc == 5 ) max_height = atof(argv[4]);
     
     XML::read( r, pathin );
     
@@ -479,23 +593,49 @@ int main( int argc, char **argv )
                 break;
 
             case 'w':
-                pointTransformation.scale *= 1.05;
+            {
+                Eigen::Matrix3d R = pointTransformation.rxso3().rotationMatrix();
+                double s = pointTransformation.rxso3().scale();
+                s *= 1.05;
+                pointTransformation.rxso3().setScaledRotationMatrix(s*R);
                 should_render = true;
+            }
                 break;
                 
             case 's':
-                pointTransformation.scale /= 1.05;
+            {
+                Eigen::Matrix3d R = pointTransformation.rxso3().rotationMatrix();
+                double s = pointTransformation.rxso3().scale();
+                s /= 1.05;
+                pointTransformation.rxso3().setScaledRotationMatrix(s*R);
                 should_render = true;
+            }
                 break;
                 
             case 't':
-                pointTransformation.angle += M_PI/180.;
+            {
+                Sophus::SO3d R( pointTransformation.rxso3().rotationMatrix() );
+                double s = pointTransformation.rxso3().scale();
+                Eigen::Vector3d deltar;
+                deltar << 0, M_PI/180., 0;
+                R = Sophus::SO3d::exp(deltar)*R;
+                pointTransformation.rxso3().setScaledRotationMatrix(s*R.matrix());
+//                pointTransformation.angle += M_PI/180.;
                 should_render = true;
+            }
                 break;
-                
+            
             case 'r':
-                pointTransformation.angle -= M_PI/180.;
+            {
+                Sophus::SO3d R( pointTransformation.rxso3().rotationMatrix() );
+                double s = pointTransformation.rxso3().scale();
+                Eigen::Vector3d deltar;
+                deltar << 0, -M_PI/180., 0;
+                R = Sophus::SO3d::exp(deltar)*R;
+                pointTransformation.rxso3().setScaledRotationMatrix(s*R.matrix());
+//                pointTransformation.angle -= M_PI/180.;
                 should_render = true;
+            }
                 break;
                 
             case 'a':
@@ -540,9 +680,25 @@ int main( int argc, char **argv )
     myOsmTransformation.centerX = 0;
     myOsmTransformation.centerZ = 0;
     
-    Sophus::Sim3d composedTransform = myOsmTransformation.sim3().inverse()*pointTransformation.sim3();
+//    Sophus::Sim3d composedTransform = myOsmTransformation.sim3().inverse()*pointTransformation.sim3();
+    Sophus::Sim3d composedTransform = myOsmTransformation.sim3().inverse()*pointTransformation;
     
     transformPoints( root, composedTransform );
+    
+    // remove all points with height < 0 or > max_height
+//    std::vector<Point*> points_to_remove;
+//    for ( ElementList::iterator pointit = root->points.begin(); pointit != root->points.end(); pointit++ )
+//    {
+//        Point *point = (Point*)pointit->second;
+//        double height = point->position[1]/point->position[3];
+//        if ( height < 0 || height > max_height ) points_to_remove.push_back( point );
+//    }
+//    for ( size_t i = 0; i < points_to_remove.size(); i++ ) {
+//        Point *point = points_to_remove[i];
+//        Track *track = point->track;
+//        track->point = NULL;
+//        root->points.erase( point->name );
+//    }
     
     XML::write( r, pathout );
     
