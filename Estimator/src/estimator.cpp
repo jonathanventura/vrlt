@@ -108,7 +108,7 @@ namespace vrlt {
         return unproject( pose1.inverse() * project(pt) );
     }
     
-    void triangulate( Node *root, Track *track )
+    bool triangulate( Node *root, Track *track )
     {
         std::vector< Eigen::Matrix<double,3,4> > poses;
         std::vector< Eigen::Vector3d > obs;
@@ -130,7 +130,7 @@ namespace vrlt {
         
         int N = poses.size();
 
-        if ( N < 2 ) return;
+        if ( N < 2 ) return false;
         Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> J( 3 * N, 4 );
         
         int row = 0;
@@ -150,33 +150,75 @@ namespace vrlt {
         
         Eigen::JacobiSVD< Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> > svdJ( J, Eigen::ComputeFullV );
         track->point->position = svdJ.matrixV().col(3);
-    }
-
-    int Estimator::sampleSize()
-    {
-        return 1;
-    }
-    
-    int Estimator::compute( PointPairList::iterator begin, PointPairList::iterator end )
-    {
-        return 0;
-    }
-    
-    void Estimator::chooseSolution( int soln )
-    {
         
-    }
-    
-    double Estimator::score( PointPairList::iterator it )
-    {
-        return 0;
-    }
-    
-    bool Estimator::canRefine()
-    {
         return true;
     }
     
+    bool triangulate_robust( Node *root, Track *track, double thresh )
+    {
+        std::vector< Sophus::SE3d > poses;
+        std::vector< Eigen::Vector3d > obs;
+        
+        ElementList::iterator it;
+        for ( it = track->features.begin(); it != track->features.end(); it++ )
+        {
+            Feature *feature = (Feature *)it->second;
+            if ( feature->camera->node->root() != root ) continue;
+            obs.push_back( feature->unproject() );
+            
+            Sophus::SE3d pose = feature->camera->node->globalPose();
+            poses.push_back( pose );
+        }
+        
+        int N = poses.size();
+        
+        if ( N < 2 ) return false;
+        Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> J( 3 * N, 4 );
+        
+        double threshsq = thresh*thresh;
+        double best_err = INFINITY;
+        Eigen::Vector4d bestX;
+        
+        for ( int i = 0; i < N; i++ )
+        {
+            for ( int j = i+1; j < N; j++ )
+            {
+                // triangulate point
+                Sophus::SE3d rel_pose = poses[j]*poses[i].inverse();
+                PointPair point_pair( obs[i], obs[j] );
+                Eigen::Vector4d X = triangulate( rel_pose, point_pair );
+                if ( isnan(X[0]) || isnan(X[1]) || isnan(X[2]) || isnan(X[3]) ) continue;
+                if ( fabs(X[3]) < 1e-10 ) continue;
+                if ( fabs(X[3]) > 1e10 ) continue;
+                if ( project(X).norm() < 1e-10 ) continue;
+                if ( project(X).norm() > 1e4 ) continue;
+                X = unproject(poses[i].inverse()*project(X));
+                
+                double total_err = 0.;
+                
+                // compute re-projection error of all observations
+                for ( int k = 0; k < N; k++ )
+                {
+                    Eigen::Vector3d PX = poses[k] * project(X);
+                    Eigen::Vector2d diff = project(obs[k])-project(PX);
+                    double errsq = diff.dot(diff);
+                    total_err += ( errsq < threshsq ) ? errsq : threshsq;
+                }
+                
+                if ( total_err < best_err )
+                {
+                    best_err = total_err;
+                    bestX = X;
+                }
+            }
+        }
+        if ( isinf(best_err) ) return false;
+        
+        track->point->position = bestX;
+        
+        return true;
+    }
+
     int FivePointEssential::sampleSize()
     {
         return 5;
@@ -628,36 +670,36 @@ namespace vrlt {
     
     double ThreePointPose::score( PointPairList::iterator it )
     {
-#ifdef USE_ACCELERATE
-        Eigen::Vector3d X = it->first;
-        Eigen::Vector2d x = it->second.head(2);
-        double scale = 1. / it->second[2];
-        vDSP_vsmulD( x.data(), 1, &scale, x.data(), 1, 2 );
-        
-        Eigen::Vector3d poseX;
-        vDSP_dotprD( R0.data(), 1, X.data(), 1, poseX.data()    , 3 );
-        vDSP_dotprD( R1.data(), 1, X.data(), 1, poseX.data() + 1, 3 );
-        vDSP_dotprD( R2.data(), 1, X.data(), 1, poseX.data() + 2, 3 );
-        vDSP_vaddD( poseX.data(), 1, t.data(), 1, poseX.data(), 1, 3 );
-        
-        double c;
-        vDSP_dotprD( poseX.data(), 1, it->second.data(), 1, &c, 3 );
-        if ( c < 0 ) return INFINITY;
-        
-        scale = 1. / poseX[2];
-        
-        Eigen::Vector2d xproj = poseX.head(2);
-        vDSP_vsmulD( xproj.data(), 1, &scale, xproj.data(), 1, 2 );
-        
-        Eigen::Vector2d diff;
-        vDSP_vsubD( xproj.data(), 1, x.data(), 1, diff.data(), 1, 2 );
-        //diff /= featurescale;
-        
-        double s;
-        vDSP_svesqD( diff.data(), 1, &s, 2 );
-        
-        return s;
-#else
+//#ifdef USE_ACCELERATE
+//        Eigen::Vector3d X = it->first;
+//        Eigen::Vector2d x = it->second.head(2);
+//        double scale = 1. / it->second[2];
+//        vDSP_vsmulD( x.data(), 1, &scale, x.data(), 1, 2 );
+//        
+//        Eigen::Vector3d poseX;
+//        vDSP_dotprD( R0.data(), 1, X.data(), 1, poseX.data()    , 3 );
+//        vDSP_dotprD( R1.data(), 1, X.data(), 1, poseX.data() + 1, 3 );
+//        vDSP_dotprD( R2.data(), 1, X.data(), 1, poseX.data() + 2, 3 );
+//        vDSP_vaddD( poseX.data(), 1, t.data(), 1, poseX.data(), 1, 3 );
+//        
+//        double c;
+//        vDSP_dotprD( poseX.data(), 1, it->second.data(), 1, &c, 3 );
+//        if ( c < 0 ) return INFINITY;
+//        
+//        scale = 1. / poseX[2];
+//        
+//        Eigen::Vector2d xproj = poseX.head(2);
+//        vDSP_vsmulD( xproj.data(), 1, &scale, xproj.data(), 1, 2 );
+//        
+//        Eigen::Vector2d diff;
+//        vDSP_vsubD( xproj.data(), 1, x.data(), 1, diff.data(), 1, 2 );
+//        //diff /= featurescale;
+//        
+//        double s;
+//        vDSP_svesqD( diff.data(), 1, &s, 2 );
+//        
+//        return s;
+//#else
         Eigen::Vector3d poseX = pose * it->first;
         //if ( poseX[2] < 0 ) return INFINITY;
         if ( poseX.dot( it->second ) < 0 ) return INFINITY;
@@ -670,7 +712,7 @@ namespace vrlt {
         Eigen::Vector2d diff = xproj - x;
         //diff /= featurescale;
         return diff.dot(diff);
-#endif
+//#endif
     }
     
     bool ThreePointPose::canRefine()
@@ -1102,5 +1144,112 @@ namespace vrlt {
         }
         
         return bestNInliers;
+    }
+    
+    
+    
+    PreemptiveRANSAC::PreemptiveRANSAC( size_t _B )
+    : inlier_threshold( 0.001 ), B( _B )
+    {
+        
+    }
+    
+    int PreemptiveRANSAC::compute( PointPairList::iterator begin, PointPairList::iterator end, std::vector<Estimator*> &estimators, Estimator **best_estimator, std::vector<bool> &inliers )
+    {
+        double threshsq = inlier_threshold*inlier_threshold;
+        size_t M = estimators.size();
+        size_t N = std::distance(begin,end);
+        int m = estimators[0]->sampleSize();
+
+        PointPairList random_subset( m+1 );
+        
+        // this contains the number of inliers (first) for a hypothesis index (second)
+        std::vector< std::pair<int,size_t> > numInliersAndIndex(estimators.size());
+        
+        // generate M hypotheses
+        for ( size_t i = 0; i < M; i++ )
+        {
+            numInliersAndIndex[i].first = 0;
+            numInliersAndIndex[i].second = i;
+            
+            // generate a random sample with one extra correspondence for disambiguation
+            random_sample(begin, N, random_subset.begin(), m+1 );
+            
+            // compute solution
+            int nsolns = estimators[i]->compute( random_subset.begin(), random_subset.begin()+m );
+            
+            // if bad sample, continue
+            if ( nsolns == 0 ) continue;
+            
+            // if more than one solution, disambiguate
+            if ( nsolns > 1 )
+            {
+                // choose solution which has best score for extra correspondence
+                int best_index = 0;
+                double best_score = INFINITY;
+                for ( int j = 0; j < nsolns; j++ )
+                {
+                    estimators[i]->chooseSolution(j);
+                    double score = estimators[i]->score( random_subset.begin()+m );
+                    if ( score < best_score )
+                    {
+                        best_score = score;
+                        best_index = j;
+                    }
+                }
+                estimators[i]->chooseSolution(best_index);
+            }
+        }
+        
+        // test blocks of correspondences
+        PointPairList::iterator it = begin;
+        size_t f_i = M;
+        for ( size_t i = 1; i < N; i++ )
+        {
+            // increment number of inliers for all remaining hypotheses using this block of correspondences
+            PointPairList::iterator start = it;
+            for ( ; it != start+B && it != end; ++it )
+            {
+                for ( size_t j = 0; j < f_i; j++ )
+                {
+                    double score = estimators[ numInliersAndIndex[j].second ]->score(it);
+                    if ( score <= threshsq ) numInliersAndIndex[j].first++;
+                }
+            }
+            
+            // f_i is the number of remaining hypotheses
+            f_i = floor(M*pow(2.,-floor(i/B)));
+            
+            // partially sort remaining hypotheses by num inliers
+            std::partial_sort( numInliersAndIndex.begin(), numInliersAndIndex.begin()+f_i, numInliersAndIndex.end(), std::greater< std::pair<int,size_t> >() );
+//            for ( size_t j = 0; j < f_i; j++ ) std::cout << numInliersAndIndex[j].first << " ";
+//            std::cout << "\n";
+            
+            // stop if we have one hypothesis left
+            if ( f_i <= 1 ) break;
+
+            // stop if we run out of correspondences
+            if ( it == end ) break;
+        }
+        
+        // top hypothesis is at beginning of list
+        (*best_estimator) = estimators[numInliersAndIndex[0].second];
+        
+        // evaluate all correspondences to determine inliers
+        int num_inliers = 0;
+        inliers.resize( N );
+
+        for ( size_t i = 0; i < N; i++ )
+        {
+            inliers[i] = false;
+            double score = (*best_estimator)->score(begin+i);
+            if ( score <= threshsq )
+            {
+                inliers[i] = true;
+                num_inliers++;
+            }
+        }
+        
+        return num_inliers;
     }
 }

@@ -32,7 +32,9 @@ namespace vrlt {
     /** Triangulates a point given two features. */
     Eigen::Vector4d triangulate( Feature *feature1, Feature *feature2 );
     /** Triangulates a track using all feature observations. */
-    void triangulate( Node *root, Track *track );
+    bool triangulate( Node *root, Track *track );
+    /** Robustly triangulates a track using all feature observations. */
+    bool triangulate_robust( Node *root, Track *track, double thresh );
     
     /** \brief Generic estimation algorithm class
      *
@@ -48,17 +50,17 @@ namespace vrlt {
         } ScoreType;
         ScoreType scoreType;
         /** Minimal sample size. */
-        virtual int sampleSize();
+        virtual int sampleSize() = 0;
         /** Computes solutions given a list of point pairs.
          * \return Number of solutions
          */
-        virtual int compute( PointPairList::iterator begin, PointPairList::iterator end );
+        virtual int compute( PointPairList::iterator begin, PointPairList::iterator end ) = 0;
         /** Chooses which solution to consider in the score() function. */
-        virtual void chooseSolution( int soln );
+        virtual void chooseSolution( int soln ) { }
         /** Compute the score of a given observation using the chosen solution. */
-        virtual double score( PointPairList::iterator it );
+        virtual double score( PointPairList::iterator it ) = 0;
         /** Returns whether the compute() function can refine an estimate using all pairs in the list. */
-        virtual bool canRefine();
+        virtual bool canRefine() { return false; }
         Estimator() : scoreType( Pixel ) { }
         virtual ~Estimator() { }
     };
@@ -181,7 +183,7 @@ namespace vrlt {
         int compute( PointPairList::iterator begin, PointPairList::iterator end );
         double score( PointPairList::iterator it );
         Eigen::Vector3d vp;
-        Sophus::SO3d R; // R*vp = [0 1 0]'
+        Sophus::SO3d R; // R*vp = up
         bool canRefine();
         VanishingPoint( const Eigen::Vector3d &_up ) : up( _up ) { }
     };
@@ -202,6 +204,22 @@ namespace vrlt {
         int countInliers( PointPairList::iterator begin, PointPairList::iterator end, Estimator &estimator );
         int countInliers( PointPairList::iterator begin, PointPairList::iterator end, Estimator &estimator, std::vector<bool> &inliers );
         int countInliers( PointPairList::iterator begin, PointPairList::iterator end, int step, Estimator &estimator, std::vector<bool> &inliers );
+    };
+    
+    /** \brief Preemptive RANSAC implementation
+     *
+     * This class implements the preemptive RANSAC algorithm for robust estimation.
+     */
+    struct PreemptiveRANSAC {
+        double inlier_threshold;
+        size_t B;
+        
+        /**
+         * \param _N Number of hypotheses
+         * \param _B Block size
+         */
+        PreemptiveRANSAC( size_t _B = 10 );
+        int compute( PointPairList::iterator begin, PointPairList::iterator end, std::vector<Estimator*> &estimators, Estimator **best_estimator, std::vector<bool> &inliers );
     };
     
     /**
