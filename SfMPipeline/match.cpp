@@ -1,5 +1,5 @@
 
-#include <Match.h>
+#include <match.h>
 
 #include <Estimator/estimator.h>
 #include <iostream>
