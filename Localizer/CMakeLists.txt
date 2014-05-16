@@ -4,5 +4,6 @@ target_link_libraries( vrlt_localizer vrlt_multiview )
 target_link_libraries( vrlt_localizer vrlt_estimator )
 target_link_libraries( vrlt_localizer vrlt_featurematcher )
 target_link_libraries( vrlt_localizer vrlt_patchtracker )
+target_link_libraries( vrlt_localizer vrlt_bundleadjustment )
 
 
