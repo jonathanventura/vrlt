@@ -11,7 +11,7 @@
 #ifndef BRUTE_FORCE_NN_H
 #define BRUTE_FORCE_NN_H
 
-#include "NN.h"
+#include "nn.h"
 
 #include <OpenCL/opencl.h>
 
