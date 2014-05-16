@@ -12,6 +12,7 @@
 #include <Estimator/estimator.h>
 #include <PatchTracker/tracker.h>
 #include <PatchTracker/robustlsq.h>
+#include <BundleAdjustment/updatepose.h>
 #include <FeatureMatcher/bruteforce.h>
 
 #include <opencv2/imgproc.hpp>
@@ -25,7 +26,7 @@ namespace vrlt
     NNLocalizer::NNLocalizer( Node *_root, NN *index ) : Localizer( _root )
     {
         fm = new FeatureMatcher( index );
-        fm->init( _root, true, false );
+        fm->init( _root, true, true );
     }
     
     NNLocalizer::~NNLocalizer()
@@ -33,7 +34,7 @@ namespace vrlt
         delete fm;
     }
     
-    static void drawMatches( Node *querynode, std::vector<Match*> &matches, std::vector<bool> &inliers )
+    static void drawMatches( Node *querynode, std::vector<Match*> &matches, const std::vector<bool> &inliers )
     {
         std::vector<Camera*> cameras;
         std::vector<cv::Mat> images;
@@ -96,8 +97,8 @@ namespace vrlt
         
         std::vector<Match*> matches;
         
-        findMatches( (*fm), features, matches );
-        //findUniqueMatches( (*fm), features, 0.8, matches );
+        //findMatches( (*fm), features, matches );
+        findUniqueMatches( (*fm), features, 0.8, matches );
 
         std::vector<bool> inliers;
         
@@ -118,20 +119,33 @@ namespace vrlt
         
         std::cout << point_pairs.size() << " matches for pose estimation\n";
         
-        ThreePointPose estimator;
         
-        PROSAC prosac;
-        prosac.num_trials = 5000;
-        prosac.min_num_inliers = 100;
-        prosac.inlier_threshold = thresh;
-
-        int ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), estimator, inliers );
+        Sophus::SE3d best_pose;
+        int ninliers;
+        
+//        ThreePointPose estimator;
+//        PROSAC prosac;
+//        prosac.num_trials = 5000;
+//        prosac.min_num_inliers = 100;
+//        prosac.inlier_threshold = thresh;
+//        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), estimator, inliers );
+//        best_pose = estimator.pose;
+        
+        std::vector<Estimator*> estimators( 5000 );
+        for ( size_t i = 0; i < estimators.size(); i++ ) estimators[i] = new ThreePointPose;
+        PreemptiveRANSAC preemptive_ransac( 10 );
+        preemptive_ransac.inlier_threshold = thresh;
+        ThreePointPose *best_estimator = NULL;
+        ninliers = preemptive_ransac.compute( point_pairs.begin(), point_pairs.end(), estimators, (Estimator**)&best_estimator, inliers );
+        best_pose = best_estimator->pose;
+        for ( size_t i = 0; i < estimators.size(); i++ ) delete estimators[i];
+        estimators.clear();
         
         ElementList::iterator it;
-        std::cout << matches.size() << " matches; " << ninliers << " PROSAC inliers\n";
+        std::cout << matches.size() << " matches; " << ninliers << " inliers\n";
         
-        drawMatches( querycamera->node, matches, inliers );
-        
+//        drawMatches( querycamera->node, matches, std::vector<bool>() );//, inliers );
+//        exit(1);
         for ( int i = 0; i < inliers.size(); i++ )
         {
             if ( !inliers[i] ) continue;
@@ -152,7 +166,7 @@ namespace vrlt
         }
         
         RobustLeastSq robustlsq( root );
-        querycamera->node->pose = estimator.pose;
+        querycamera->node->pose = best_pose;
         bool good = false;
         for ( int i = 0; i < 10; i++ )
         {
@@ -162,7 +176,8 @@ namespace vrlt
             std::cout << "tracker tracked " << tracker->ntracked << " / " << tracker->nattempted << "\n";
             if ( !good ) break;
             if ( good ) {
-                robustlsq.run( querycamera, 10 );
+                robustlsq.run( querycamera );
+//                updatePose( root, querycamera );
                 Sophus::SE3d update = querycamera->node->pose * last_pose.inverse();
                 if ( update.log().norm() < 1e-6 ) break;
             }

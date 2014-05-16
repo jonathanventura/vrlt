@@ -24,7 +24,7 @@ namespace vrlt
         tracker->firstlevel = 1;
         tracker->lastlevel = 0;
         tracker->minnumpoints = 100;
-        min_tracker_ratio = 0.1;
+        min_tracker_ratio = 0.2;
         tracker->minratio = min_tracker_ratio;
     }
     
