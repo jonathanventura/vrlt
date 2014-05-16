@@ -114,6 +114,12 @@ void LoadMaterialFile( const char *prefix, const char *filename, std::vector<Tex
     
     FILE *f = fopen( path, "r" );
     
+    if ( f == NULL )
+    {
+        std::cerr << "error: could not open material file " << path << "\n";
+        exit(1);
+    }
+    
     char buffer[256];
 
     std::string mtlname;
@@ -162,6 +168,11 @@ void LoadMaterialFile( const char *prefix, const char *filename, std::vector<Tex
 #else
             texture.image = cv::imread( path, cv::IMREAD_COLOR );
 #endif
+            if ( texture.image.empty() )
+            {
+                std::cerr << "could not load texture " << path << "\n";
+                exit(1);
+            }
 //            cout << path << " has dimensions " << texture.image.size().x << " " << texture.image.size().y << "\n";
 //            cout << (int) texture.image.data()[0].red << "\n";
             cv::flip( texture.image, texture.image, 0 );
@@ -225,7 +236,7 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
     checkGL( "about to make packed texture" );
     glGenTextures( 1, &packedTexID );
     glBindTexture( GL_TEXTURE_2D, packedTexID );
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, packed_texture.size().width, packed_texture.size().height, 0, GL_RGB, GL_UNSIGNED_BYTE, packed_texture.data );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, packed_texture.size().width, packed_texture.size().height, 0, GL_BGR, GL_UNSIGNED_BYTE, packed_texture.data );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
