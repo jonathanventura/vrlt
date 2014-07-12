@@ -21,12 +21,12 @@
 
 #include <Eigen/Core>
 
-#include <opencv2/imgproc.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #if defined( __IPHONE__ )
 #include <GLUtils/LoadImage.h>
 #else
-#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #endif
 
 static inline Eigen::Vector2d scaleVector( const Eigen::Vector2d &scale, const Eigen::Vector2d &in )
@@ -164,7 +164,7 @@ void LoadMaterialFile( const char *prefix, const char *filename, std::vector<Tex
             
             sprintf( path, "%s/%s", prefix, mtlpath.c_str() );
 #if defined( __IPHONE__ )
-            loadJPEG( path, texture.image );
+            loadJPEG_color( path, texture.image );
 #else
             texture.image = cv::imread( path, cv::IMREAD_COLOR );
 #endif
@@ -236,7 +236,11 @@ GLModel * LoadOBJ( const char *prefix, const char *filename )
     checkGL( "about to make packed texture" );
     glGenTextures( 1, &packedTexID );
     glBindTexture( GL_TEXTURE_2D, packedTexID );
+#ifndef __IPHONE__
     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, packed_texture.size().width, packed_texture.size().height, 0, GL_BGR, GL_UNSIGNED_BYTE, packed_texture.data );
+#else
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, packed_texture.size().width, packed_texture.size().height, 0, GL_RGB, GL_UNSIGNED_BYTE, packed_texture.data );
+#endif
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
