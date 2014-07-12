@@ -42,15 +42,15 @@ static void writeOutGluLookAt( Reconstruction &r, const std::string &path )
         
         getGluLookAtVectors( node->globalPose(), eye, center, up );
         
-        if ( r.utmZone != 0 )
-        {
-            eye = convertToUTM * eye;
-            center = convertToUTM * center;
-            up = convertToUTM * up;
-            
-            eye[0] += r.utmCenterEast;
-            eye[1] += r.utmCenterNorth;
-        }
+        eye = convertToUTM * eye;
+        center = convertToUTM * center;
+        up = convertToUTM * up;
+        
+        eye[0] += r.utmCenterEast;
+        eye[1] += r.utmCenterNorth;
+        
+        center[0] += r.utmCenterEast;
+        center[1] += r.utmCenterNorth;
         
         fprintf( f, "%s ", camera->path.c_str() );
         fprintf( f, "%0.17lf %0.17lf %0.17lf ", eye[0], eye[1], eye[2] );

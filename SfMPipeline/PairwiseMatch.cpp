@@ -66,6 +66,8 @@ int main( int argc, char **argv )
             MatchThread *thread = new MatchThread( &fm1, node1, node2, threshold, r.upright );
             
             threads.push_back( thread );
+            
+            if ( threads.size() == 10 ) finishThreads( r, threads );
         }
 		finishThreads( r, threads );
     }

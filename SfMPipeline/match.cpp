@@ -51,21 +51,41 @@ namespace vrlt
             point_pairs.push_back( point_pair );
         }
         
-        PROSAC prosac;
-        prosac.num_trials = 100;
-        prosac.inlier_threshold = threshold;
-        prosac.min_num_inliers = point_pairs.size();
+//        PROSAC prosac;
+//        prosac.num_trials = 100;
+//        prosac.inlier_threshold = threshold;
+//        prosac.min_num_inliers = point_pairs.size();
+        
+        std::vector<Estimator*> estimators( 100 );
+        PreemptiveRANSAC ransac( 10 );
+        ransac.inlier_threshold = threshold;
         
         if ( upright )
         {
             estimator = new UprightEssential;
+            for ( size_t i = 0; i < estimators.size(); i++ ) estimators[i] = new UprightEssential;
         }
         else
         {
             estimator = new FivePointEssential;
+            for ( size_t i = 0; i < estimators.size(); i++ ) estimators[i] = new FivePointEssential;
         }
         
-        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), (*estimator), inliers );
+//        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), (*estimator), inliers );
+        Estimator *best_estimator = NULL;
+        ninliers = ransac.compute( point_pairs.begin(), point_pairs.end(), estimators, &best_estimator, inliers );
+        
+        if ( upright )
+        {
+            *(UprightEssential*)estimator = *(UprightEssential*)best_estimator;
+        }
+        else
+        {
+            *(FivePointEssential*)estimator = *(FivePointEssential*)best_estimator;
+        }
+        
+        for ( size_t i = 0; i < estimators.size(); i++ ) delete estimators[i];
+        estimators.clear();
     }
     
     void MatchThread::finish( Reconstruction &r )

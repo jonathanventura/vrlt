@@ -2,6 +2,8 @@
 #include <MultiView/multiview.h>
 #include <MultiView/multiview_io_xml.h>
 
+#include <iostream>
+
 using namespace vrlt;
 
 struct PLYPoint
@@ -111,8 +113,11 @@ int main( int argc, char **argv )
                 if ( node->root() != root ) continue;
             }
             if ( !good ) continue;
-                    
+            
+//            if ( track->features.size() < 5 ) continue;
+            
             Eigen::Vector3d X = project( point->position );
+            std::cout << X.transpose() << "\n";
             if ( X.norm() > 1000 ) continue;
             
             Eigen::Vector3d N = point->normal;

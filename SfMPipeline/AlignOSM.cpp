@@ -291,7 +291,7 @@ void optimizeAlignment()
             myo << o[0], 0, o[1];
             PointPlaneError *err = new PointPlaneError(pt,myn,myo);
             problem.AddResidualBlock( new ceres::AutoDiffCostFunction<PointPlaneError, 1, 7>(err), lossFunction, params );
-        } else if ( fabs(XYZ[1])<0.5 ) {
+        } else if ( fabs(XYZ[1]) <= 4. ) {
             point_scores[point] = fabs(XYZ[1]);
             Eigen::Vector3d myn;
             myn << 0, -1, 0;
@@ -352,7 +352,7 @@ void getPointLimits()
         Xvalues.push_back( X );
         Zvalues.push_back( Z );
         
-        point_scores[point] = 1.;
+        point_scores[point] = 10.;
     }
     
     std::sort( Xvalues.begin(), Xvalues.end() );
@@ -392,7 +392,7 @@ void renderPoints( cv::Mat &image )
         cv::Point2i pt( size/2 + round(metersToPixels*XYZ[0]), size/2 - round(metersToPixels*XYZ[2]) );
         double score = point_scores[point];
         
-        if ( score < 1. ) cv::circle( image, pt, 0, cv::Scalar(0) );
+        if ( score < 4. ) cv::circle( image, pt, 0, cv::Scalar(0) );
         else cv::circle( image, pt, 0, cv::Scalar(128) );
     }
 }
