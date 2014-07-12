@@ -11,8 +11,8 @@
 #include <PatchTracker/patch.h>
 #include <PatchTracker/ncc.h>
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #ifdef USE_ACCELERATE
 #include <Accelerate/Accelerate.h>

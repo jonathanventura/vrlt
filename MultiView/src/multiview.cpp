@@ -425,7 +425,7 @@ namespace vrlt
         eye = -( pose.so3().inverse() * pose.translation() );
         
         // center is point camera is looking at
-        center = pose.so3().inverse() * makeVector( 0., 0., 1. );
+        center = eye + pose.so3().inverse() * makeVector( 0., 0., 1. );
         
         // up is up vector of camera
         up = pose.so3().inverse() * makeVector( 0., -1., 0. );

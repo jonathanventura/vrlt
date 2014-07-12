@@ -11,7 +11,7 @@
 #ifndef SSD_H
 #define SSD_H
 
-#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include <Eigen/Core>
 
 namespace vrlt {

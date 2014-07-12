@@ -12,8 +12,8 @@
 #include <PatchTracker/patch.h>
 #include <PatchTracker/nccsearch.h>
 
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #include <Eigen/Eigen>
 
@@ -342,7 +342,7 @@ namespace vrlt
                     if ( searchPatches[i]->source->isnew ) nnew++;
                 }
                 
-                bool tracked = ( nattempted >= minnumpoints ) && ( ntracked >= minratio * nattempted );
+                bool tracked = ( ntracked >= minnumpoints ) && ( ntracked >= minratio * nattempted );
                 if ( !tracked ) return false;
             }
         }
@@ -368,7 +368,7 @@ namespace vrlt
             }
         }
         
-        bool tracked = ( nattempted >= minnumpoints ) && ( ntracked >= minratio * nattempted );
+        bool tracked = ( ntracked >= minnumpoints ) && ( ntracked >= minratio * nattempted );
         
         return tracked;
     }

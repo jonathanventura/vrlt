@@ -19,7 +19,7 @@
 #include <sophus/so3.hpp>
 #include <sophus/se3.hpp>
 #include <sophus/sim3.hpp>
-#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <MultiView/pyramid.h>
 

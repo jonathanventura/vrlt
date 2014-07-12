@@ -12,7 +12,7 @@
 #define SAMPLER_H
 
 #include <Eigen/Core>
-#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 namespace vrlt {
     

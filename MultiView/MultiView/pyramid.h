@@ -11,7 +11,7 @@
 #ifndef __PYRAMID_H
 #define __PYRAMID_H
 
-#include <opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #define NLEVELS 4
 

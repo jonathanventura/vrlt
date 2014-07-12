@@ -101,11 +101,17 @@ int main( int argc, char **argv )
     mypath << pathin << "/reconstruction.xml";
     XML::read( r, mypath.str() );
     
+    std::cout << "done reading xml\n";
+    
     Node *root = (Node*)r.nodes["root"];
     XML::readDescriptors( r, root );
 
+    std::cout << "done reading descriptors\n";
+
     loadImages( pathin, root );
-    
+
+    std::cout << "done reading images\n";
+
     double minY = INFINITY;
     for ( ElementList::iterator it = root->children.begin(); it != root->children.end(); it++ ) {
         Node *node = (Node *)it->second;
@@ -126,7 +132,9 @@ int main( int argc, char **argv )
     NN *index = NULL;
 
     index = new ApproxNN;
-    
+
+    std::cout << "done making approxNN\n";
+
     NNLocalizer *localizer = new NNLocalizer( root, index );
     localizer->verbose = true;
     localizer->tracker->verbose = false;

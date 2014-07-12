@@ -127,14 +127,14 @@ int main( int argc, char **argv )
     Node *root = (Node*)r.nodes["root"];
     
     // set up tracker
-    int maxnumpoints = 1024;
-    double minratio = 0.2;
+    int maxnumpoints = 4096;//1024;
+    double minratio = 0;//0.2;
     Tracker tracker( root, maxnumpoints, "ncc", 0.7 );
     tracker.verbose = false;
     tracker.firstlevel = 3;
     tracker.lastlevel = 0;
     tracker.niter = 10;
-    tracker.minnumpoints = 20;
+    tracker.minnumpoints = 100;
     tracker.minratio = minratio;
     tracker.do_pose_update = false;
     
@@ -257,7 +257,7 @@ int main( int argc, char **argv )
                 }
                 float ratio = (float) ntracked / tracker.nattempted;
                 std::cout << "after optimization, tracked: " << ntracked << " / " << tracker.nattempted << " (" << ntracked / (float) tracker.nattempted << ")\n";
-                good = ( ratio > tracker.minratio );
+                good = ( ratio > tracker.minratio ) && ( ntracked >= tracker.minnumpoints );
             }
         }
 
@@ -298,7 +298,7 @@ int main( int argc, char **argv )
             if ( framesSinceLocalized < 30 ) should_add = false;
 	
             // un-comment to disable keyframe sampling
-            //should_add = false;
+            should_add = false;
             if ( should_add ) {
 				Camera *newcamera = NULL;
                 newcamera = addCameraToReconstruction( r, querycamera->calibration,
