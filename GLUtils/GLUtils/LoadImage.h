@@ -9,10 +9,8 @@
  * Last Modified: 11.17.2012
  */
 
-#include <cvd/image.h>
-#include <cvd/rgb.h>
-#include <cvd/byte.h>
+#include <opencv2/highgui/highgui.hpp>
 
-void loadJPEG( const char *path, CVD::Image<CVD::byte> &image );
+void loadJPEG_gray( const char *path, cv::Mat &image );
 
-void loadJPEG( const char *path, CVD::Image< CVD::Rgb<CVD::byte> > &image );
+void loadJPEG_color( const char *path, cv::Mat &image );

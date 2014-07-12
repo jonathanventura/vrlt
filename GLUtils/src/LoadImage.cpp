@@ -13,13 +13,13 @@
 
 #include <CoreGraphics/CoreGraphics.h>
 
-static void copyImageData( CGImageRef imageRef, CVD::Image<CVD::byte> &image )
+static void copyImageData_gray( CGImageRef imageRef, cv::Mat &image )
 {
     size_t width = CGImageGetWidth(imageRef);
     size_t height = CGImageGetHeight(imageRef);
-    image.resize( CVD::ImageRef( width, height ) );
+    image = cv::Mat( cv::Size( width, height ), CV_8UC1 );
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
-    unsigned char *rawData = image.data();
+    unsigned char *rawData = image.data;
     size_t bytesPerPixel = 1;
     size_t bytesPerRow = bytesPerPixel * width;
     size_t bitsPerComponent = 8;
@@ -32,25 +32,25 @@ static void copyImageData( CGImageRef imageRef, CVD::Image<CVD::byte> &image )
     CGContextRelease(context);
 }
 
-void loadJPEG( const char *path, CVD::Image<CVD::byte> &image )
+void loadJPEG_gray( const char *path, cv::Mat &image )
 {
     CGDataProviderRef jpegDataProvider = CGDataProviderCreateWithFilename( path );
     
     CGImageRef imageRef = CGImageCreateWithJPEGDataProvider( jpegDataProvider, NULL, false, kCGRenderingIntentDefault );
     
-    copyImageData( imageRef, image );
+    copyImageData_gray( imageRef, image );
     
     CGImageRelease( imageRef );
     CGDataProviderRelease( jpegDataProvider );
 }
 
-static void copyImageData( CGImageRef imageRef, CVD::Image< CVD::Rgb<CVD::byte> > &image )
+static void copyImageData_color( CGImageRef imageRef, cv::Mat &image )
 {
     size_t width = CGImageGetWidth(imageRef);
     size_t height = CGImageGetHeight(imageRef);
-    image.resize( CVD::ImageRef( width, height ) );
+    image = cv::Mat( cv::Size( width, height ), CV_8UC3 );
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-    unsigned char *rawData = (unsigned char *)malloc( width * height * 4 );
+    unsigned char *rawData = image.data;
     size_t bytesPerPixel = 4;
     size_t bytesPerRow = bytesPerPixel * width;
     size_t bitsPerComponent = 8;
@@ -61,23 +61,15 @@ static void copyImageData( CGImageRef imageRef, CVD::Image< CVD::Rgb<CVD::byte> 
     
     CGContextDrawImage(context, CGRectMake(0, 0, width, height), imageRef);
     CGContextRelease(context);
-    
-    for ( int i = 0; i < width*height; i++ ) {
-        image.data()[i].red =   rawData[i*4+0];
-        image.data()[i].green = rawData[i*4+1];
-        image.data()[i].blue =  rawData[i*4+2];
-    }
-    
-    free( rawData );
 }
 
-void loadJPEG( const char *path, CVD::Image< CVD::Rgb<CVD::byte> > &image )
+void loadJPEG_color( const char *path, cv::Mat &image )
 {
     CGDataProviderRef jpegDataProvider = CGDataProviderCreateWithFilename( path );
     
     CGImageRef imageRef = CGImageCreateWithJPEGDataProvider( jpegDataProvider, NULL, false, kCGRenderingIntentDefault );
     
-    copyImageData( imageRef, image );
+    copyImageData_color( imageRef, image );
     
     CGImageRelease( imageRef );
     CGDataProviderRelease( jpegDataProvider );
