@@ -63,13 +63,35 @@ public:
 	 */
 	void AddAttrib( GLuint attribID, GLuint attribSize );
 	/** Add an element with one attribute */
-	void AddElem( const Eigen::VectorXf &attrib0 );
+	template <typename T0> void AddElem( const Eigen::MatrixBase<T0> &attrib0 )
+    {
+        GLfloat *elem = PushElem();
+        for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
+    }
 	/** Add an element with two attributes */
-	void AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1 );
+	template <typename T0, typename T1> void AddElem( const Eigen::MatrixBase<T0> &attrib0, const Eigen::MatrixBase<T1> &attrib1 )
+    {
+        GLfloat *elem = PushElem();
+        for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
+        for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
+    }
 	/** Add an element with three attributes */
-	void AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2 );
+	template <typename T0, typename T1, typename T2> void AddElem( const Eigen::MatrixBase<T0> &attrib0, const Eigen::MatrixBase<T1> &attrib1, const Eigen::MatrixBase<T2> &attrib2 )
+    {
+        GLfloat *elem = PushElem();
+        for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
+        for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
+        for ( GLuint i = 0; i < attribSizes[2]; i++,elem++ ) *elem = attrib2[i];
+    }
 	/** Add an element with four attributes */
-	void AddElem( const Eigen::VectorXf &attrib0, const Eigen::VectorXf &attrib1, const Eigen::VectorXf &attrib2, const Eigen::VectorXf &attrib3 );
+	template <typename T0, typename T1, typename T2, typename T3> void AddElem( const Eigen::MatrixBase<T0> &attrib0, const Eigen::MatrixBase<T1> &attrib1, const Eigen::MatrixBase<T2> &attrib2, const Eigen::MatrixBase<T3> &attrib3 )
+    {
+        GLfloat *elem = PushElem();
+        for ( GLuint i = 0; i < attribSizes[0]; i++,elem++ ) *elem = attrib0[i];
+        for ( GLuint i = 0; i < attribSizes[1]; i++,elem++ ) *elem = attrib1[i];
+        for ( GLuint i = 0; i < attribSizes[2]; i++,elem++ ) *elem = attrib2[i];
+        for ( GLuint i = 0; i < attribSizes[3]; i++,elem++ ) *elem = attrib3[i];
+    }
 	/** Copy the data to the vertex buffer object
 	 * This must be called after adding elements and before drawing.
 	 */
