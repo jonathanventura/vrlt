@@ -76,14 +76,17 @@ namespace vrlt {
             {
                 Point *point = *it;
                 Feature *feature = new Feature;
-                feature->track = point->track;
+                Track *track = point->track;
+                feature->track = track;
                 unsigned int sum[128];
                 for ( int j = 0; j < 128; j++ ) sum[j] = 0;
                 int count = 0;
-                for ( int i = 0; i < features.size(); i++ )
+                //for ( int i = 0; i < features.size(); i++ )
+                for ( ElementList::iterator featureit = track->features.begin(); featureit != track->features.end(); featureit++ )
                 {
-                    if ( features[i]->track->point != point ) continue;
-                    for ( int j = 0; j < 128; j++ ) sum[j] += features[i]->descriptor[j];
+//                    if ( features[i]->track->point != point ) continue;
+                    Feature *myfeature = (Feature*)featureit->second;
+                    for ( int j = 0; j < 128; j++ ) sum[j] += myfeature->descriptor[j];
                     count++;
                 }
                 feature->descriptor = new unsigned char[128];
