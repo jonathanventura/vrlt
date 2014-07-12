@@ -56,15 +56,15 @@
     
     GLint backingWidth, backingHeight;
     
-    std::vector< TooN::Vector<3> > modelOffsets;
+    std::vector< Eigen::Vector3d > modelOffsets;
     
-    TooN::Vector<3> modelScale;
-    TooN::Vector<3> modelTranslation;
-    TooN::Vector<3> modelRotation;
+    Eigen::Vector3d modelScale;
+    Eigen::Vector3d modelTranslation;
+    Eigen::Vector3d modelRotation;
     
-    TooN::Vector<4> shadowColor;
-    TooN::Vector<3> lightDirection;
-    TooN::Vector<4> plane;
+    Eigen::Vector4d shadowColor;
+    Eigen::Vector3d lightDirection;
+    Eigen::Vector4d plane;
     
     vrlt::Node *node;
     
@@ -102,7 +102,7 @@
 - (void)setOBJModelFromPath:(NSString*)path filename:(NSString*)filename;
 
 - (void)addModelInstance;
-- (void)setModelPlanePoint:(CGPoint)loc withPose:(TooN::SE3<>)pose andCalibration:(vrlt::Calibration*)calibration;
+- (void)setModelPlanePoint:(CGPoint)loc withPose:(Sophus::SE3d)pose andCalibration:(vrlt::Calibration*)calibration;
 
 - (void)setModelScale:(NSString*)valString;
 - (void)setModelTranslation:(NSString*)valString;
@@ -111,7 +111,7 @@
 - (void)setLightDirection:(NSString*)valString;
 - (void)setPlane:(NSString*)valString;
 
-- (void)renderWithPose:(TooN::SE3<>)pose;
+- (void)renderWithPose:(Sophus::SE3d)pose;
 
 - (void)startRecording:(NSURL*)url;
 - (void)stopRecording;

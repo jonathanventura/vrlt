@@ -103,36 +103,36 @@ using namespace vrlt;
         // load image vertex data
         imageDrawable.AddAttrib( 0, 2 );
         imageDrawable.AddAttrib( 1, 2 );
-        imageDrawable.AddElem( TooN::makeVector(-1,-1 ), TooN::makeVector( 0, 0 ) );
-        imageDrawable.AddElem( TooN::makeVector( 1,-1 ), TooN::makeVector( 1, 0 ) );
-        imageDrawable.AddElem( TooN::makeVector(-1, 1 ), TooN::makeVector( 0, 1 ) );
-        imageDrawable.AddElem( TooN::makeVector( 1, 1 ), TooN::makeVector( 1, 1 ) );
+        imageDrawable.AddElem( makeVector(-1.f,-1.f ), makeVector( 0.f, 0.f ) );
+        imageDrawable.AddElem( makeVector( 1.f,-1.f ), makeVector( 1.f, 0.f ) );
+        imageDrawable.AddElem( makeVector(-1.f, 1.f ), makeVector( 0.f, 1.f ) );
+        imageDrawable.AddElem( makeVector( 1.f, 1.f ), makeVector( 1.f, 1.f ) );
         imageDrawable.Commit();
         checkGL( "load image vertex data" );
 
         // load image vertex data
         shadowImageDrawable.AddAttrib( 0, 2 );
         shadowImageDrawable.AddAttrib( 1, 2 );
-        shadowImageDrawable.AddElem( TooN::makeVector(-1,-1 ), TooN::makeVector( 0, 0 ) );
-        shadowImageDrawable.AddElem( TooN::makeVector( 1,-1 ), TooN::makeVector( 1, 0 ) );
-        shadowImageDrawable.AddElem( TooN::makeVector(-1, 1 ), TooN::makeVector( 0, 1 ) );
-        shadowImageDrawable.AddElem( TooN::makeVector( 1, 1 ), TooN::makeVector( 1, 1 ) );
+        shadowImageDrawable.AddElem( makeVector(-1.f,-1.f ), makeVector( 0.f, 0.f ) );
+        shadowImageDrawable.AddElem( makeVector( 1.f,-1.f ), makeVector( 1.f, 0.f ) );
+        shadowImageDrawable.AddElem( makeVector(-1.f, 1.f ), makeVector( 0.f, 1.f ) );
+        shadowImageDrawable.AddElem( makeVector( 1.f, 1.f ), makeVector( 1.f, 1.f ) );
         shadowImageDrawable.Commit();
         checkGL( "load shadow image vertex data" );
 
         // load flipped image vertex data
         flippedImageDrawable.AddAttrib( 0, 2 );
         flippedImageDrawable.AddAttrib( 1, 2 );
-        flippedImageDrawable.AddElem( TooN::makeVector(-1,-1 ), TooN::makeVector( 0, 1 ) );
-        flippedImageDrawable.AddElem( TooN::makeVector( 1,-1 ), TooN::makeVector( 1, 1 ) );
-        flippedImageDrawable.AddElem( TooN::makeVector(-1, 1 ), TooN::makeVector( 0, 0 ) );
-        flippedImageDrawable.AddElem( TooN::makeVector( 1, 1 ), TooN::makeVector( 1, 0 ) );
+        flippedImageDrawable.AddElem( makeVector(-1.f,-1.f ), makeVector( 0.f, 1.f ) );
+        flippedImageDrawable.AddElem( makeVector( 1.f,-1.f ), makeVector( 1.f, 1.f ) );
+        flippedImageDrawable.AddElem( makeVector(-1.f, 1.f ), makeVector( 0.f, 0.f ) );
+        flippedImageDrawable.AddElem( makeVector( 1.f, 1.f ), makeVector( 1.f, 0.f ) );
         flippedImageDrawable.Commit();
         checkGL( "load image vertex data" );
 
         glClearColor( 0.f, 0.f, 0.f, 0.f );
                 
-        shadowColor = TooN::makeVector( 0, 0, 0, 0.7 );
+        shadowColor = makeVector( 0., 0., 0., 0.7 );
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         
         // make texture cache
@@ -206,30 +206,30 @@ using namespace vrlt;
 - (void)addModelInstance
 {
     if ( !modelOffsets.empty() ) return;
-    //modelOffsets.push_back( TooN::makeVector( 0, 0, 0 ) );
-    //modelOffsets.push_back( TooN::makeVector( .3, 0, -.2 ) );
-    modelOffsets.push_back( TooN::makeVector( 2.65334, 0, 0.260111 ) );
+    //modelOffsets.push_back( makeVector( 0, 0, 0 ) );
+    //modelOffsets.push_back( makeVector( .3, 0, -.2 ) );
+    modelOffsets.push_back( makeVector( 2.65334, 0., 0.260111 ) );
 }
 
-- (void)setModelPlanePoint:(CGPoint)loc withPose:(TooN::SE3<>)pose andCalibration:(vrlt::Calibration*)calibration;
+- (void)setModelPlanePoint:(CGPoint)loc withPose:(Sophus::SE3d)pose andCalibration:(vrlt::Calibration*)calibration;
 {
     if ( modelOffsets.empty() ) return;
     //return;
     
     // intersect with ground plane
-    TooN::Vector<4> ground_plane = plane;//TooN::makeVector( 0, -1, 0, 0 );
+    Eigen::Vector4d ground_plane = plane;//makeVector( 0, -1, 0, 0 );
     
-    TooN::Vector<2> screen_pos = TooN::makeVector( loc.x / 1024. * 1280., loc.y / 748. * 720. );
+    Eigen::Vector2d screen_pos = makeVector( loc.x / 1024. * 1280., loc.y / 748. * 720. );
     
-    TooN::Vector<3> origin = -( pose.get_rotation().inverse() * pose.get_translation() );
-    TooN::Vector<3> ray = pose.get_rotation().inverse() * calibration->unproject( screen_pos );
+    Eigen::Vector3d origin = -( pose.so3().inverse() * pose.translation() );
+    Eigen::Vector3d ray = pose.so3().inverse() * calibration->unproject( screen_pos );
     
     // N * ( x0 + r * t ) + D = 0
     // N * x0 + N * r * t + D = 0
     // t = ( - D - N * x0 ) / ( N * r )
     
-    double t = ( - ground_plane[3] - ground_plane.slice<0,3>() * origin ) / ( ground_plane.slice<0,3>() * ray );
-    TooN::Vector<3> point = origin + t * ray;
+    double t = ( - ground_plane[3] - ground_plane.head(3).dot( origin ) ) / ( ground_plane.head(3).dot( ray ) );
+    Eigen::Vector3d point = origin + t * ray;
     
     NSLog( @"point: %g %g %g", point[0], point[1], point[2] );
     
@@ -270,7 +270,7 @@ using namespace vrlt;
     lightDirection[0] = vals[0];
     lightDirection[1] = vals[1];
     lightDirection[2] = vals[2];
-    normalize( lightDirection );
+    lightDirection.normalize();
 }
 
 - (void)setPlane:(NSString *)valString
@@ -335,8 +335,8 @@ using namespace vrlt;
 - (void)renderPoints
 {
     pointShader.shaderProgram.Use();
-    if ( tracked ) pointShader.SetColor( TooN::makeVector( 0, 1, 0 ) );
-    else pointShader.SetColor( TooN::makeVector( 1, 0, 0 ) );
+    if ( tracked ) pointShader.SetColor( makeVector( 0., 1., 0. ) );
+    else pointShader.SetColor( makeVector( 1., 0., 0. ) );
     
     // set up vertex buffer and shader
     pointDrawable.PushClientState();
@@ -373,7 +373,7 @@ using namespace vrlt;
     }
 }
 
-- (void)_renderWithPose:(TooN::SE3<>)pose flipped:(BOOL)flipped
+- (void)_renderWithPose:(Sophus::SE3d)pose flipped:(BOOL)flipped
 {
     // render video image
     glActiveTexture( GL_TEXTURE1 );
@@ -384,18 +384,18 @@ using namespace vrlt;
     checkGL( "render texture" );
     
     // set up perspective
-    TooN::Vector<4> params = TooN::makeVector( 1179.90411, 1179.90411, 640, 360 );
+    Eigen::Vector4d params = makeVector( 1179.90411, 1179.90411, 640., 360. );
     if ( flipped ) params[1] = -params[1];
-    TooN::Matrix<4> proj = makeProj( params, 1280, 720 );
+    Eigen::Matrix4d proj = makeProj( params, 1280, 720 );
     
-    TooN::Matrix<4> scale = TooN::Identity;
+    Eigen::Matrix4d scale = Eigen::Matrix4d::Identity();
     scale(2,2) = -1;
     
     // set up camera pose
-    TooN::Matrix<4> modelView = makeModelView( pose );
+    Eigen::Matrix4d modelView = makeModelView( pose );
     
     // create model view proj
-    TooN::Matrix<4> modelViewProj = proj * scale * modelView;
+    Eigen::Matrix4d modelViewProj = proj * scale * modelView;
     
     if ( showPoints )
     {
@@ -414,13 +414,13 @@ using namespace vrlt;
         shadowShader.SetColor( shadowColor );
         shadowShader.SetPlane( plane );
         
-        TooN::Matrix<4> modelScaleMat = makeScale( modelScale );
-        TooN::Matrix<4> modelRotationMat = makeRotation( TooN::SO3<>( modelRotation ) );
+        Eigen::Matrix4d modelScaleMat = makeScale( modelScale );
+        Eigen::Matrix4d modelRotationMat = makeRotation( Sophus::SO3d::exp( modelRotation ) );
         
         model->drawable->PushClientState();
         glEnable( GL_DEPTH_TEST );
         
-        TooN::Matrix<4> modelTranslationMat;
+        Eigen::Matrix4d modelTranslationMat;
         
         for ( int i = 0; i < modelOffsets.size(); i++ ) {
             modelTranslationMat = makeTranslation( modelOffsets[i] );
@@ -453,7 +453,7 @@ using namespace vrlt;
     }
 }
 
-- (void)renderWithPose:(TooN::SE3<>)pose
+- (void)renderWithPose:(Sophus::SE3d)pose
 {
     if ( !ready ) return;
     

@@ -12,13 +12,15 @@
 #import "VideoHandler.h"
 #import "MainViewController.h"
 
-#include <TooN/so3.h>
+#include <sophus/so3.hpp>
 
-#include <cvd/image.h>
-#include <cvd/image_convert.h>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
 #import "TrackerHandler.h"
 #import "ARDisplay.h"
+
+using namespace vrlt;
 
 @implementation VideoHandler
 @synthesize controller;
@@ -39,11 +41,12 @@
         distortedData = (unsigned char *)malloc(1280*720);
         undistortedData = (unsigned char *)malloc(1280*720);
         
-        TooN::Matrix<3> mymat;
-        mymat[0] = TooN::makeVector( 0,-1, 0 );
-        mymat[1] = TooN::makeVector(-1, 0, 0 );
-        mymat[2] = TooN::makeVector( 0, 0,-1 );
-        gyroconversion = TooN::SO3<>( mymat );
+        Eigen::Matrix3d mymat;
+        mymat <<
+        0,-1, 0,
+        -1, 0, 0,
+        0, 0,-1;
+        gyroconversion = Sophus::SO3d( mymat );
         
         NSString *trackingModelPath = [[settings objectForKey:@"trackingModelPath"] retain];
         NSLog( @"opening tracking model: %@", trackingModelPath );
@@ -176,11 +179,12 @@
     
     // convert attitude to rotation
     CMRotationMatrix attitude = motion.attitude.rotationMatrix;
-    TooN::Matrix<3> Rmat;
-    Rmat(0,0) = attitude.m11;   Rmat(0,1) = attitude.m12;   Rmat(0,2) = attitude.m13;
-    Rmat(1,0) = attitude.m21;   Rmat(1,1) = attitude.m22;   Rmat(1,2) = attitude.m23;
-    Rmat(2,0) = attitude.m31;   Rmat(2,1) = attitude.m32;   Rmat(2,2) = attitude.m33;
-    TooN::SO3<> R( Rmat );
+    Eigen::Matrix3d Rmat;
+    Rmat <<
+    attitude.m11, attitude.m12, attitude.m13,
+    attitude.m21, attitude.m22, attitude.m23,
+    attitude.m31, attitude.m32, attitude.m33;
+    Sophus::SO3d R( Rmat );
     
     currentAttitude = gyroconversion * R * gyroconversion;
     
@@ -201,8 +205,8 @@
     double y = motion.rotationRate.y * elapsed;
     double z = motion.rotationRate.z * elapsed;
     
-    TooN::SO3<> rotrate( TooN::SO3<>( TooN::makeVector( 0, 0, z ) ) * TooN::SO3<>( TooN::makeVector( 0, y, 0 ) ) * TooN::SO3<>( TooN::makeVector( x, 0, 0 ) ) );
-    double mag = TooN::norm( rotrate.ln() ) * 180. / M_PI;
+    Sophus::SO3d rotrate( Sophus::SO3d::exp( makeVector( 0., 0., z ) ) * Sophus::SO3d::exp( makeVector( 0., y, 0. ) ) * Sophus::SO3d::exp( makeVector( x, 0., 0. ) ) );
+    double mag = rotrate.log().norm() * 180. / M_PI;
 
     if ( mag >= highRotThresh && !highMotion )
     {
@@ -244,7 +248,8 @@
     
     if ( self.useGyro )
     {
-        trackerHandler.node->pose = currentAttitude * lastAttitude.inverse() * trackerHandler.node->pose;
+        trackerHandler.node->pose.so3() = ( currentAttitude * lastAttitude.inverse() ) * trackerHandler.node->pose.so3();
+        trackerHandler.node->pose.translation() = ( currentAttitude * lastAttitude.inverse() ) * trackerHandler.node->pose.translation();
     }
 
     [trackerHandler process];

@@ -9,10 +9,7 @@
  * Last Modified: 12.2.2012
  */
 
-#include <cvd/image.h>
-#include <cvd/rgb.h>
-#include <cvd/byte.h>
-//#include <cvd/timer.h>
+#include <opencv2/highgui/highgui.hpp>
 
 #include <MultiView/multiview.h>
 #include <PatchTracker/tracker.h>
@@ -32,7 +29,7 @@
     int nFpsTimerFrames;
     
     VideoHandler *videoHandler;
-    CVD::ImageRef imsize;
+    cv::Size imsize;
     int maxnumpoints;
     int minnumpoints;
     float minratio;
@@ -88,10 +85,10 @@
 {
     unsigned char *imagedata;
     double *posedata;
-    TooN::SO3<> attitude;
+    Sophus::SO3d attitude;
 }
-- (id)initWithImageData:(const unsigned char *)data attitude:(TooN::SO3<>)att;
+- (id)initWithImageData:(const unsigned char *)data attitude:(Sophus::SO3d)att;
 @property (assign) unsigned char *imagedata;
 @property (assign) double *posedata;
-@property (assign) TooN::SO3<> attitude;
+@property (assign) Sophus::SO3d attitude;
 @end

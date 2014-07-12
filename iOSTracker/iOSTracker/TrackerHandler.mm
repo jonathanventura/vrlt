@@ -4,15 +4,11 @@
 #import "TrackerHandler.h"
 #import "VideoHandler.h"
 
-#include <cvd/image_convert.h>
-#include <cvd/image_io.h>
-#include <cvd/draw.h>
-#include <cvd/vision.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 using namespace vrlt;
-using namespace TooN;
-using namespace CVD;
 
 @implementation TrackerHandler
 @synthesize maxnumpoints;
@@ -38,9 +34,9 @@ static void copyImageData( UIImage *image, Camera *camera )
     CGImageRef imageRef = [image CGImage];
     NSUInteger width = CGImageGetWidth(imageRef);
     NSUInteger height = CGImageGetHeight(imageRef);
-    camera->image.resize( ImageRef( width, height ) );
+    camera->image.create( cv::Size( width, height ), CV_8UC1 );
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
-    unsigned char *rawData = camera->image.data();
+    unsigned char *rawData = camera->image.data;
     NSUInteger bytesPerPixel = 1;
     NSUInteger bytesPerRow = bytesPerPixel * width;
     NSUInteger bitsPerComponent = 8;
@@ -61,7 +57,7 @@ static void copyImageData( UIImage *image, Camera *camera )
         
         fpsTimer = [[NSDate alloc] init];
         
-        imsize = ImageRef( 1280, 720 );
+        imsize = cv::Size( 1280, 720 );
         
         calibration = new Calibration;
         calibration->name = "ipad";
@@ -75,7 +71,7 @@ static void copyImageData( UIImage *image, Camera *camera )
         camera = new Camera;
         camera->name = "camera";
         camera->calibration = calibration;
-        camera->image.resize( imsize );
+        camera->image.create( imsize, CV_8UC1 );
         camera->pyramid.resize( imsize );
         node = new Node;
         node->name = "node";
@@ -154,15 +150,15 @@ static void copyImageData( UIImage *image, Camera *camera )
             if ( connected ) break;
         }
         if ( !connected ) {
-            cout << "could not connect\n";
+            NSLog( @"could not connect" );
             exit(0);
         }
 #endif
         
-        data2 = (byte*)malloc( 640*360 );
-        data4 = (byte*)malloc( 320*180 );
-        data8 = (byte*)malloc( 160*90 );
-        packedData = (byte*)malloc( 1280*720 );
+        data2 = (uchar*)malloc( 640*360 );
+        data4 = (uchar*)malloc( 320*180 );
+        data8 = (uchar*)malloc( 160*90 );
+        packedData = (uchar*)malloc( 1280*720 );
         
         NSLog( @"client ready." );
         
@@ -197,8 +193,8 @@ static void copyImageData( UIImage *image, Camera *camera )
 
 - (void)setGrayData:(unsigned char *)grayData
 {
-    CVD::BasicImage<CVD::byte> im( grayData, imsize );
-    camera->image.copy_from( im );
+    cv::Mat im( imsize, CV_8UC1, grayData );
+    im.copyTo( camera->image );
     camera->pyramid.levels[0].image = camera->image;
     camera->pyramid.remake();
 }
@@ -232,10 +228,11 @@ static void copyImageData( UIImage *image, Camera *camera )
     // we do this here on the main thread because of the CVD allocations and frees
     [localizerResponsesLock lock];
     for ( LocalizationRequest *response in localizerResponses ) {
-        SE3<> pose( wrapVector<6>( response.posedata ) );
+        Sophus::SE3d pose = Sophus::SE3d::exp( Eigen::Map< Eigen::Matrix<double,6,1> >( response.posedata ) );
         
         if ( ntimeslost > 30 ) {
-            camera->node->pose = videoHandler.currentAttitude * response.attitude.inverse() * pose;
+            camera->node->pose.so3() = (videoHandler.currentAttitude * response.attitude.inverse()) * pose.so3();
+            camera->node->pose.translation() = (videoHandler.currentAttitude * response.attitude.inverse()) * pose.translation();
         }
         
         [response release];
@@ -254,7 +251,7 @@ static void copyImageData( UIImage *image, Camera *camera )
     [localizerResponsesLock unlock];
     
     tracked = tracker->track( camera );
-    if ( tracked ) robustlsq->run( camera, 10 );
+    if ( tracked ) robustlsq->run( camera );
     
     if ( tracked ) {
 #ifdef ADD_CAMERA
@@ -265,8 +262,8 @@ static void copyImageData( UIImage *image, Camera *camera )
         if ( newratio >= .5 ) {
             should_add = false;
             
-            SE3<> trackerpose = camera->node->pose;
-            Vector<3> trackercenter = -( trackerpose.get_rotation().inverse() * trackerpose.get_translation() );
+            Sophus::SE3d trackerpose = camera->node->pose;
+            Eigen::Vector3d trackercenter = -( trackerpose.so3().inverse() * trackerpose.translation() );
             
             double min_dist = INFINITY;
             
@@ -276,10 +273,10 @@ static void copyImageData( UIImage *image, Camera *camera )
                 Camera *othercamera = tracker->cameras[i];
                 if ( othercamera->isnew == false ) continue;
                 
-                SE3<> pose = othercamera->node->pose;
-                Vector<3> center = -( pose.get_rotation().inverse() * pose.get_translation() );
+                Sophus::SE3d pose = othercamera->node->pose;
+                Eigen::Vector3d center = -( pose.so3().inverse() * pose.translation() );
                 
-                double dist = norm( center - trackercenter );
+                double dist = ( center - trackercenter ).norm();
                 if ( dist < min_dist ) min_dist = dist;
             }
             
@@ -331,12 +328,12 @@ static void copyImageData( UIImage *image, Camera *camera )
     }
 }
 
-static NSData * getJPEGData( const CVD::BasicImage<CVD::byte> &image, float quality )
+static NSData * getJPEGData( const cv::Mat &image, float quality )
 {
-    size_t width = image.size().x;
-    size_t height = image.size().y;
+    size_t width = image.size().width;
+    size_t height = image.size().height;
     
-    CGDataProviderRef dataProviderRef = CGDataProviderCreateWithData( NULL, image.data(), width*height, NULL );
+    CGDataProviderRef dataProviderRef = CGDataProviderCreateWithData( NULL, image.data, width*height, NULL );
     
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceGray();
     size_t bitsPerPixel = 8;
@@ -380,7 +377,7 @@ static NSData * getJPEGData( const CVD::BasicImage<CVD::byte> &image, float qual
     int h = 720;
     unsigned char *data = request.imagedata;
     
-    NSData *jpegData = getJPEGData( BasicImage<byte>( data, ImageRef( w, h ) ), 0.2 );
+    NSData *jpegData = getJPEGData( cv::Mat( cv::Size( w, h ), CV_8UC1, data ), 0.2 );
     localizer->sendImage( jpegData.length, (unsigned char *) jpegData.bytes );
     [jpegData release];
     
@@ -408,7 +405,7 @@ static NSData * getJPEGData( const CVD::BasicImage<CVD::byte> &image, float qual
 @synthesize imagedata;
 @synthesize posedata;
 
-- (id)initWithImageData:(const unsigned char *)data attitude:(TooN::SO3<>)att
+- (id)initWithImageData:(const unsigned char *)data attitude:(Sophus::SO3d)att
 {
     if ( ( self = [super init] ) )
     {

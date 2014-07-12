@@ -19,8 +19,8 @@
 
 #import <CoreMotion/CoreMotion.h>
 
-#include <TooN/TooN.h>
-#include <TooN/so3.h>
+#include <Eigen/Core>
+#include <Sophus/so3.hpp>
 
 @interface VideoHandler : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate> {
     MainViewController *controller;
@@ -42,15 +42,15 @@
     int countThresh;    // num frames before state is good
     
     double lastMotionTime;
-    TooN::SO3<> gyroconversion;
+    Sophus::SO3d gyroconversion;
     
     BOOL useGyro;
     BOOL freeze;
     
     ARDisplay *arDisplay;
     
-    TooN::SO3<> lastAttitude;
-    TooN::SO3<> currentAttitude;
+    Sophus::SO3d lastAttitude;
+    Sophus::SO3d currentAttitude;
 }
 - (void)processMotion:(CMDeviceMotion*)motion;
 - (void)localize;
@@ -68,5 +68,5 @@
 @property (nonatomic,assign) TrackerHandler *trackerHandler;
 @property (nonatomic,assign) BOOL useGyro;
 @property (nonatomic,retain) ARDisplay *arDisplay;
-@property (nonatomic,assign) TooN::SO3<> currentAttitude;
+@property (nonatomic,assign) Sophus::SO3d currentAttitude;
 @end

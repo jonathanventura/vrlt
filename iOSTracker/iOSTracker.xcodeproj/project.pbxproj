@@ -21,7 +21,6 @@
 		600BB9801418181D00362575 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62613FEDE3300A34C59 /* UIKit.framework */; };
 		600BB9811418181D00362575 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62813FEDE3300A34C59 /* Foundation.framework */; };
 		600BB9821418181D00362575 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62A13FEDE3300A34C59 /* CoreGraphics.framework */; };
-		600BB9831418181D00362575 /* libcvd.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA77F13FEDE6400A34C59 /* libcvd.a */; };
 		600BB9EE1418182A00362575 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 600BB9EA1418182A00362575 /* MainWindow.xib */; };
 		600BB9EF1418182A00362575 /* MainViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 600BB9EC1418182A00362575 /* MainViewController.xib */; };
 		605F797116416FA000378D68 /* imagecache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 605F796F16416FA000378D68 /* imagecache.cpp */; };
@@ -50,6 +49,8 @@
 		607140D415E836380071C29D /* sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140B815E836380071C29D /* sampler.cpp */; };
 		607140D615E836380071C29D /* tracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140BA15E836380071C29D /* tracker.cpp */; };
 		607140E815E837B20071C29D /* client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140E515E837B20071C29D /* client.cpp */; };
+		6075D18E1965AD6400062518 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6075D18D1965AD6400062518 /* opencv2.framework */; };
+		6075D1901965CD3100062518 /* libc++.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6075D18F1965CD3100062518 /* libc++.dylib */; };
 		60830B2F15D5C512001E2E64 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA8C013FEE78F00A34C59 /* AVFoundation.framework */; };
 		608C8D4816415007004CE002 /* robustlsq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 608C8D4716415007004CE002 /* robustlsq.cpp */; };
 		60BB6A07164B210B000219A7 /* default_settings.plist in Resources */ = {isa = PBXBuildFile; fileRef = 60BB6A06164B210B000219A7 /* default_settings.plist */; };
@@ -73,7 +74,6 @@
 		603BA63613FEDE3300A34C59 /* iOSTrackerAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = iOSTrackerAppDelegate.m; sourceTree = "<group>"; };
 		603BA63B13FEDE3400A34C59 /* MainViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MainViewController.h; sourceTree = "<group>"; };
 		603BA63C13FEDE3400A34C59 /* MainViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MainViewController.mm; sourceTree = "<group>"; };
-		603BA77F13FEDE6400A34C59 /* libcvd.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcvd.a; path = ../iOSLibs/libcvd/libcvd.a; sourceTree = "<group>"; };
 		603BA8B613FEE19F00A34C59 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		603BA8C013FEE78F00A34C59 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		6051781B140032D2003E225D /* VideoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoView.h; sourceTree = "<group>"; };
@@ -131,6 +131,8 @@
 		607140BA15E836380071C29D /* tracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tracker.cpp; sourceTree = "<group>"; };
 		607140E315E837B20071C29D /* client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = client.h; sourceTree = "<group>"; };
 		607140E515E837B20071C29D /* client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = client.cpp; sourceTree = "<group>"; };
+		6075D18D1965AD6400062518 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = opencv2.framework; sourceTree = "<group>"; };
+		6075D18F1965CD3100062518 /* libc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libc++.dylib"; path = "usr/lib/libc++.dylib"; sourceTree = SDKROOT; };
 		608C8D4616414FFF004CE002 /* robustlsq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = robustlsq.h; sourceTree = "<group>"; };
 		608C8D4716415007004CE002 /* robustlsq.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = robustlsq.cpp; sourceTree = "<group>"; };
 		60A8B6A913FF5D750006C541 /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
@@ -151,6 +153,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6075D1901965CD3100062518 /* libc++.dylib in Frameworks */,
 				60E840E11422C173002CEEF2 /* QuartzCore.framework in Frameworks */,
 				600BB97A1418181D00362575 /* CoreMotion.framework in Frameworks */,
 				600BB97B1418181D00362575 /* OpenGLES.framework in Frameworks */,
@@ -160,8 +163,8 @@
 				600BB9801418181D00362575 /* UIKit.framework in Frameworks */,
 				600BB9811418181D00362575 /* Foundation.framework in Frameworks */,
 				600BB9821418181D00362575 /* CoreGraphics.framework in Frameworks */,
-				600BB9831418181D00362575 /* libcvd.a in Frameworks */,
 				60830B2F15D5C512001E2E64 /* AVFoundation.framework in Frameworks */,
+				6075D18E1965AD6400062518 /* opencv2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -187,7 +190,6 @@
 				607140AD15E836380071C29D /* PatchTracker */,
 				600BB9E91418181D00362575 /* Resources-iPad */,
 				603BA62C13FEDE3300A34C59 /* iOSTracker */,
-				603BA77E13FEDE5500A34C59 /* Libraries */,
 				603BA62513FEDE3300A34C59 /* Frameworks */,
 				603BA62313FEDE3300A34C59 /* Products */,
 			);
@@ -204,6 +206,8 @@
 		603BA62513FEDE3300A34C59 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				6075D18F1965CD3100062518 /* libc++.dylib */,
+				6075D18D1965AD6400062518 /* opencv2.framework */,
 				60E840E01422C173002CEEF2 /* QuartzCore.framework */,
 				60DA312D140AA04000134ED6 /* CoreMotion.framework */,
 				602313ED140575B700623A92 /* OpenGLES.framework */,
@@ -250,14 +254,6 @@
 				60BB6A06164B210B000219A7 /* default_settings.plist */,
 			);
 			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		603BA77E13FEDE5500A34C59 /* Libraries */ = {
-			isa = PBXGroup;
-			children = (
-				603BA77F13FEDE6400A34C59 /* libcvd.a */,
-			);
-			name = Libraries;
 			sourceTree = "<group>";
 		};
 		605F796A16416FA000378D68 /* ImageCache */ = {
@@ -466,6 +462,8 @@
 /* Begin PBXProject section */
 		603BA61913FEDE3300A34C59 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+			};
 			buildConfigurationList = 603BA61C13FEDE3300A34C59 /* Build configuration list for PBXProject "iOSTracker" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
@@ -573,21 +571,18 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				COPY_PHASE_STRIP = NO;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SDKROOT)$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks\"",
-					"\"$(SRCROOT)\"",
+					"$(SRCROOT)",
+					"$(PROJECT_DIR)",
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
 				INFOPLIST_FILE = "iOSTracker/iOSTracker-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/../iOSLibs/libcvd",
-				);
 				PRODUCT_NAME = "iOSTracker-iPad";
 				TARGETED_DEVICE_FAMILY = 2;
 				WRAPPER_EXTENSION = app;
@@ -599,20 +594,17 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				CLANG_CXX_LIBRARY = "compiler-default";
 				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SDKROOT)$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks\"",
-					"\"$(SRCROOT)\"",
+					"$(SRCROOT)",
+					"$(PROJECT_DIR)",
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
 				INFOPLIST_FILE = "iOSTracker/iOSTracker-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(SRCROOT)/../iOSLibs/libcvd",
-				);
 				PRODUCT_NAME = "iOSTracker-iPad";
 				TARGETED_DEVICE_FAMILY = 2;
 				VALIDATE_PRODUCT = YES;
@@ -637,21 +629,16 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					../iOSLibs,
-					../iOSLibs/libcvd,
+					"../iOSLibs/Sophus-master",
+					"../iOSLibs/eigen-eigen-6b38706d90a9",
 					.,
 					../GLUtils,
 					../MultiView,
 					../ImageCache,
 					../PatchTracker,
 					../LocalizerClient,
-					../iOSLibs/tag,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
-				OTHER_LDFLAGS = (
-					"-framework",
-					OpenCL,
-				);
 				PROVISIONING_PROFILE = "";
 				SDKROOT = iphoneos;
 				USER_HEADER_SEARCH_PATHS = "../iOSLibs ../iOSLibs/libcvd . .. ../MultiView ../PatchTracker ../LocalizerClient";
@@ -674,22 +661,17 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					../iOSLibs,
-					../iOSLibs/libcvd,
+					"../iOSLibs/Sophus-master",
+					"../iOSLibs/eigen-eigen-6b38706d90a9",
 					.,
 					../GLUtils,
 					../MultiView,
 					../ImageCache,
 					../PatchTracker,
 					../LocalizerClient,
-					../iOSLibs/tag,
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				OTHER_CFLAGS = "-DNS_BLOCK_ASSERTIONS=1";
-				OTHER_LDFLAGS = (
-					"-framework",
-					OpenCL,
-				);
 				PROVISIONING_PROFILE = "";
 				SDKROOT = iphoneos;
 				USER_HEADER_SEARCH_PATHS = "../iOSLibs ../iOSLibs/libcvd . .. ../MultiView ../PatchTracker ../LocalizerClient";
