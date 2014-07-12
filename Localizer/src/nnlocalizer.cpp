@@ -23,7 +23,9 @@ namespace vrlt
     NNLocalizer::NNLocalizer( Node *_root, NN *index ) : Localizer( _root )
     {
         fm = new FeatureMatcher( index );
+        std::cout << "making averaged descriptors\n";
         fm->init( _root, true, true );
+        std::cout << "done making averaged descriptors\n";
     }
     
     NNLocalizer::~NNLocalizer()
@@ -94,8 +96,12 @@ namespace vrlt
         
         std::vector<Match*> matches;
         
+        std::cout << "running query with " << features.size() << " features\n";
+        
         //findMatches( (*fm), features, matches );
         findUniqueMatches( (*fm), features, 0.8, matches );
+
+        std::cout << "done matching\n";
 
         std::vector<bool> inliers;
         
@@ -120,23 +126,23 @@ namespace vrlt
         Sophus::SE3d best_pose;
         int ninliers;
         
-//        ThreePointPose estimator;
-//        PROSAC prosac;
-//        prosac.num_trials = 5000;
-//        prosac.min_num_inliers = 100;
-//        prosac.inlier_threshold = thresh;
-//        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), estimator, inliers );
-//        best_pose = estimator.pose;
+        ThreePointPose estimator;
+        PROSAC prosac;
+        prosac.num_trials = 5000;
+        prosac.min_num_inliers = 100;
+        prosac.inlier_threshold = thresh;
+        ninliers = prosac.compute( point_pairs.begin(), point_pairs.end(), estimator, inliers );
+        best_pose = estimator.pose;
         
-        std::vector<Estimator*> estimators( 5000 );
-        for ( size_t i = 0; i < estimators.size(); i++ ) estimators[i] = new ThreePointPose;
-        PreemptiveRANSAC preemptive_ransac( 10 );
-        preemptive_ransac.inlier_threshold = thresh;
-        ThreePointPose *best_estimator = NULL;
-        ninliers = preemptive_ransac.compute( point_pairs.begin(), point_pairs.end(), estimators, (Estimator**)&best_estimator, inliers );
-        best_pose = best_estimator->pose;
-        for ( size_t i = 0; i < estimators.size(); i++ ) delete estimators[i];
-        estimators.clear();
+//        std::vector<Estimator*> estimators( 5000 );
+//        for ( size_t i = 0; i < estimators.size(); i++ ) estimators[i] = new ThreePointPose;
+//        PreemptiveRANSAC preemptive_ransac( 10 );
+//        preemptive_ransac.inlier_threshold = thresh;
+//        ThreePointPose *best_estimator = NULL;
+//        ninliers = preemptive_ransac.compute( point_pairs.begin(), point_pairs.end(), estimators, (Estimator**)&best_estimator, inliers );
+//        best_pose = best_estimator->pose;
+//        for ( size_t i = 0; i < estimators.size(); i++ ) delete estimators[i];
+//        estimators.clear();
         
         ElementList::iterator it;
         std::cout << matches.size() << " matches; " << ninliers << " inliers\n";

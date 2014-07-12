@@ -19,12 +19,12 @@ namespace vrlt
     : verbose( false ), root( _root )
     {
         if ( _tracker_root == NULL ) _tracker_root = root->root();
-        tracker = new Tracker( _tracker_root, 1024 );
+        tracker = new Tracker( _tracker_root, 4096 );//1024 );
         tracker->niter = 10;
         tracker->firstlevel = 1;
         tracker->lastlevel = 0;
         tracker->minnumpoints = 100;
-        min_tracker_ratio = 0.2;
+        min_tracker_ratio = 0; //0.1; //0.2;
         tracker->minratio = min_tracker_ratio;
     }
     
