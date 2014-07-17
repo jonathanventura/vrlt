@@ -19,10 +19,12 @@
 
 #import <CoreMotion/CoreMotion.h>
 
+#import "VideoLoader.h"
+
 #include <Eigen/Core>
 #include <Sophus/so3.hpp>
 
-@interface VideoHandler : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate> {
+@interface VideoHandler : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate,VideoLoaderDelegate> {
     MainViewController *controller;
     
     NSOperationQueue *gyroQueue;
@@ -47,6 +49,8 @@
     BOOL useGyro;
     BOOL freeze;
     
+    VideoLoader *videoLoader;
+    
     ARDisplay *arDisplay;
     
     Sophus::SO3d lastAttitude;
@@ -63,6 +67,9 @@
 
 - (void)addObjectAtPoint:(CGPoint)point;
 - (void)moveObjectToPoint:(CGPoint)point;
+
+- (void)processFrame:(unsigned char *)grayData;
+- (void)processFrame:(unsigned char *)grayData withPose:(Sophus::SE3d)pose;
 
 @property (nonatomic,retain) MainViewController *controller;
 @property (nonatomic,assign) TrackerHandler *trackerHandler;

@@ -12,23 +12,45 @@
 #import "VideoHandler.h"
 #import "MainViewController.h"
 
+#include <MobileCoreServices/MobileCoreServices.h>
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+#include <unistd.h>
+
+uint64_t ConvertMachToNanoseconds( uint64_t t );
+
+static mach_timebase_info_data_t sTimebaseInfo;
+uint64_t ConvertMachToNanoseconds( uint64_t t )
+{
+    return t * sTimebaseInfo.numer / sTimebaseInfo.denom;
+}
+
+static uint64_t last_frame_time = 0;
+static double total_elapsed = 0;
+static size_t ntimings = 0;
+
 @implementation VideoHandler
 @synthesize controller;
+@synthesize frameRate;
 
 - (id)init
 {
     if ( ( self = [super init] ) )
     {
-        motionManager = [[CMMotionManager alloc] init];
-        motionManager.gyroUpdateInterval = 0.01;
+        (void) mach_timebase_info(&sTimebaseInfo);
+
+        frameRate = 30;
         
-        locationManager = [[CLLocationManager alloc] init];
-        locationManager.headingOrientation = CLDeviceOrientationUnknown;
-        locationManager.headingFilter = kCLHeadingFilterNone;
+//        motionManager = [[CMMotionManager alloc] init];
+//        motionManager.gyroUpdateInterval = 0.01;
         
-        [motionManager startDeviceMotionUpdates];
-        [locationManager startUpdatingLocation];
-        [locationManager startUpdatingHeading];
+//        locationManager = [[CLLocationManager alloc] init];
+//        locationManager.headingOrientation = CLDeviceOrientationUnknown;
+//        locationManager.headingFilter = kCLHeadingFilterNone;
+        
+//        [motionManager startDeviceMotionUpdates];
+//        [locationManager startUpdatingLocation];
+//        [locationManager startUpdatingHeading];
     }
     
     return self;
@@ -36,9 +58,9 @@
 
 - (void)dealloc
 {
-    [motionManager release];
+//    [motionManager release];
     
-    [locationManager release];
+//    [locationManager release];
     
     [super dealloc];
 }
@@ -136,7 +158,7 @@
     
     [assetWriter startWriting];
     
-    assetNextTime = CMTimeMake(0,30);
+    assetNextTime = CMTimeMake(0,frameRate);
     [assetWriter startSessionAtSourceTime:assetNextTime];
 
     
@@ -156,7 +178,6 @@
     [imagesDirectory release];
     [imagesPath release];
     [xmlPath release];
-    
     
     [assetWriter finishWriting];
     
@@ -245,6 +266,26 @@
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
 {
+    uint64_t this_frame_time = mach_absolute_time();
+    if ( last_frame_time != 0 )
+    {
+        uint64_t elapsed_mach = this_frame_time - last_frame_time;
+        uint64_t elapsed_nano = ConvertMachToNanoseconds(elapsed_mach);
+        double elapsed = elapsed_nano * 1e-9;
+        total_elapsed += elapsed;
+        ntimings++;
+        
+        if ( ntimings == 1000 )
+        {
+            double avg = total_elapsed / ntimings;
+            NSLog( @"average frame time: %g s (%g fps)", avg, 1./avg );
+            total_elapsed = 0.;
+            ntimings = 0;
+        }
+    }
+    last_frame_time = this_frame_time;
+    
+    
     CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
 
     if ( isRecording ) {
@@ -253,7 +294,11 @@
             [assetWriterInputAdaptor appendPixelBuffer:imageBuffer withPresentationTime:assetNextTime];
             assetNextTime.value++;
             
-            [self processFrame];
+//            [self processFrame];
+        }
+        else
+        {
+            NSLog( @"not ready" );
         }
     }
 }

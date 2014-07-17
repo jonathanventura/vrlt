@@ -19,6 +19,7 @@
 
 @interface VideoHandler : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate> {
     MainViewController *controller;
+    int frameRate;
     
     BOOL isRecording;
     
@@ -56,4 +57,5 @@
 - (void)startRecordingWithTitle:(NSString *)title;
 - (void)endRecording;
 @property (nonatomic,retain) MainViewController *controller;
+@property (nonatomic,assign) int frameRate;
 @end

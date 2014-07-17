@@ -48,10 +48,22 @@ using namespace vrlt;
         0, 0,-1;
         gyroconversion = Sophus::SO3d( mymat );
         
+        NSString *trackingVideoPath = [[settings objectForKey:@"trackingVideoPath"] retain];
+        if ( [trackingVideoPath length] != 0 )
+        {
+            useGyro = NO;
+                
+            videoLoader = [[VideoLoader alloc] initFromFile:trackingVideoPath];
+            videoLoader.delegate = self;
+        }
+        
         NSString *trackingModelPath = [[settings objectForKey:@"trackingModelPath"] retain];
         NSLog( @"opening tracking model: %@", trackingModelPath );
         
-        NSString *prefix = [[NSString alloc] initWithFormat:@"%@/%@",[[NSBundle mainBundle] bundlePath],trackingModelPath];
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *documentsDirectory = [paths objectAtIndex:0];
+
+        NSString *prefix = [[NSString alloc] initWithFormat:@"%@/%@",documentsDirectory,trackingModelPath];
         [trackingModelPath release];
         
         NSNumber *scaleNumber = [[settings objectForKey:@"adjustmentScale"] retain];
@@ -82,20 +94,25 @@ using namespace vrlt;
         
         self.arDisplay = [[ARDisplay alloc] initWithNode:trackerHandler.root];
         
-        NSString *displayModelPath = [[NSString stringWithFormat:@"%@/models/%@",[[NSBundle mainBundle] bundlePath],[settings objectForKey:@"displayModelPath"]] retain];
-        NSString *displayModelFilename = [[settings objectForKey:@"displayModelFilename"] retain];
+        if ( [[settings objectForKey:@"displayModelPath"] length] != 0 )
+        {
+            NSString *displayModelPath = [[NSString stringWithFormat:@"%@/models/%@",documentsDirectory,[settings objectForKey:@"displayModelPath"]] retain];
+            NSString *displayModelFilename = [[settings objectForKey:@"displayModelFilename"] retain];
+
+            [arDisplay setOBJModelFromPath:displayModelPath filename:displayModelFilename];
+            [arDisplay setModelScale:[settings objectForKey:@"modelScale"]];
+            [arDisplay setModelTranslation:[settings objectForKey:@"modelTranslation"]];
+            [arDisplay setModelRotation:[settings objectForKey:@"modelRotation"]];
+            [arDisplay setLightDirection:[settings objectForKey:@"lightDirection"]];
+            [arDisplay setPlane:[settings objectForKey:@"plane"]];
         
-        [arDisplay setOBJModelFromPath:displayModelPath filename:displayModelFilename];
-        [arDisplay setModelScale:[settings objectForKey:@"modelScale"]];
-        [arDisplay setModelTranslation:[settings objectForKey:@"modelTranslation"]];
-        [arDisplay setModelRotation:[settings objectForKey:@"modelRotation"]];
-        [arDisplay setLightDirection:[settings objectForKey:@"lightDirection"]];
-        [arDisplay setPlane:[settings objectForKey:@"plane"]];
-        
-        [displayModelFilename release];
-        [displayModelPath release];
+            [displayModelFilename release];
+            [displayModelPath release];
+        }
         
         [settings release];
+        
+        if ( videoLoader ) [videoLoader start];
     }
     
     return self;
@@ -259,6 +276,19 @@ using namespace vrlt;
     [arDisplay renderWithPose:trackerHandler.node->pose];
 
     [poseLock unlock];    
+}
+
+- (void)processFrame:(unsigned char *)grayData withPose:(Sophus::SE3d)pose
+{
+    [poseLock lock];
+    if ( trackerHandler.needLocalize )
+    {
+        trackerHandler.node->pose = pose;
+        trackerHandler.needLocalize = NO;
+    }
+    [poseLock unlock];
+    
+    [self processFrame:grayData];
 }
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection

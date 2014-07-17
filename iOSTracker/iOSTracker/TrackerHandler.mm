@@ -21,7 +21,7 @@ using namespace vrlt;
 @synthesize tracked;
 
 //#define PRELOAD_CACHE
-#define USE_LOCALIZER
+//#define USE_LOCALIZER
 
 //#define SEARCH_CACHE
 //#define ADD_TO_CACHE
@@ -252,6 +252,8 @@ static void copyImageData( UIImage *image, Camera *camera )
     
     tracked = tracker->track( camera );
     if ( tracked ) robustlsq->run( camera );
+    
+    NSLog( @"tracked %d/%d points", tracker->ntracked, tracker->nattempted );
     
     if ( tracked ) {
 #ifdef ADD_CAMERA

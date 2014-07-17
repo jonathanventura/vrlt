@@ -15,9 +15,11 @@
 
 @class VideoHandler;
 
-@interface MainViewController : UIViewController<UITextFieldDelegate,UIAlertViewDelegate> {
+@interface MainViewController : UIViewController<UITextFieldDelegate,UIAlertViewDelegate,AVCaptureFileOutputRecordingDelegate> {
     AVCaptureDevice *captureDevice;
     AVCaptureSession *captureSession;
+    AVCaptureMovieFileOutput *movieOutput;
+    AVCaptureConnection *movieConnection;
     AVCaptureVideoDataOutput *captureOutput;
     AVCaptureConnection *captureConnection;
     AVCaptureVideoPreviewLayer *previewLayer;
@@ -25,8 +27,8 @@
     VideoHandler *videoHandler;
     
     IBOutlet UIView *videoView;
+    IBOutlet UIBarButtonItem *recordButton;
     IBOutlet UIActivityIndicatorView *loadingIndicator;
-    IBOutlet UISwitch *recordSwitch;
 
     UIAlertView *alertView;
 }
@@ -35,4 +37,5 @@
 @property (nonatomic,retain) AVCaptureDevice *captureDevice;
 - (float)getRotationForOrientation:(UIInterfaceOrientation)interfaceOrientation;
 - (IBAction)recordButton:(id)sender;
+- (void)reset;
 @end

@@ -3,11 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>trackingModelPath</key>
-	<string>demotable1.short-3d</string>
+	<string>hauptplatz-3d</string>
+	<key>trackingVideoPath</key>
+	<string>localized_6.xml</string>
 	<key>displayModelPath</key>
-	<string>arcde</string>
+	<string></string>
 	<key>displayModelFilename</key>
-	<string>ArcDeTriomphe.obj</string>
+	<string></string>
 	<key>adjustmentScale</key>
 	<integer>1</integer>
 	<key>adjustmentShift</key>

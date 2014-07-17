@@ -9,6 +9,8 @@
  * Last Modified: 12.2.2012
  */
 
+#include <TargetConditionals.h>
+
 #import "MainViewController.h"
 #import "TrackerHandler.h"
 #import "VideoHandler.h"
@@ -45,6 +47,7 @@
     videoHandler.controller = self;
     videoView.mainViewController = self;
     
+#if !(TARGET_IPHONE_SIMULATOR)
     NSError *err;
     
     // create capture session
@@ -67,6 +70,7 @@
     
     // start capture session
     [captureSession startRunning];
+#endif
     
     [loadingIndicator stopAnimating];
     [self.videoView setNeedsLayout];

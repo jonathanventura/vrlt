@@ -42,29 +42,76 @@
     // create capture session
     // set for high-quality photos
     captureSession = [[AVCaptureSession alloc] init];
-    captureSession.sessionPreset = AVCaptureSessionPreset1280x720;
+    captureSession.sessionPreset = AVCaptureSessionPresetInputPriority;
     
     // get camera
     self.captureDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    
+    AVCaptureDeviceFormat *bestFormat = nil;
+    AVFrameRateRange *bestFrameRateRange = nil;
+    for ( AVCaptureDeviceFormat *format in [self.captureDevice formats] ) {
+        for ( AVFrameRateRange *range in format.videoSupportedFrameRateRanges ) {
+            FourCharCode codec = CMFormatDescriptionGetMediaSubType(format.formatDescription);
+            unsigned char c4 = (codec >> 0) & (0xFF);
+            if ( c4 != 'f' ) continue;
+            NSLog( @"%d x %d x %d", CMVideoFormatDescriptionGetDimensions(format.formatDescription).width, CMVideoFormatDescriptionGetDimensions(format.formatDescription).height, range.minFrameDuration.timescale );
+            if ( CMVideoFormatDescriptionGetDimensions(format.formatDescription).width != 1280 ) continue;
+            if ( range.minFrameDuration.timescale != 30 ) continue;
+            bestFormat = format;
+            bestFrameRateRange = range;
+        }
+    }
+    NSLog( @"max frame rate: %g", bestFrameRateRange.maxFrameRate );
+    if ( bestFormat ) {
+        if ( [self.captureDevice lockForConfiguration:NULL] == YES ) {
+            NSLog( @"setting format" );
+            self.captureDevice.activeFormat = bestFormat;
+            self.captureDevice.activeVideoMinFrameDuration = bestFrameRateRange.minFrameDuration;
+            self.captureDevice.activeVideoMaxFrameDuration = bestFrameRateRange.minFrameDuration;
+            [self.captureDevice unlockForConfiguration];
+        } else {
+            NSLog( @"could not set format" );
+        }
+    }
+    
+    NSLog( @"min: %g, max: %g",
+          (double)self.captureDevice.activeVideoMinFrameDuration.value/self.captureDevice.activeVideoMinFrameDuration.timescale,
+          (double)self.captureDevice.activeVideoMaxFrameDuration.value/self.captureDevice.activeVideoMaxFrameDuration.timescale
+          );
+
+    videoHandler.frameRate = bestFrameRateRange.maxFrameRate;
+
+    for ( AVFrameRateRange *range in self.captureDevice.activeFormat.videoSupportedFrameRateRanges ) {
+        NSLog(@"frame rate min/max: %g / %g", range.minFrameRate,range.maxFrameRate);
+    }
+    
     AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&err];
     [captureSession addInput:input];
     
     // create image output
     captureOutput = [[AVCaptureVideoDataOutput alloc] init];
+    captureOutput.alwaysDiscardsLateVideoFrames = NO;
     
     [captureOutput setSampleBufferDelegate:videoHandler queue:dispatch_get_main_queue()];
     [captureSession addOutput:captureOutput];
+
+    movieOutput = [[AVCaptureMovieFileOutput alloc] init];
+    [captureSession addOutput:movieOutput];
     
+    movieConnection = [movieOutput.connections objectAtIndex:0];
+    [movieConnection setVideoOrientation:AVCaptureVideoOrientationLandscapeRight];
+
     // get connection between input and output
     captureConnection = [captureOutput.connections objectAtIndex:0];
-        
+    
     // set up preview layer
     self.previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:captureSession];
-    self.previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    self.previewLayer.videoGravity = AVLayerVideoGravityResizeAspect;
     [videoView.layer addSublayer:previewLayer];
     float rotation = [self getRotationForOrientation:self.interfaceOrientation];
     self.previewLayer.transform = CATransform3DMakeRotation(rotation, 0, 0, 1.0);
     self.previewLayer.frame = videoView.frame;
+    
 
     // start capture session
     [captureSession startRunning];
@@ -118,7 +165,7 @@
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
-    return !recordSwitch.on;
+    return [recordButton.title isEqualToString:@"Start"];
 }
 
 - (void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration
@@ -146,16 +193,26 @@
 - (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
 {
     if ( buttonIndex == 1 ) {
-        [videoHandler startRecordingWithTitle:[self.alertView textFieldAtIndex:0].text];
+//        [videoHandler startRecordingWithTitle:[self.alertView textFieldAtIndex:0].text];
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *documentsDirectory = [paths objectAtIndex:0];
+        NSString *videopath = [NSString stringWithFormat:@"%@/%@.mp4",documentsDirectory,[self.alertView textFieldAtIndex:0].text];
+        [movieOutput startRecordingToOutputFileURL:[NSURL fileURLWithPath:videopath] recordingDelegate:self];
     } else {
-        recordSwitch.on = NO;
+        [self reset];
     }
     [loadingIndicator stopAnimating];
 }
 
 - (IBAction)recordButton:(id)sender
 {
-    if ( recordSwitch.on ) {
+    if ( [recordButton.title isEqualToString:@"Start"] ) {
+        if ( [self.captureDevice lockForConfiguration:NULL] == YES ) {
+            self.captureDevice.focusMode = AVCaptureFocusModeLocked;
+            self.captureDevice.exposureMode = AVCaptureExposureModeLocked;
+            [self.captureDevice unlockForConfiguration];
+        }
+        recordButton.title = @"Stop";
         [loadingIndicator startAnimating];
         self.alertView = [[UIAlertView alloc] initWithTitle:@"Start New Recording" message:@"Enter the recording name:" delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"OK",nil];
         self.alertView.alertViewStyle = UIAlertViewStylePlainTextInput;
@@ -163,7 +220,31 @@
         [self.alertView textFieldAtIndex:0].delegate = self;
         [self.alertView show];
     }
-    else [videoHandler endRecording];
+    else
+    {
+        [movieOutput stopRecording];
+//        [videoHandler endRecording];
+    }
+}
+
+- (void)reset
+{
+    if ( [self.captureDevice lockForConfiguration:NULL] == YES ) {
+        self.captureDevice.focusMode = AVCaptureFocusModeContinuousAutoFocus;
+        self.captureDevice.exposureMode = AVCaptureExposureModeContinuousAutoExposure;
+        [self.captureDevice unlockForConfiguration];
+    }
+    recordButton.title = @"Start";
+}
+
+- (void)captureOutput:(AVCaptureFileOutput *)captureOutput didStartRecordingToOutputFileAtURL:(NSURL *)fileURL fromConnections:(NSArray *)connections
+{
+    
+}
+
+- (void)captureOutput:(AVCaptureFileOutput *)captureOutput didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL fromConnections:(NSArray *)connections error:(NSError *)error
+{
+    [self reset];
 }
 
 @end

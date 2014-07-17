@@ -23,6 +23,7 @@
 		600BB9821418181D00362575 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA62A13FEDE3300A34C59 /* CoreGraphics.framework */; };
 		600BB9EE1418182A00362575 /* MainWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = 600BB9EA1418182A00362575 /* MainWindow.xib */; };
 		600BB9EF1418182A00362575 /* MainViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 600BB9EC1418182A00362575 /* MainViewController.xib */; };
+		60140AB21976E57C0020D495 /* VideoLoader.mm in Sources */ = {isa = PBXBuildFile; fileRef = 60140AB11976E57C0020D495 /* VideoLoader.mm */; };
 		605F797116416FA000378D68 /* imagecache.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 605F796F16416FA000378D68 /* imagecache.cpp */; };
 		605F797416416FE200378D68 /* ssd.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 605F797316416FE200378D68 /* ssd.cpp */; };
 		606B0132166BD3C500B3C25E /* nccsearch.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 606B0131166BD3C500B3C25E /* nccsearch.cpp */; };
@@ -62,6 +63,8 @@
 		600BB98B1418181D00362575 /* iOSTracker-iPad.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "iOSTracker-iPad.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		600BB9EB1418182A00362575 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = "Resources-iPad/iOSTracker/en.lproj/MainWindow.xib"; sourceTree = "<group>"; };
 		600BB9ED1418182A00362575 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = en; path = "Resources-iPad/iOSTracker/en.lproj/MainViewController.xib"; sourceTree = "<group>"; };
+		60140AB01976E57C0020D495 /* VideoLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoLoader.h; sourceTree = "<group>"; };
+		60140AB11976E57C0020D495 /* VideoLoader.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = VideoLoader.mm; sourceTree = "<group>"; };
 		602313ED140575B700623A92 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		603BA62613FEDE3300A34C59 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		603BA62813FEDE3300A34C59 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -233,6 +236,8 @@
 				60E840D41422C050002CEEF2 /* EAGLView.m */,
 				6051781B140032D2003E225D /* VideoView.h */,
 				6051781C140032D3003E225D /* VideoView.m */,
+				60140AB01976E57C0020D495 /* VideoLoader.h */,
+				60140AB11976E57C0020D495 /* VideoLoader.mm */,
 				60A8B6AE13FF5E500006C541 /* VideoHandler.h */,
 				60A8B6AF13FF5E500006C541 /* VideoHandler.mm */,
 				60A8B6B513FF62F10006C541 /* TrackerHandler.h */,
@@ -508,6 +513,7 @@
 				60E840D61422C050002CEEF2 /* EAGLView.m in Sources */,
 				6071406115E833F30071C29D /* ARDisplay.mm in Sources */,
 				607140BC15E836380071C29D /* CheckGL.cpp in Sources */,
+				60140AB21976E57C0020D495 /* VideoLoader.mm in Sources */,
 				607140BF15E836380071C29D /* GLGenericDrawable.cpp in Sources */,
 				607140C015E836380071C29D /* GLModel.cpp in Sources */,
 				607140C115E836380071C29D /* GLShadow.cpp in Sources */,
