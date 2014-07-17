@@ -609,6 +609,11 @@
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					VL_DISABLE_SSE2,
+					USE_DISPATCH,
+					__IPHONE__,
+				);
 				INFOPLIST_FILE = "iOSTracker/iOSTracker-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 4.3;
 				PRODUCT_NAME = "iOSTracker-iPad";

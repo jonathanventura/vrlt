@@ -55,7 +55,7 @@ static void copyImageData( UIImage *image, Camera *camera )
     {
         NSLog( @"loading..." );
         
-        fpsTimer = [[NSDate alloc] init];
+        fpsTimerTotal = 0.;
         
         imsize = cv::Size( 1280, 720 );
         
@@ -207,13 +207,7 @@ static void copyImageData( UIImage *image, Camera *camera )
 
 - (void)process
 {
-    if ( nFpsTimerFrames == 0 )
-    {
-        [fpsTimer release];
-        fpsTimer = [[NSDate date] retain];
-    }
-    
-    
+    NSDate *fpsTimer = [[NSDate date] retain];
     
     if ( ntimeslost > 30 )
     {
@@ -321,12 +315,16 @@ static void copyImageData( UIImage *image, Camera *camera )
         }
     }
     
+    fpsTimerTotal += -[fpsTimer timeIntervalSinceNow];
+    [fpsTimer release];
+    
     nFpsTimerFrames++;
     if ( nFpsTimerFrames == 100 )
     {
-        double fps = 100. / (-[fpsTimer timeIntervalSinceNow]);
+        double fps = 100. / fpsTimerTotal;
         [videoHandler reportFPS:fps];
         nFpsTimerFrames = 0;
+        fpsTimerTotal = 0;
     }
 }
 

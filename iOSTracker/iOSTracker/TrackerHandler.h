@@ -25,7 +25,7 @@
 @interface TrackerHandler : NSObject
 {
 //    CVD::cvd_timer fpsTimer;
-    NSDate *fpsTimer;
+    double fpsTimerTotal;
     int nFpsTimerFrames;
     
     VideoHandler *videoHandler;
