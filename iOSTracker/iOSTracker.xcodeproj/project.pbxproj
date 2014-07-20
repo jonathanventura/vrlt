@@ -50,13 +50,13 @@
 		607140D415E836380071C29D /* sampler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140B815E836380071C29D /* sampler.cpp */; };
 		607140D615E836380071C29D /* tracker.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140BA15E836380071C29D /* tracker.cpp */; };
 		607140E815E837B20071C29D /* client.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 607140E515E837B20071C29D /* client.cpp */; };
-		6075D18E1965AD6400062518 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6075D18D1965AD6400062518 /* opencv2.framework */; };
 		6075D1901965CD3100062518 /* libc++.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 6075D18F1965CD3100062518 /* libc++.dylib */; };
 		60830B2F15D5C512001E2E64 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 603BA8C013FEE78F00A34C59 /* AVFoundation.framework */; };
 		608C8D4816415007004CE002 /* robustlsq.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 608C8D4716415007004CE002 /* robustlsq.cpp */; };
 		60BB6A07164B210B000219A7 /* default_settings.plist in Resources */ = {isa = PBXBuildFile; fileRef = 60BB6A06164B210B000219A7 /* default_settings.plist */; };
 		60E840D61422C050002CEEF2 /* EAGLView.m in Sources */ = {isa = PBXBuildFile; fileRef = 60E840D41422C050002CEEF2 /* EAGLView.m */; };
 		60E840E11422C173002CEEF2 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60E840E01422C173002CEEF2 /* QuartzCore.framework */; };
+		60ED8D2C197B6B1700429A58 /* opencv2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 60ED8D2B197B6B1700429A58 /* opencv2.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -135,7 +135,6 @@
 		607140BA15E836380071C29D /* tracker.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = tracker.cpp; sourceTree = "<group>"; };
 		607140E315E837B20071C29D /* client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = client.h; sourceTree = "<group>"; };
 		607140E515E837B20071C29D /* client.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = client.cpp; sourceTree = "<group>"; };
-		6075D18D1965AD6400062518 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = opencv2.framework; sourceTree = "<group>"; };
 		6075D18F1965CD3100062518 /* libc++.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libc++.dylib"; path = "usr/lib/libc++.dylib"; sourceTree = SDKROOT; };
 		608C8D4616414FFF004CE002 /* robustlsq.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = robustlsq.h; sourceTree = "<group>"; };
 		608C8D4716415007004CE002 /* robustlsq.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = robustlsq.cpp; sourceTree = "<group>"; };
@@ -150,6 +149,7 @@
 		60E840D31422C050002CEEF2 /* EAGLView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = EAGLView.h; sourceTree = "<group>"; };
 		60E840D41422C050002CEEF2 /* EAGLView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = EAGLView.m; sourceTree = "<group>"; };
 		60E840E01422C173002CEEF2 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		60ED8D2B197B6B1700429A58 /* opencv2.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = opencv2.framework; path = ../iOSLibs/opencv2.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -163,12 +163,12 @@
 				600BB97B1418181D00362575 /* OpenGLES.framework in Frameworks */,
 				600BB97C1418181D00362575 /* CoreMedia.framework in Frameworks */,
 				600BB97D1418181D00362575 /* CoreVideo.framework in Frameworks */,
+				60ED8D2C197B6B1700429A58 /* opencv2.framework in Frameworks */,
 				600BB97F1418181D00362575 /* Accelerate.framework in Frameworks */,
 				600BB9801418181D00362575 /* UIKit.framework in Frameworks */,
 				600BB9811418181D00362575 /* Foundation.framework in Frameworks */,
 				600BB9821418181D00362575 /* CoreGraphics.framework in Frameworks */,
 				60830B2F15D5C512001E2E64 /* AVFoundation.framework in Frameworks */,
-				6075D18E1965AD6400062518 /* opencv2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,7 +211,7 @@
 			isa = PBXGroup;
 			children = (
 				6075D18F1965CD3100062518 /* libc++.dylib */,
-				6075D18D1965AD6400062518 /* opencv2.framework */,
+				60ED8D2B197B6B1700429A58 /* opencv2.framework */,
 				60E840E01422C173002CEEF2 /* QuartzCore.framework */,
 				60DA312D140AA04000134ED6 /* CoreMotion.framework */,
 				602313ED140575B700623A92 /* OpenGLES.framework */,
@@ -585,6 +585,7 @@
 					"$(inherited)",
 					"$(SRCROOT)",
 					"$(PROJECT_DIR)",
+					/Users/jventura/code/vrlt/iOSLibs,
 				);
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -608,6 +609,7 @@
 					"$(inherited)",
 					"$(SRCROOT)",
 					"$(PROJECT_DIR)",
+					/Users/jventura/code/vrlt/iOSLibs,
 				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
