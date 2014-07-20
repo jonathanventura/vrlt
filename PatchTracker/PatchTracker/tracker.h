@@ -13,6 +13,8 @@
 
 #include <MultiView/multiview.h>
 
+#include "timer.h"
+
 namespace vrlt {
     class Patch;
     class PatchSearch;
@@ -44,6 +46,8 @@ namespace vrlt {
         int nattempted;
         float minratio;
         
+        Timer cullTimer;
+
         cv::Mat grid;
         cv::Size gridstep;
         

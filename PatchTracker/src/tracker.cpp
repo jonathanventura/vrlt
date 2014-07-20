@@ -264,7 +264,11 @@ namespace vrlt
 #ifdef USE_DISPATCH
         dispatch_apply_f( patches.size(), queue, this, checkPoint );
 #else
-        for ( size_t i = 0; i < patches.size(); i++ ) checkPoint( this, i );
+        for ( size_t i = 0; i < patches.size(); i++ ) {
+            cullTimer.start();
+            checkPoint( this, i );
+            cullTimer.stop();
+        }
 #endif
         
         int count = 0;

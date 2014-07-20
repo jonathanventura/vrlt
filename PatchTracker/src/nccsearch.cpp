@@ -94,7 +94,11 @@ namespace vrlt
         dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
         dispatch_apply_f( count, queue, this, makeNCCTemplate );
 #else
-        for ( int i = 0; i < count; i++ ) makeNCCTemplate( this, i );
+        for ( int i = 0; i < count; i++ ) {
+            warpTimer.start();
+            makeNCCTemplate( this, i );
+            warpTimer.stop();
+        }
 #endif
         
         int newcount = 0;
@@ -238,7 +242,11 @@ namespace vrlt
         dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
         dispatch_apply_f( count, queue, this, searchNCCTemplate );
 #else
-        for ( int i = 0; i < count; i++ ) searchNCCTemplate( this, i );
+        for ( int i = 0; i < count; i++ ) {
+            searchTimer.start();
+            searchNCCTemplate( this, i );
+            searchTimer.stop();
+        }
 #endif
         
         int newcount = 0;

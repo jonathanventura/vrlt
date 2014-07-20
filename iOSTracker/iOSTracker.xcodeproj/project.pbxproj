@@ -66,6 +66,7 @@
 		60140AB01976E57C0020D495 /* VideoLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoLoader.h; sourceTree = "<group>"; };
 		60140AB11976E57C0020D495 /* VideoLoader.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = VideoLoader.mm; sourceTree = "<group>"; };
 		602313ED140575B700623A92 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		60362D63197B62EA00B8E23D /* timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = timer.h; sourceTree = "<group>"; };
 		603BA62613FEDE3300A34C59 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		603BA62813FEDE3300A34C59 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		603BA62A13FEDE3300A34C59 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -397,6 +398,7 @@
 				607140B015E836380071C29D /* ncc.h */,
 				607140B115E836380071C29D /* patch.h */,
 				607140B215E836380071C29D /* sampler.h */,
+				60362D63197B62EA00B8E23D /* timer.h */,
 				607140B415E836380071C29D /* tracker.h */,
 			);
 			path = PatchTracker;
@@ -611,7 +613,6 @@
 				GCC_PREFIX_HEADER = "iOSTracker/iOSTracker-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					VL_DISABLE_SSE2,
-					USE_DISPATCH,
 					__IPHONE__,
 				);
 				INFOPLIST_FILE = "iOSTracker/iOSTracker-Info.plist";

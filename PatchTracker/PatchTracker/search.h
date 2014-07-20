@@ -13,6 +13,8 @@
 
 #include <PatchTracker/patch.h>
 
+#include "timer.h"
+
 namespace vrlt
 {
     
@@ -27,6 +29,10 @@ namespace vrlt
         int level;
         float lowThreshold, highThreshold;
         std::vector<Patch*>::iterator begin;
+        
+        Timer warpTimer;
+        Timer searchTimer;
+        
         PatchSearch() : subsample( false ) { }
         virtual ~PatchSearch() { }
         

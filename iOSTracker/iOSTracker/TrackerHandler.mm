@@ -1,6 +1,8 @@
 
 #include <MultiView/multiview_io_xml.h>
 
+#include <PatchTracker/search.h>
+
 #import "TrackerHandler.h"
 #import "VideoHandler.h"
 
@@ -325,6 +327,12 @@ static void copyImageData( UIImage *image, Camera *camera )
         [videoHandler reportFPS:fps];
         nFpsTimerFrames = 0;
         fpsTimerTotal = 0;
+        
+#ifndef USE_DISPATCH
+        NSLog( @"average cull time: %0.5f ms", tracker->cullTimer.average()*1e-6 );
+        NSLog( @"average warp time: %0.5f ms", tracker->patchSearcher->warpTimer.average()*1e-6 );
+        NSLog( @"average search time: %0.5f ms", tracker->patchSearcher->searchTimer.average()*1e-6 );
+#endif
     }
 }
 
