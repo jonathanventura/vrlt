@@ -21,7 +21,7 @@ set( BUILD_BUNDLEADJUSTMENT TRUE CACHE BOOL "Build BundleAdjusment module" )
 set( BUILD_SFMPIPELINE TRUE CACHE BOOL "Build reconstruction pipeline programs" )
 set( BUILD_TEST TRUE CACHE BOOL "Build test programs" )
 
-set( USE_ACCELERATE TRUE CACHE BOOL "Use Accelerate framework" )
+set( USE_ACCELERATE FALSE CACHE BOOL "Use Accelerate framework" )
 set( USE_DISPATCH TRUE CACHE BOOL "Use Grand Central Dispatch for multithreading" )
 
 find_package( Eigen3 REQUIRED )
