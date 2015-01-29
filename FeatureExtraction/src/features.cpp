@@ -11,8 +11,7 @@
 #include <FeatureExtraction/features.h>
 
 #include <opencv2/imgproc.hpp>
-#include <opencv2/features2d.hpp>
-#include <opencv2/nonfree.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 #include <iostream>
 
@@ -386,6 +385,7 @@ namespace vrlt {
     }
     */
     
+    /*
     int extractORB( cv::Mat &image, std::vector<Feature*> &features, int nfeatures )
     {
         cv::Mat gray_image;
@@ -447,6 +447,7 @@ namespace vrlt {
         
         return features.size();
     }
+    */
     
     int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min, double contrast_thresh )
     {
@@ -463,8 +464,9 @@ namespace vrlt {
         std::vector<cv::KeyPoint> keypoints;
         cv::Mat descriptors;
         
-        cv::SIFT sift( 0, 3, contrast_thresh );
-        sift( gray_image, cv::noArray(), keypoints, descriptors );
+        cv::Ptr<cv::xfeatures2d::SIFT> sift = cv::xfeatures2d::SIFT::create( 0, 3, contrast_thresh );
+        sift->detect( gray_image, keypoints );
+        sift->compute( gray_image, keypoints, descriptors );
         
         float *floatdata = (float*)descriptors.ptr();
         

@@ -14,6 +14,7 @@
 #include "osm_xml_reader.h"
 
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>

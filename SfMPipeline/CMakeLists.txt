@@ -16,9 +16,9 @@ add_executable( ExtractSIFT ExtractSIFT.cpp )
 target_link_libraries( ExtractSIFT vrlt_multiview )
 target_link_libraries( ExtractSIFT vrlt_features )
 
-add_executable( ExtractORB ExtractORB.cpp )
-target_link_libraries( ExtractORB vrlt_multiview )
-target_link_libraries( ExtractORB vrlt_features )
+#add_executable( ExtractORB ExtractORB.cpp )
+#target_link_libraries( ExtractORB vrlt_multiview )
+#target_link_libraries( ExtractORB vrlt_features )
 
 add_executable( PairwiseMatch PairwiseMatch.cpp match.cpp match.h )
 target_link_libraries( PairwiseMatch vrlt_multiview )
