@@ -200,7 +200,7 @@ namespace vrlt {
             
             Match *match = new Match;
             match->score = sqrtf( distances_sq[i] );
-            match->feature1 = matcher.features[neighbors[i]];
+            match->feature1 = matcher.getfeature(neighbors[i]);
             match->feature2 = features[i];
             matches.push_back( match );
         }
@@ -229,7 +229,7 @@ namespace vrlt {
             {
                 Match *match = new Match;
                 match->score = sqrtf( distances_sq_ptr[j] );
-                match->feature1 = matcher.features[ neighbors_ptr[j] ];
+                match->feature1 = matcher.getfeature(neighbors_ptr[j]);
                 match->feature2 = features[i];
                 matches.push_back( match );
             }
@@ -261,7 +261,7 @@ namespace vrlt {
             
             Match *match = new Match;
             match->score = distance0 / distance1;
-            match->feature1 = matcher.features[ neighbors_ptr[0] ];
+            match->feature1 = matcher.getfeature(neighbors_ptr[0]);
             match->feature2 = features[i];
             matches.push_back( match );
         }
@@ -287,7 +287,7 @@ namespace vrlt {
             
             Match *match = new Match;
             match->score = sqrtf( distances_sq[i] );
-            match->feature1 = matcher.features[neighbors[i]];
+            match->feature1 = matcher.getfeature(neighbors[i]);
             match->feature2 = features[i];
             matches.push_back( match );
         }

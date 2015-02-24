@@ -21,6 +21,9 @@ namespace vrlt {
  * @{
  */
 
+    /**
+     * \brief Brute force nearest neighbor implementation.  Uses OpenCL for speedup.
+     */
     class BruteForceNN : public NN
     {
     public:
@@ -50,7 +53,7 @@ namespace vrlt {
         void findnn( int num_queries, unsigned char *queries, int *neighbors, unsigned int *distances_sq );
         void findknn( int num_queries, unsigned char *queries, int k, int *neighbors, unsigned int *distances_sq );
         
-        virtual void getDistances( size_t num_queries, unsigned char *queries, unsigned int *stored_distsqs );
+        void getDistances( size_t num_queries, unsigned char *queries, unsigned int *stored_distsqs );
     };
 
 /**

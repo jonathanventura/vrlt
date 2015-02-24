@@ -26,7 +26,7 @@ namespace vrlt
         std::vector<Feature*> fm2_features;
         addFeatures( node2, false, fm2_features );
 
-        if ( fm->features.empty() || fm2_features.empty() ) {
+        if ( fm->empty() || fm2_features.empty() ) {
             return;
         }
 

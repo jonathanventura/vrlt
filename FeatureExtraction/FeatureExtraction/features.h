@@ -17,18 +17,20 @@ namespace vrlt {
 
 /** \addtogroup FeatureExtraction
  * \brief Feature extraction
+ *
+ * Helper functions for detecting feature points, extracting feature descriptors and loading them into the Feature structure.
+ *
  * @{
+ *
  */
-//    int detectShiTomasi( cv::Mat &image, std::vector<Feature*> &features, int numcorners );
-//    int detectHarris( cv::Mat &image, std::vector<Feature*> &features, int numcorners );
-    
-//    int detectFAST( cv::Mat &image, std::vector<Feature*> &features, int thresh = 10 );
-//    int detectFAST( ImagePyramid &image, std::vector<Feature*> &features );
-    
-//    int extractPatchDescriptors( cv::Mat &color_image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
-    int extractORB( cv::Mat &image, std::vector<Feature*> &features, int nfeatures = 500 );
-    
-//    int extractSIFTdescriptors( cv::Mat &image, std::vector<Feature*> &features, std::vector<Feature*> &features_out );
+    /**
+     * \brief Extract SIFT features from an image.
+     *
+     * \param[in] image               The image from which features will be extracted
+     * \param[out] features           Vector of feature structures
+     * \param[in] o_min               Minimum octave at which features will be extracted, defaults to 0
+     * \param[in] contrast_thresh     Contrast threshold for SIFT feature detector, defaults to 0.04
+     */
     int extractSIFT( cv::Mat &image, std::vector<Feature*> &features, int o_min = 0, double contrast_thresh = 0.04 );
 /**
  * @}

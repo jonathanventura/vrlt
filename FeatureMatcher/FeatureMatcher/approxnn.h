@@ -22,6 +22,9 @@ namespace vrlt {
  * @{
  */
 
+    /**
+     * \brief Approximate nearest neighbor implementation.  Wrapper for the OpenCV FLANN matcher.
+     */
     class ApproxNN : public NN
     {
     public:
