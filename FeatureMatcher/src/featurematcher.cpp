@@ -86,6 +86,7 @@ namespace vrlt {
                 {
 //                    if ( features[i]->track->point != point ) continue;
                     Feature *myfeature = (Feature*)featureit->second;
+                    if ( myfeature->descriptor == NULL ) continue;
                     for ( int j = 0; j < 128; j++ ) sum[j] += myfeature->descriptor[j];
                     count++;
                 }
