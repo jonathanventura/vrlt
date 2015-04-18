@@ -30,6 +30,9 @@ include_directories( ${EIGEN3_INCLUDE_DIR} )
 find_package( Sophus REQUIRED )
 include_directories( ${SOPHUS_INCLUDE_DIR} )
 
+find_package( GeographicLib REQUIRED )
+include_directories( ${GEOGRAPHICLIB_INCLUDE_DIR} )
+
 find_package( OpenCV REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
