@@ -14,3 +14,11 @@
 
 *.xcworkspace
 xcuserdata
+Dataset/
+build/
+openCV-2.4.11-lib/
+
+#Android compiled Objects
+LocalizerClientAndroid/bin
+LocalizerClientAndroid/.settings
+LocalizerClientAndroid/obj

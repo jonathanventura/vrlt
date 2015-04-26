@@ -74,7 +74,7 @@ public:
         buffer = new char[BUFFER_SIZE];
     }
 
-        int cnt = 0;
+    int cnt = 0;
     
     ~ServerThread()
     {
