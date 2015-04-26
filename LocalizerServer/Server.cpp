@@ -73,6 +73,8 @@ public:
         
         buffer = new char[BUFFER_SIZE];
     }
+
+        int cnt = 0;
     
     ~ServerThread()
     {
@@ -172,10 +174,15 @@ public:
         //
         //        cout << "read JPEG image from file\n";
         
-//        membuf mb( jpegData, datasize );
-//        std::istream is( &mb );
+        //        membuf mb( jpegData, datasize );
+        //        std::istream is( &mb );
         cv::Mat jpegDataMat( cv::Size(datasize,1), CV_8UC1, jpegData );
         querycamera->image = cv::imdecode( jpegDataMat, cv::IMREAD_UNCHANGED );
+
+        cnt++;
+        std::stringstream name;
+        name << "test" << cnt << ".bmp";
+        cv::imwrite(name.str().c_str(), querycamera->image);
         
         delete [] jpegData;
         
@@ -443,10 +450,16 @@ int main( int argc, char **argv )
     // iPhone
     //calibration->focal = 1489.653430;
     // iPad
-    calibration->focal = 1179.90411;
-    calibration->center[0] = 639.500000;
-    calibration->center[1] = 359.500000;
-    imsize = cv::Size( 1280, 720 );
+    //calibration->focal = 1179.90411;
+    //calibration->center[0] = 639.500000;
+    //calibration->center[1] = 359.500000;
+    //imsize = cv::Size( 1280, 720 );
+
+    // htc test full res (calibration of the requests)
+    calibration->focal = 2452.49622461;
+    calibration->center[0] = 1343.5;
+    calibration->center[1] = 759.5;
+    imsize = cv::Size( 2688, 1520 );
     
     //    imsize = imsize / 4;
     //    int level = 2;
