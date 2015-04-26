@@ -14,10 +14,12 @@
 #include "LocalizationClient.h"
 
 extern "C" {
+
+
 JNIEXPORT void JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeOnCreate(
 		JNIEnv *env, jobject obj);
-JNIEXPORT jboolean JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeOnStart(
-		JNIEnv *env, jobject obj);
+JNIEXPORT jboolean JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeConnect(
+		JNIEnv *env, jobject obj, jstring ip, jint port);
 JNIEXPORT void JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeOnPause(
 		JNIEnv *env, jobject obj);
 JNIEXPORT void JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeOnDestroy(
@@ -85,7 +87,10 @@ void LocalizationClient::getJpgBuffer(cv::Mat &grayMat, int compression) {
 	compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
 	compression_params.push_back(compression);
 
-	cv::imencode(".jpg", grayMat, transmissionBuffer, compression_params);
+	cv::Mat grayRotated;
+	cv::flip(grayMat.t(),grayRotated,1);
+
+	cv::imencode(".jpg", grayRotated, transmissionBuffer, compression_params);
 	LOGI("jpg buffer size %i", transmissionBuffer.size());
 }
 
@@ -127,6 +132,8 @@ bool LocalizationClient::recvPose(double *posedata) {
 
 } //namespace vrlt
 
+
+
 JNIEXPORT void JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeOnCreate(
 		JNIEnv * env, jobject obj) {
 	//create jni cache
@@ -145,14 +152,13 @@ JNIEXPORT void JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWra
 	vrlt::localizationCleint = new vrlt::LocalizationClient(1, 0);
 }
 
-JNIEXPORT jboolean JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeOnStart(
-		JNIEnv *env, jobject obj) {
+JNIEXPORT jboolean JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeConnect(
+		JNIEnv *env, jobject obj, jstring ip, jint port) {
 	LOGI("native on start");
-	//ip and port hardcoded:-(
-	const std::string ip("192.168.1.5");
-	const int port = 12345;
+	const std::string nativeIp(env->GetStringUTFChars(ip,0));
+	const int nativePort = port;
 	if (vrlt::localizationCleint != nullptr)
-		return vrlt::localizationCleint->connectToServer(ip, port);
+		return vrlt::localizationCleint->connectToServer(nativeIp,nativePort);
 	return false;
 }
 

@@ -451,15 +451,18 @@ int main( int argc, char **argv )
     //calibration->focal = 1489.653430;
     // iPad
     //calibration->focal = 1179.90411;
-    //calibration->center[0] = 639.500000;
-    //calibration->center[1] = 359.500000;
-    //imsize = cv::Size( 1280, 720 );
+
+
+    //depends on the sender image size TODO check size
+    calibration->center[0] = 400.00000;
+    calibration->center[1] = 240.00000;
+    imsize = cv::Size( 800, 480 );
 
     // htc test full res (calibration of the requests)
     calibration->focal = 2452.49622461;
-    calibration->center[0] = 1343.5;
-    calibration->center[1] = 759.5;
-    imsize = cv::Size( 2688, 1520 );
+    //calibration->center[0] = 1343.5;
+    //calibration->center[1] = 759.5;
+    //imsize = cv::Size( 2688, 1520 );
     
     //    imsize = imsize / 4;
     //    int level = 2;

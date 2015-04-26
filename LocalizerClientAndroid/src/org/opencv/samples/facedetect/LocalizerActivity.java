@@ -6,7 +6,6 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.core.Core;
 import org.opencv.core.Mat;
 
 import android.app.Activity;
@@ -32,12 +31,11 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
       if (status == LoaderCallbackInterface.SUCCESS) {
         Log.i(TAG, "OpenCV loaded successfully");
         System.loadLibrary("lacalizationClient");
-        mOpenCvCameraView.enableView();
-        //blocking until timeout or connection is established TODO make that better
         if (mNativeCommunication == null) {
           mNativeCommunication = new NativeCommunicationWraper();
         }
-        mNativeCommunication.start();
+        connectToServer();
+        mOpenCvCameraView.enableView();
       } else {
       }
       super.onManagerConnected(status);
@@ -56,8 +54,9 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
     mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_view);
     mOpenCvCameraView.enableFpsMeter();
     mOpenCvCameraView.setCameraIndex(0);
-    //mOpenCvCameraView.setMaxFrameSize(maxWidth, maxHeight);
+    mOpenCvCameraView.setMaxFrameSize(800, 480); //use this resolution to avoid an incorrect aspect ratio set by the cam view TODO!!!!
     mOpenCvCameraView.setCvCameraViewListener(this);
+
   }
 
   @Override
@@ -71,8 +70,19 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
   @Override
   public void onResume() {
     super.onResume();
-    mServerResponse = true;
     OpenCVLoader.initAsync(OpenCVLoader.OPENCV_VERSION_2_4_3, this, mLoaderCallback);
+  }
+
+  private void connectToServer() {
+    mServerResponse = false;
+    // establish server connection asynch
+    new Thread(new Runnable() {
+      @Override
+      public void run() {
+        mNativeCommunication.connect("192.168.1.5", 12345);
+        mServerResponse = true;
+      }
+    }).start();
   }
 
   public void onDestroy() {
@@ -92,39 +102,44 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
   }
 
   public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-
+    
     mRgba = inputFrame.rgba();
     mGray = inputFrame.gray();
-
-    //TODO flip correctly
-    //Core.flip(mRgba.t(), mRgba, 1);
-    //Core.flip(mRgba.t(), mGray, 1);
-    if (mNativeCommunication != null && mServerResponse){   
-      // wait until the image in the native part is generated
+    
+    
+    if (mNativeCommunication != null && mServerResponse) {
+      // copy compressed image data for asynch transmit
       mNativeCommunication.fillImageBuffer(mGray);
       mServerResponse = false;
-      //now send the data asynchronous and wait for a response
-      new Thread(new Runnable() {        
+
+      // now send the data asynchronous and wait for a response
+      new Thread(new Runnable() {
         @Override
         public void run() {
-          boolean imageSended = mNativeCommunication.transmitImageBuffer();
-          
-          System.out.println("imageSended " + imageSended);
-          
-          double[] pose = mNativeCommunication.receiveServerPose();
-          
-          if(pose != null)
-            for (int i = 0; i < pose.length; i++) {
-              System.out.print(pose[i] + " ");
-            }
-          System.out.println();
-          
-          mServerResponse = true;
-        }
-      }).start(); 
-    }
+          double[] pose = null;
 
+          // if the image is transmitted successfully to the server receive the pose from the server
+          // blocking until timeout, if connection is not established transmitImageBuffer reconnects
+          if (mNativeCommunication.transmitImageBuffer()) {
+            // blocking until pose is received or a timeout occurred
+            pose = mNativeCommunication.receiveServerPose();
+          }
+
+          logServerPose(pose);
+          mServerResponse = true;
+
+        }
+      }).start();
+    }
     return mRgba;
+  }
+
+  private void logServerPose(double[] pose) {
+    if (pose != null)
+      for (int i = 0; i < pose.length; i++) {
+        System.out.print(pose[i] + " ");
+      }
+    System.out.println();
   }
 
 }

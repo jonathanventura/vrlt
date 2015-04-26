@@ -3,15 +3,19 @@ package org.opencv.samples.facedetect;
 import org.opencv.core.Mat;
 
 public class NativeCommunicationWraper {
-  boolean mConnected;
+  private boolean mConnected;
+  private String mIp = "";
+  private int mPort = 0;
 
   public NativeCommunicationWraper() {
     nativeOnCreate();
     mConnected = false;
   }
 
-  public void start() {
-    mConnected = nativeOnStart();
+  public void connect(String ip, int port) {
+    mIp = ip;
+    mPort = port;
+    mConnected = nativeConnect(ip, port);
   }
 
   public void stop() {
@@ -23,10 +27,14 @@ public class NativeCommunicationWraper {
   }
 
   public boolean transmitImageBuffer() {
-    if(mConnected) {
-      return nativeTransmitImageBuffer();      
+    //reconnect if connection is lost
+    if(!mConnected) {
+      mConnected = nativeConnect(mIp, mPort);
+      if(!mConnected) {
+        return false;
+      }
     }
-    return false;
+    return nativeTransmitImageBuffer();
   }
   
   public double[] receiveServerPose() {
@@ -41,7 +49,7 @@ public class NativeCommunicationWraper {
   }
 
   private static native void nativeOnCreate();
-  private static native boolean nativeOnStart();
+  private static native boolean nativeConnect(String ip, int port);
   private static native void nativeOnPause();
   private static native void nativeOnDestroy();
   private static native void nativeFillImageBuffer(long matPtr);
