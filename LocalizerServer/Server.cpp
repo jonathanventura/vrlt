@@ -53,7 +53,7 @@ public:
         localizer->verbose = true;
         //        localizer->tracker->firstlevel = 3;
         //        localizer->tracker->lastlevel = 1;
-        localizer->tracker->minnumpoints = 200;
+        localizer->tracker->minnumpoints = 500;
         localizer->thresh = 0.006 * imsize.width / _calibration->focal;
         //        localizer->thresh *= 2.;
         
@@ -451,18 +451,15 @@ int main( int argc, char **argv )
     //calibration->focal = 1489.653430;
     // iPad
     //calibration->focal = 1179.90411;
+    //calibration->center[0] = 639.500000;
+    //calibration->center[1] = 359.500000;
+    //imsize = cv::Size( 1280, 720 );
 
-
-    //depends on the sender image size TODO check size
-    calibration->center[0] = 400.00000;
-    calibration->center[1] = 240.00000;
+    // htc test 800x480 res (calibration of the requests)
+    calibration->focal = 664.46779;
+    calibration->center[0] = 399.5;
+    calibration->center[1] = 239.5;
     imsize = cv::Size( 800, 480 );
-
-    // htc test full res (calibration of the requests)
-    calibration->focal = 2452.49622461;
-    //calibration->center[0] = 1343.5;
-    //calibration->center[1] = 759.5;
-    //imsize = cv::Size( 2688, 1520 );
     
     //    imsize = imsize / 4;
     //    int level = 2;

@@ -54,9 +54,10 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
     mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.camera_view);
     mOpenCvCameraView.enableFpsMeter();
     mOpenCvCameraView.setCameraIndex(0);
-    mOpenCvCameraView.setMaxFrameSize(800, 480); //use this resolution to avoid an incorrect aspect ratio set by the cam view TODO!!!!
+    mOpenCvCameraView.setMaxFrameSize(800, 480); // use this resolution to avoid an incorrect aspect ratio set by the cam view TODO!!!!
     mOpenCvCameraView.setCvCameraViewListener(this);
-
+    
+    mServerResponse = true;
   }
 
   @Override
@@ -74,15 +75,17 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
   }
 
   private void connectToServer() {
-    mServerResponse = false;
-    // establish server connection asynch
-    new Thread(new Runnable() {
-      @Override
-      public void run() {
-        mNativeCommunication.connect("192.168.1.5", 12345);
-        mServerResponse = true;
-      }
-    }).start();
+    if (mServerResponse) {
+      mServerResponse = false;
+      // establish server connection asynch
+      new Thread(new Runnable() {
+        @Override
+        public void run() {
+          mNativeCommunication.connect("10.249.153.197", 12345);
+          mServerResponse = true;
+        }
+      }).start();
+    }
   }
 
   public void onDestroy() {
@@ -102,11 +105,10 @@ public class LocalizerActivity extends Activity implements CvCameraViewListener2
   }
 
   public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
-    
+
     mRgba = inputFrame.rgba();
     mGray = inputFrame.gray();
-    
-    
+
     if (mNativeCommunication != null && mServerResponse) {
       // copy compressed image data for asynch transmit
       mNativeCommunication.fillImageBuffer(mGray);

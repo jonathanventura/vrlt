@@ -87,10 +87,10 @@ void LocalizationClient::getJpgBuffer(cv::Mat &grayMat, int compression) {
 	compression_params.push_back(CV_IMWRITE_JPEG_QUALITY);
 	compression_params.push_back(compression);
 
-	cv::Mat grayRotated;
-	cv::flip(grayMat.t(),grayRotated,1);
+	//cv::Mat grayRotated;
+	//cv::flip(grayMat.t(),grayRotated,1);
 
-	cv::imencode(".jpg", grayRotated, transmissionBuffer, compression_params);
+	cv::imencode(".jpg", grayMat, transmissionBuffer, compression_params);
 	LOGI("jpg buffer size %i", transmissionBuffer.size());
 }
 
@@ -178,7 +178,7 @@ JNIEXPORT void JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWra
 		JNIEnv *env, jobject obj, jlong matptr) {
 	LOGI("native fill image buffer");
 	if (vrlt::localizationCleint != nullptr)
-		vrlt::localizationCleint->getJpgBuffer(*((cv::Mat*) matptr), 20);
+		vrlt::localizationCleint->getJpgBuffer(*((cv::Mat*) matptr), 80);
 }
 
 JNIEXPORT jboolean JNICALL Java_org_opencv_samples_facedetect_NativeCommunicationWraper_nativeTransmitImageBuffer(
