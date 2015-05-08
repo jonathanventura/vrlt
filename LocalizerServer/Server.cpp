@@ -182,7 +182,7 @@ public:
         cnt++;
         std::stringstream name;
         name << "test" << cnt << ".bmp";
-        cv::imwrite(name.str().c_str(), querycamera->image);
+        //cv::imwrite(name.str().c_str(), querycamera->image);
         
         delete [] jpegData;
         
@@ -212,6 +212,20 @@ public:
         double buffer[6];
         Eigen::Map< Eigen::Matrix<double,6,1> > buffervec(buffer);
         buffervec = pose.log();
+
+        //std::cout << "sophus translation x:" << pose.translation()[0] << "  y: " << pose.translation()[1] << " z: " << pose.translation()[2] << std::endl;
+        //std::cout << "test log: " << pose.so3().log() << std::endl;
+        //std::cout << "test rot: " << pose.so3().matrix() << std::endl;
+
+        //Sophus::SO3d test(pose.so3().log()[0],pose.so3().log()[1],pose.so3().log()[2]);
+        //std::cout << "my test log: " << test.log() << std::endl;
+        //std::cout << "my test rot: " << test.matrix() << std::endl;
+
+        //std::cout << "sophus so3:  " << pose.so3() << std::endl;
+
+        buffer[0] = pose.translation()[0];
+        buffer[1] = pose.translation()[1];
+        buffer[2] = pose.translation()[2];
         
         int nbytesSent = send( clntSock, buffer, sizeof(double)*6, 0 );
         if ( nbytesSent < 0 ) return false;
@@ -460,7 +474,13 @@ int main( int argc, char **argv )
     calibration->center[0] = 399.5;
     calibration->center[1] = 239.5;
     imsize = cv::Size( 800, 480 );
-    
+
+    // nexus5 test 1024x768 (Ar mode calib)
+    calibration->focal = 904.96136;
+    calibration->center[0] = 511.5;
+    calibration->center[1] = 383.5;
+    imsize = cv::Size( 1024, 768 );
+
     //    imsize = imsize / 4;
     //    int level = 2;
     //    double levelScale = pow( 2., (double)-level );
