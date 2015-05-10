@@ -25,6 +25,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <map>
+#include <fstream>
 
 #include <opencv2/highgui.hpp>
 
@@ -33,11 +35,6 @@
 using namespace vrlt;
 
 #define BUFFER_SIZE 131072
-
-const bool GLOBAL_LOC_NORTH = false;
-const int GLOBAL_LOC_ZONE = 59;
-const double GLOBAL_LOC_NORTHING = 4920529.43607018608599901;
-const double GLOBAL_LOC_EASTING = 462394.31180651579052210;
 
 // from http://stackoverflow.com/questions/2079912/simpler-way-to-create-a-c-memorystream-from-char-size-t-without-copying-t
 class membuf : public std::basic_streambuf<char>
@@ -51,8 +48,8 @@ public:
 class ServerThread
 {
 public:
-    ServerThread( Node *_root, Calibration *_calibration, cv::Size _imsize, int _clntSock )
-    : root( _root ), imsize( _imsize ), clntSock( _clntSock )
+    ServerThread(const Reconstruction *_r, Node *_root, Calibration *_calibration, cv::Size _imsize, int _clntSock )
+    : r(_r), root( _root ), imsize( _imsize ), clntSock( _clntSock )
     {
         index = new BruteForceNN;
         
@@ -231,9 +228,11 @@ public:
         //std::cout << "sophus so3:  " << pose.so3() << std::endl;
 
 
+
+
         double lat, lon;
-        GeographicLib::UTMUPS::Reverse(GLOBAL_LOC_ZONE, GLOBAL_LOC_NORTH,
-                                       GLOBAL_LOC_EASTING + pose.translation()[0], GLOBAL_LOC_NORTHING + pose.translation()[2],
+        GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
+                                       r->utmCenterEast + pose.translation()[0], r->utmCenterNorth + pose.translation()[2],
                                        lat, lon);
 
         buffer[0] = lat;
@@ -362,6 +361,7 @@ public:
         querycalibration = NULL;
     }
     
+    const Reconstruction *r;
     Node *root;
     cv::Size imsize;
     
@@ -448,10 +448,32 @@ void loadImages( std::string prefix, Node *node )
     }
 }
 
+bool parseConfig(std::map<std::string, std::string> &options, const char* path) {
+
+    std::string id, eq, val;
+    std::ifstream cfgfile (path, std::ifstream::in);
+
+    while(cfgfile >> id >> eq >> val)
+    {
+      if (id[0] == '#') continue;  // skip comments
+      if (eq != "=") {
+          cfgfile.close();
+          return false;
+      }
+
+      options[id] = val;
+    }
+
+    cfgfile.close();
+    return true;
+}
+
+
+
 int main( int argc, char **argv )
 {
-    if ( argc != 2 && argc != 3 ) {
-        fprintf( stderr, "usage: %s <reconstruction> [<port>]\n", argv[0] );
+    if ( argc != 3 && argc != 4 ) {
+        fprintf( stderr, "usage: %s <reconstruction> <config> [<port>]\n", argv[0] );
         exit(1);
     }
     
@@ -459,7 +481,7 @@ int main( int argc, char **argv )
     
     std::string pathin = std::string(argv[1]);
     int portno = 12345;
-    if ( argc == 3 ) portno = atoi(argv[2]);
+    if ( argc == 4 ) portno = atoi(argv[3]);
     
     Reconstruction r;
     r.pathPrefix = pathin;
@@ -471,30 +493,19 @@ int main( int argc, char **argv )
     loadImages( pathin, root );
     XML::readDescriptors( r, root );
     
+    std::map<std::string, std::string> options;
+    if(!parseConfig(options, argv[2])) {
+        fprintf( stderr, "config file corrupted\n" );
+        exit(1);
+    }
+
     Calibration *calibration = new Calibration;
     cv::Size imsize;
-    
 
-    //TODO
-    // iPhone
-    //calibration->focal = 1489.653430;
-    // iPad
-    //calibration->focal = 1179.90411;
-    //calibration->center[0] = 639.500000;
-    //calibration->center[1] = 359.500000;
-    //imsize = cv::Size( 1280, 720 );
-
-    // htc test 800x480 res (calibration of the requests)
-    //calibration->focal = 664.46779;
-    //calibration->center[0] = 399.5;
-    //calibration->center[1] = 239.5;
-    //imsize = cv::Size( 800, 480 );
-
-    // nexus5 test 1024x768 (Ar mode calib)
-    calibration->focal = 904.96136;
-    calibration->center[0] = 511.5;
-    calibration->center[1] = 383.5;
-    imsize = cv::Size( 1024, 768 );
+    calibration->focal = std::stod(options.find("calibrationFocalLength")->second);
+    calibration->center[0] = std::stod(options.find("calibrationPrincipalPointX")->second);
+    calibration->center[1] = std::stod(options.find("calibrationPrincipalPointY")->second);
+    imsize = cv::Size( std::stoi(options.find("imageSizeX")->second), std::stoi(options.find("imageSizeY")->second) );
 
     //    imsize = imsize / 4;
     //    int level = 2;
@@ -516,7 +527,7 @@ int main( int argc, char **argv )
         
 #if USE_DISPATCH
         dispatch_async(myCustomQueue, ^{
-            ServerThread *serverThread = new ServerThread( root, calibration, imsize, clntSock );
+            ServerThread *serverThread = new ServerThread(&r, root, calibration, imsize, clntSock );
             serverThread->run();
         });
 #endif
