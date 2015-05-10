@@ -558,11 +558,13 @@ int main( int argc, char **argv )
             case 'k':
                 osmTransformation.centerZ += bigstep;
                 should_render = true;
+                 printf("%f %f\n", osmTransformation.centerX, osmTransformation.centerZ);
                 break;
 
             case 'i':
                 osmTransformation.centerZ -= bigstep;
                 should_render = true;
+                 printf("%f %f\n", osmTransformation.centerX, osmTransformation.centerZ);
                 break;
 
             case 'K':
@@ -578,11 +580,13 @@ int main( int argc, char **argv )
             case 'j':
                 osmTransformation.centerX += bigstep;
                 should_render = true;
+                 printf("%f %f\n", osmTransformation.centerX, osmTransformation.centerZ);
                 break;
                 
             case 'l':
                 osmTransformation.centerX -= bigstep;
                 should_render = true;
+                 printf("%f %f\n", osmTransformation.centerX, osmTransformation.centerZ);
                 break;
                 
             case 'J':
@@ -660,6 +664,8 @@ int main( int argc, char **argv )
                 break;
         }
         
+
+
         if ( should_render )
         {
             mapimage = cv::Scalar(255);
@@ -675,36 +681,10 @@ int main( int argc, char **argv )
     }
 
 
-    //debug
-    int zone;
-    bool northb;
-    double east, north;
-
-    double lat, lon;
-    GeographicLib::UTMUPS::Reverse(osmdata.utm_zone, osmdata.utm_north,
-                                   osmTransformation.centerX, osmTransformation.centerZ,
-                                   lat, lon);
-
-    std::cout << " orig utm: " <<  osmTransformation.centerX << "  " << osmTransformation.centerZ << "   lat long: " << lat <<  "  " << lon << std::endl;
-
-    GeographicLib::UTMUPS::Forward(lat, lon,
-                                   zone, northb,
-                                   east, north);
-
-    std::cout << " utm: " <<  east << "  " << north << std::endl;
-    //debug end
-
-
-    
     r.utmZone = osmdata.utm_zone;
     r.utmNorth = osmdata.utm_north;
     r.utmCenterEast = osmTransformation.centerX;
     r.utmCenterNorth = osmTransformation.centerZ;
-
-    //r.utmCenterEast = lat;
-    //r.utmCenterNorth = lon;
-    //-45.8675  170.516 //global origin of the commerce reconstruction
-    //-45.8673  170.515 //global origin of the clyde street reconstruction
     
     Transformation myOsmTransformation = osmTransformation;
     myOsmTransformation.centerX = 0;

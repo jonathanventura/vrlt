@@ -15,6 +15,8 @@
 #include <PatchTracker/tracker.h>
 #include <Localizer/nnlocalizer.h>
 
+#include <GeographicLib/UTMUPS.hpp>
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -31,6 +33,11 @@
 using namespace vrlt;
 
 #define BUFFER_SIZE 131072
+
+const bool GLOBAL_LOC_NORTH = false;
+const int GLOBAL_LOC_ZONE = 59;
+const double GLOBAL_LOC_NORTHING = 4920529.43607018608599901;
+const double GLOBAL_LOC_EASTING = 462394.31180651579052210;
 
 // from http://stackoverflow.com/questions/2079912/simpler-way-to-create-a-c-memorystream-from-char-size-t-without-copying-t
 class membuf : public std::basic_streambuf<char>
@@ -53,7 +60,7 @@ public:
         localizer->verbose = true;
         //        localizer->tracker->firstlevel = 3;
         //        localizer->tracker->lastlevel = 1;
-        localizer->tracker->minnumpoints = 500;
+        localizer->tracker->minnumpoints = 800;
         localizer->thresh = 0.006 * imsize.width / _calibration->focal;
         //        localizer->thresh *= 2.;
         
@@ -213,7 +220,7 @@ public:
         Eigen::Map< Eigen::Matrix<double,6,1> > buffervec(buffer);
         buffervec = pose.log();
 
-        //std::cout << "sophus translation x:" << pose.translation()[0] << "  y: " << pose.translation()[1] << " z: " << pose.translation()[2] << std::endl;
+        std::cout << "sophus translation x:" << pose.translation()[0] << "  y: " << pose.translation()[1] << " z: " << pose.translation()[2] << std::endl;
         //std::cout << "test log: " << pose.so3().log() << std::endl;
         //std::cout << "test rot: " << pose.so3().matrix() << std::endl;
 
@@ -223,9 +230,15 @@ public:
 
         //std::cout << "sophus so3:  " << pose.so3() << std::endl;
 
-        buffer[0] = pose.translation()[0];
-        buffer[1] = pose.translation()[1];
-        buffer[2] = pose.translation()[2];
+
+        double lat, lon;
+        GeographicLib::UTMUPS::Reverse(GLOBAL_LOC_ZONE, GLOBAL_LOC_NORTH,
+                                       GLOBAL_LOC_EASTING + pose.translation()[0], GLOBAL_LOC_NORTHING + pose.translation()[2],
+                                       lat, lon);
+
+        buffer[0] = lat;
+        buffer[1] = lon;
+        buffer[2] = pose.translation()[1];
         
         int nbytesSent = send( clntSock, buffer, sizeof(double)*6, 0 );
         if ( nbytesSent < 0 ) return false;
@@ -461,6 +474,8 @@ int main( int argc, char **argv )
     Calibration *calibration = new Calibration;
     cv::Size imsize;
     
+
+    //TODO
     // iPhone
     //calibration->focal = 1489.653430;
     // iPad
@@ -470,10 +485,10 @@ int main( int argc, char **argv )
     //imsize = cv::Size( 1280, 720 );
 
     // htc test 800x480 res (calibration of the requests)
-    calibration->focal = 664.46779;
-    calibration->center[0] = 399.5;
-    calibration->center[1] = 239.5;
-    imsize = cv::Size( 800, 480 );
+    //calibration->focal = 664.46779;
+    //calibration->center[0] = 399.5;
+    //calibration->center[1] = 239.5;
+    //imsize = cv::Size( 800, 480 );
 
     // nexus5 test 1024x768 (Ar mode calib)
     calibration->focal = 904.96136;
