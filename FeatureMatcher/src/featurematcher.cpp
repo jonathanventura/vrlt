@@ -115,7 +115,7 @@ namespace vrlt {
         delete [] data;
         if ( deleteFeatures ) {
             for ( int i = 0; i < features.size(); i++ ) {
-                delete [] features[i]->descriptor;
+                //delete [] features[i]->descriptor;
                 delete features[i];
             }
         }

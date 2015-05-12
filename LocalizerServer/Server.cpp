@@ -138,6 +138,8 @@ public:
         
         int datasize = 0;
         ptr = (char*)&datasize;
+
+        int timeout = 0;
         
         while ( nbytesRecvd < 4 )
         {
@@ -145,7 +147,8 @@ public:
             
             // receive some data
             recvMsgSize = recv( clntSock, ptr, 4 - nbytesRecvd, 0);
-            if ( recvMsgSize < 0 ) return false;
+            if ( recvMsgSize < 0 || timeout > 200 ) return false;
+            if( recvMsgSize == 0) timeout++;
             nbytesRecvd += recvMsgSize;
             ptr += recvMsgSize;
         }
@@ -156,6 +159,7 @@ public:
         
         nbytesRecvd = 0;
         ptr = jpegData;
+        timeout = 0;
         
         while ( nbytesRecvd < datasize )
         {
@@ -163,7 +167,8 @@ public:
             
             // receive some data
             recvMsgSize = recv( clntSock, ptr, datasize - nbytesRecvd, 0);
-            if ( recvMsgSize < 0 ) return false;
+            if ( recvMsgSize < 0 || timeout > 200 ) return false;
+            if( recvMsgSize == 0) timeout++;
             nbytesRecvd += recvMsgSize;
             ptr += recvMsgSize;
         }
@@ -213,33 +218,56 @@ public:
     
     bool sendPose( Sophus::SE3d &pose )
     {
-        double buffer[6];
-        Eigen::Map< Eigen::Matrix<double,6,1> > buffervec(buffer);
-        buffervec = pose.log();
+        double buffer[12];
+        //Eigen::Map< Eigen::Matrix<double,6,1> > buffervec(buffer);
+        //buffervec = pose.log();
 
-        std::cout << "sophus translation x:" << pose.translation()[0] << "  y: " << pose.translation()[1] << " z: " << pose.translation()[2] << std::endl;
-        //std::cout << "test log: " << pose.so3().log() << std::endl;
-        //std::cout << "test rot: " << pose.so3().matrix() << std::endl;
-
-        //Sophus::SO3d test(pose.so3().log()[0],pose.so3().log()[1],pose.so3().log()[2]);
-        //std::cout << "my test log: " << test.log() << std::endl;
-        //std::cout << "my test rot: " << test.matrix() << std::endl;
-
-        //std::cout << "sophus so3:  " << pose.so3() << std::endl;
+        //std::cout << "sophus translation x:" << pose.translation()[0] << "  y: " << pose.translation()[1] << " z: " << pose.translation()[2] << std::endl;
+        bool success = false;
+        for ( int i = 0; i < 6; i++ ) if ( pose.log()[i] != 0 ) {
+           success = true;
+           break;
+        }
 
 
+        if(success) {
+            Eigen::Matrix3d t;
+            t <<  0, -1,  0,
+                 -1,  0,  0,
+                  0,  0, -1; //symmetric
+            Sophus::SO3d vrlt2opengl(t);
+            Sophus::SO3d openglRotation = vrlt2opengl * pose.so3() * vrlt2opengl;
 
+            std::cout << "my test rot: " << openglRotation.matrix() << std::endl;
+            //std::cout << "my test data: " << openglRotation.matrix().data() << std::endl;
+            //std::cout << "test log: " << pose.log() << std::endl;
+            //std::cout << "test rot: " << pose.so3().matrix() << std::endl;
+            //Sophus::SO3d test(pose.so3().log()[0],pose.so3().log()[1],pose.so3().log()[2]);
+            //std::cout << "my test log: " << test.log() << std::endl;
+            //std::cout << "my test rot: " << test.matrix() << std::endl;
+            //std::cout << "sophus so3:  " << pose.so3() << std::endl;
 
-        double lat, lon;
-        GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
-                                       r->utmCenterEast + pose.translation()[0], r->utmCenterNorth + pose.translation()[2],
-                                       lat, lon);
+            double lat, lon;
+            GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
+                                           r->utmCenterEast + pose.translation()[0], r->utmCenterNorth + pose.translation()[2],
+                                           lat, lon);
 
-        buffer[0] = lat;
-        buffer[1] = lon;
-        buffer[2] = pose.translation()[1];
+            buffer[0] = lat; buffer[1] = lon; buffer[2] = pose.translation()[1];
+            buffer[3] = openglRotation.matrix()(0,0); buffer[4] = openglRotation.matrix()(0,1); buffer[5] = openglRotation.matrix()(0,2);
+            buffer[6] = openglRotation.matrix()(1,0); buffer[7] = openglRotation.matrix()(1,1); buffer[8] = openglRotation.matrix()(1,2);
+            buffer[9] = openglRotation.matrix()(2,0); buffer[10] = openglRotation.matrix()(2,1); buffer[11] = openglRotation.matrix()(2,2);
+
+        }
+        else {
+            for ( int i = 0; i < 12; i++ ) buffer[i] = 0.;
+        }
+
+        for (int var = 0; var < 12; ++var) {
+            printf("%f\n",buffer[var]);
+            //std::cout << buffer[var] << std::endl;
+        }
         
-        int nbytesSent = send( clntSock, buffer, sizeof(double)*6, 0 );
+        int nbytesSent = send( clntSock, buffer, sizeof(double)*12, 0 );
         if ( nbytesSent < 0 ) return false;
         
         return true;
@@ -283,12 +311,15 @@ public:
     
     void run()
     {
+        std::cout << "read header\n";
         bool gotHeader = recvHeader();
+        std::cout << "recived header\n";
         
         if ( gotHeader )
         {
             for ( ; ; )
             {
+                std::cout << "wait for image\n";
                 bool good = waitForImage();
                 if ( !good ) break;
                 
@@ -331,6 +362,7 @@ public:
                 Sophus::SE3d pose;
                 if ( success ) pose = querynode->pose;
                 
+                std::cout << "sending pose...\n";
                 good = sendPose( pose );
                 if ( !good ) break;
                 
@@ -348,15 +380,20 @@ public:
         
         close( clntSock );
         
+        std::cout << "delete localizer \n";
+        //if(localizer)  //todo here is an issue the localizer is not deleted correctly
         delete localizer;
         localizer = NULL;
         
+        std::cout << "delete querynode \n";
         delete querynode;
         querynode = NULL;
         
+        std::cout << "delete querycamera \n";
         delete querycamera;
         querycamera = NULL;
-        
+
+        std::cout << "delete querycalibration \n";
         delete querycalibration;
         querycalibration = NULL;
     }
