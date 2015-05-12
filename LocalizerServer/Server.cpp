@@ -132,6 +132,8 @@ public:
         
         int datasize = 0;
         ptr = (char*)&datasize;
+
+        int timeout = 0;
         
         while ( nbytesRecvd < 4 )
         {
@@ -139,7 +141,8 @@ public:
             
             // receive some data
             recvMsgSize = recv( clntSock, ptr, 4 - nbytesRecvd, 0);
-            if ( recvMsgSize < 0 ) return false;
+            if ( recvMsgSize < 0 || timeout > 200 ) return false;
+            if ( recvMsgSize == 0) timeout++;
             nbytesRecvd += recvMsgSize;
             ptr += recvMsgSize;
         }
@@ -150,6 +153,8 @@ public:
         
         nbytesRecvd = 0;
         ptr = jpegData;
+        timeout = 0;
+
         
         while ( nbytesRecvd < datasize )
         {
@@ -157,7 +162,8 @@ public:
             
             // receive some data
             recvMsgSize = recv( clntSock, ptr, datasize - nbytesRecvd, 0);
-            if ( recvMsgSize < 0 ) return false;
+            if ( recvMsgSize < 0 || timeout > 200 ) return false;
+            if( recvMsgSize == 0) timeout++;
             nbytesRecvd += recvMsgSize;
             ptr += recvMsgSize;
         }

@@ -160,7 +160,7 @@ namespace vrlt {
         Eigen::Vector3d unproject();
         Eigen::Vector3d globalUnproject( Node *root = NULL );
         Feature() : track( NULL ), camera( NULL ), descriptor( NULL ) { }
-        ~Feature() { delete [] descriptor; }
+        ~Feature() { delete descriptor; }
     };
     
     /** \brief Feature match

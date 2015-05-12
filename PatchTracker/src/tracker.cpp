@@ -102,13 +102,13 @@ namespace vrlt
         int i = 0;
         for ( it = root->points.begin(); it != root->points.end(); it++,i++ )
         {
-            delete patches[i];
+            if(patches[i]) delete patches[i];
         }
-        delete patchSearcher;
+        if(patchSearcher) delete patchSearcher;
         
-        delete mynode;
-        delete mycamera;
-        delete mycalibration;
+        if(mynode) delete mynode;
+        if(mycamera) delete mycamera;
+        if(mycalibration) delete mycalibration;
     }
     
     void Tracker::updateMatrices( Camera *source, Camera *target )

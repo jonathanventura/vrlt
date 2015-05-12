@@ -165,7 +165,8 @@ namespace vrlt
         }
         
         for ( int i = 0; i < matches.size(); i++ ) {
-            delete matches[i];
+            if(matches[i])
+                delete matches[i];
         }
         
         RobustLeastSq robustlsq( root );
