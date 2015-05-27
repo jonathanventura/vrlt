@@ -78,9 +78,9 @@ namespace vrlt {
     {
         unsigned char *ptr = (unsigned char *)posedata;
         int totalrecvd = 0;
-        while ( totalrecvd < 6*sizeof(double) )
+        while ( totalrecvd < 12*sizeof(double) )
         {
-            int bytesrecvd = recv( sock, ptr, 6*sizeof(double) - totalrecvd, 0 );
+            int bytesrecvd = recv( sock, ptr, 12*sizeof(double) - totalrecvd, 0 );
             if ( bytesrecvd < 0 )
             {
                 close( sock );
@@ -94,5 +94,4 @@ namespace vrlt {
         
         return true;
     }
-
 }

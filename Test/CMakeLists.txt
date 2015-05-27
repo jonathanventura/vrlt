@@ -20,3 +20,7 @@ target_link_libraries( RenderTrack vrlt_multiview  )
 target_link_libraries( RenderTrack vrlt_glutils  )
 target_link_libraries( RenderTrack ${GLUT_LIBRARY} )
 
+add_executable( TestClient TestClient.cpp )
+target_link_libraries( TestClient vrlt_client  )
+target_link_libraries( TestClient ${OpenCV_LIBS} )
+

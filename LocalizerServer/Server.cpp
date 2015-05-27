@@ -29,12 +29,14 @@
 #include <fstream>
 
 #include <opencv2/highgui.hpp>
+#include <opencv2/video.hpp>
 
 #include <iostream>
 
 using namespace vrlt;
 
 #define BUFFER_SIZE 131072
+#define KALMAN
 
 // from http://stackoverflow.com/questions/2079912/simpler-way-to-create-a-c-memorystream-from-char-size-t-without-copying-t
 class membuf : public std::basic_streambuf<char>
@@ -57,7 +59,7 @@ public:
         localizer->verbose = true;
         //        localizer->tracker->firstlevel = 3;
         //        localizer->tracker->lastlevel = 1;
-        localizer->tracker->minnumpoints = 800;
+        localizer->tracker->minnumpoints = 400;
         localizer->thresh = 0.006 * imsize.width / _calibration->focal;
         //        localizer->thresh *= 2.;
         
@@ -76,6 +78,31 @@ public:
         querycamera->calibration = querycalibration;
         
         buffer = new char[BUFFER_SIZE];
+
+#ifdef KALMAN
+        LocalizationKf = new cv::KalmanFilter(4,2,0);
+        LocalizationKf->transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+
+        LocalizationKf->statePre.at<float>(0) = 0;
+        LocalizationKf->statePre.at<float>(1) = 0;
+        LocalizationKf->statePre.at<float>(2) = 0;
+        LocalizationKf->statePre.at<float>(3) = 0;
+        cv::setIdentity(LocalizationKf->measurementMatrix);
+        cv::setIdentity(LocalizationKf->processNoiseCov, cv::Scalar::all(1e-6));
+        cv::setIdentity(LocalizationKf->measurementNoiseCov, cv::Scalar::all(1e-6));
+        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.0525;//x varianz
+        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.1548;//z varianz
+        cv::setIdentity(LocalizationKf->errorCovPost, cv::Scalar::all(.1));
+
+
+        AltitudeKf = new cv::KalmanFilter(1,1);
+        AltitudeKf->transitionMatrix = (cv::Mat_<float>(1, 1) << 1);
+        AltitudeKf->statePre.at<float>(0) = 1.5;
+        cv::setIdentity(AltitudeKf->measurementMatrix);
+        cv::setIdentity(AltitudeKf->processNoiseCov, cv::Scalar::all(1e-6));
+        cv::setIdentity(AltitudeKf->measurementNoiseCov, cv::Scalar::all(0.0727));
+        cv::setIdentity(AltitudeKf->errorCovPost, cv::Scalar::all(.1));
+#endif
     }
 
     int cnt = 0;
@@ -190,7 +217,7 @@ public:
 
         cnt++;
         std::stringstream name;
-        name << "test" << cnt << ".bmp";
+        name << cnt << ".bmp";
         //cv::imwrite(name.str().c_str(), querycamera->image);
         
         delete [] jpegData;
@@ -231,12 +258,20 @@ public:
 
 
         if(success) {
+
+            Eigen::Matrix3d rot;
+            rot <<  0,  0,  -1,
+                  -1,  0,  0,
+                  0, 1,  0; //
+            Sophus::SO3d rotAr2Pointing(rot);
+
             Eigen::Matrix3d t;
-            t <<  0, -1,  0,
-                 -1,  0,  0,
-                  0,  0, -1; //symmetric
+            t <<  1,  0,  0,
+                  0,  0,  -1,
+                  0, 1,  0; //
             Sophus::SO3d vrlt2opengl(t);
-            Sophus::SO3d openglRotation = vrlt2opengl * pose.so3() * vrlt2opengl;
+
+            Sophus::SO3d openglRotation = vrlt2opengl.inverse() * pose.so3().inverse() * rotAr2Pointing * vrlt2opengl;
 
             std::cout << "my test rot: " << openglRotation.matrix() << std::endl;
             //std::cout << "my test data: " << openglRotation.matrix().data() << std::endl;
@@ -247,15 +282,42 @@ public:
             //std::cout << "my test rot: " << test.matrix() << std::endl;
             //std::cout << "sophus so3:  " << pose.so3() << std::endl;
 
-            double lat, lon;
-            GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
-                                           r->utmCenterEast + pose.translation()[0], r->utmCenterNorth + pose.translation()[2],
-                                           lat, lon);
+            //according to Hartley and Zissermann
+            //P = [R|t]
+            //P = [R|-Rc]
+            //t = -Rc
+            //c = -R't
+            Eigen::Vector3d center = -(pose.so3().inverse()*pose.translation());
 
-            buffer[0] = lat; buffer[1] = lon; buffer[2] = pose.translation()[1];
-            buffer[3] = openglRotation.matrix()(0,0); buffer[4] = openglRotation.matrix()(0,1); buffer[5] = openglRotation.matrix()(0,2);
-            buffer[6] = openglRotation.matrix()(1,0); buffer[7] = openglRotation.matrix()(1,1); buffer[8] = openglRotation.matrix()(1,2);
-            buffer[9] = openglRotation.matrix()(2,0); buffer[10] = openglRotation.matrix()(2,1); buffer[11] = openglRotation.matrix()(2,2);
+#ifdef KALMAN
+            LocalizationKf->predict();
+
+            cv::Mat_<float> locationMeasurement(2,1); locationMeasurement.setTo(cv::Scalar(0));
+            locationMeasurement(0) = center[0];
+            locationMeasurement(1) = center[2];
+
+            cv::Mat estimate = LocalizationKf->correct(locationMeasurement);
+            center[0] = estimate.at<float>(0); center[2] = estimate.at<float>(1);
+
+
+            AltitudeKf->predict();
+
+            cv::Mat_<float> heightMeasurement(1,1);
+            heightMeasurement(0) = center[1];
+            cv::Mat heightEstimate = AltitudeKf->correct(heightMeasurement);
+            center[1] = heightEstimate.at<float>(0);
+#endif
+
+        double lat, lon;
+        GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
+                                       r->utmCenterEast + center[0], r->utmCenterNorth + center[2],
+                                       lat, lon);
+
+        //passing the matrix like that is correct...
+        buffer[0] = lat; buffer[1] = lon; buffer[2] = -center[1];
+        buffer[3] = openglRotation.matrix()(0,0); buffer[4] = openglRotation.matrix()(1,0); buffer[5] = openglRotation.matrix()(2,0);
+        buffer[6] = openglRotation.matrix()(0,1); buffer[7] = openglRotation.matrix()(1,1); buffer[8] = openglRotation.matrix()(2,1);
+        buffer[9] = openglRotation.matrix()(0,2); buffer[10] = openglRotation.matrix()(1,2); buffer[11] = openglRotation.matrix()(2,2);
 
         }
         else {
@@ -396,6 +458,13 @@ public:
         std::cout << "delete querycalibration \n";
         delete querycalibration;
         querycalibration = NULL;
+
+#ifdef KALMAN
+        delete LocalizationKf;
+        LocalizationKf = NULL;
+        delete AltitudeKf;
+        AltitudeKf = NULL;
+#endif
     }
     
     const Reconstruction *r;
@@ -413,6 +482,12 @@ public:
     char *buffer;
     
     int bpp;
+
+#ifdef KALMAN
+    cv::KalmanFilter *LocalizationKf;
+    cv::KalmanFilter *AltitudeKf;
+#endif
+
 };
 
 void DieWithError( const char *msg )
