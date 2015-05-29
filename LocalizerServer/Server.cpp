@@ -79,19 +79,25 @@ public:
         
         buffer = new char[BUFFER_SIZE];
 
+        imageCnt = 0;
+
 #ifdef KALMAN
         LocalizationKf = new cv::KalmanFilter(4,2,0);
-        LocalizationKf->transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);
+        LocalizationKf->transitionMatrix = (cv::Mat_<float>(4, 4) << 1,0,1,0,
+                                                                     0,1,0,1,
+                                                                     0,0,1,0,
+                                                                     0,0,0,1);
 
         LocalizationKf->statePre.at<float>(0) = 0;
         LocalizationKf->statePre.at<float>(1) = 0;
         LocalizationKf->statePre.at<float>(2) = 0;
         LocalizationKf->statePre.at<float>(3) = 0;
+
         cv::setIdentity(LocalizationKf->measurementMatrix);
         cv::setIdentity(LocalizationKf->processNoiseCov, cv::Scalar::all(1e-6));
         cv::setIdentity(LocalizationKf->measurementNoiseCov, cv::Scalar::all(1e-6));
-        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.0525;//x varianz
-        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.1548;//z varianz
+        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.0525;//0.990118270247447;//12.5990035501749e-012; x varianz
+        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.1548;//3.328951005398172;//8.97741265238049e-012; z varianz
         cv::setIdentity(LocalizationKf->errorCovPost, cv::Scalar::all(.1));
 
 
@@ -104,8 +110,6 @@ public:
         cv::setIdentity(AltitudeKf->errorCovPost, cv::Scalar::all(.1));
 #endif
     }
-
-    int cnt = 0;
     
     ~ServerThread()
     {
@@ -215,9 +219,9 @@ public:
         cv::Mat jpegDataMat( cv::Size(datasize,1), CV_8UC1, jpegData );
         querycamera->image = cv::imdecode( jpegDataMat, cv::IMREAD_UNCHANGED );
 
-        cnt++;
-        std::stringstream name;
-        name << cnt << ".bmp";
+        imageCnt++;
+        //std::stringstream name;
+        //name << imagecnt << ".bmp";
         //cv::imwrite(name.str().c_str(), querycamera->image);
         
         delete [] jpegData;
@@ -308,10 +312,11 @@ public:
             center[1] = heightEstimate.at<float>(0);
 #endif
 
-        double lat, lon;
-        GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
-                                       r->utmCenterEast + center[0], r->utmCenterNorth + center[2],
-                                       lat, lon);
+       double lat, lon;
+       GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
+                                      r->utmCenterEast + center[0], r->utmCenterNorth + center[2],
+                                      lat, lon);
+
 
         //passing the matrix like that is correct...
         buffer[0] = lat; buffer[1] = lon; buffer[2] = -center[1];
@@ -482,6 +487,8 @@ public:
     char *buffer;
     
     int bpp;
+
+    int imageCnt;
 
 #ifdef KALMAN
     cv::KalmanFilter *LocalizationKf;

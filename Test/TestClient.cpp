@@ -19,7 +19,7 @@ int main( int argc, char **argv )
 
     int imgcnt = 1;
     std::stringstream stream;
-    stream << argv[1] << "/" << imgcnt << ".bmp";
+    stream << argv[1] << "/" << imgcnt << ".jpg";
     cv::Mat img = cv::imread(stream.str().c_str(),cv::IMREAD_GRAYSCALE);
 
     std::vector<uchar> transmissionBuffer;
@@ -45,7 +45,7 @@ int main( int argc, char **argv )
 
         stream.str("");
         imgcnt++;
-        stream << argv[1] << "/" << imgcnt << ".bmp";
+        stream << argv[1] << "/" << imgcnt << ".jpg";
 
         img = cv::imread(stream.str().c_str(),cv::IMREAD_GRAYSCALE);
     }
