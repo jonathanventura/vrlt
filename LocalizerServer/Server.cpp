@@ -36,7 +36,11 @@
 using namespace vrlt;
 
 #define BUFFER_SIZE 131072
-#define KALMAN
+//#define KALMAN
+
+#define AVERAGING
+static const int WINDOWSIZE = 5;
+
 
 // from http://stackoverflow.com/questions/2079912/simpler-way-to-create-a-c-memorystream-from-char-size-t-without-copying-t
 class membuf : public std::basic_streambuf<char>
@@ -59,7 +63,7 @@ public:
         localizer->verbose = true;
         //        localizer->tracker->firstlevel = 3;
         //        localizer->tracker->lastlevel = 1;
-        localizer->tracker->minnumpoints = 400;
+        localizer->tracker->minnumpoints = 200;
         localizer->thresh = 0.006 * imsize.width / _calibration->focal;
         //        localizer->thresh *= 2.;
         
@@ -88,16 +92,11 @@ public:
                                                                      0,0,1,0,
                                                                      0,0,0,1);
 
-        LocalizationKf->statePre.at<float>(0) = 0;
-        LocalizationKf->statePre.at<float>(1) = 0;
-        LocalizationKf->statePre.at<float>(2) = 0;
-        LocalizationKf->statePre.at<float>(3) = 0;
-
         cv::setIdentity(LocalizationKf->measurementMatrix);
         cv::setIdentity(LocalizationKf->processNoiseCov, cv::Scalar::all(1e-6));
         cv::setIdentity(LocalizationKf->measurementNoiseCov, cv::Scalar::all(1e-6));
-        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.0525;//0.990118270247447;//12.5990035501749e-012; x varianz
-        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.1548;//3.328951005398172;//8.97741265238049e-012; z varianz
+        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.0525;//0.1089;
+        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.1548;//0.3420;
         cv::setIdentity(LocalizationKf->errorCovPost, cv::Scalar::all(.1));
 
 
@@ -219,9 +218,9 @@ public:
         cv::Mat jpegDataMat( cv::Size(datasize,1), CV_8UC1, jpegData );
         querycamera->image = cv::imdecode( jpegDataMat, cv::IMREAD_UNCHANGED );
 
-        imageCnt++;
+        //imageCnt++;
         //std::stringstream name;
-        //name << imagecnt << ".bmp";
+        //name << imageCnt << ".bmp";
         //cv::imwrite(name.str().c_str(), querycamera->image);
         
         delete [] jpegData;
@@ -293,7 +292,42 @@ public:
             //c = -R't
             Eigen::Vector3d center = -(pose.so3().inverse()*pose.translation());
 
+
+
+#ifdef AVERAGING
+    if(avgwindowX.size() < WINDOWSIZE) {
+        avgwindowX.push_back(center[0]);
+        avgwindowY.push_back(center[2]);
+        avgwindowZ.push_back(center[1]);
+    } else {
+        avgwindowX.at(imageCnt % WINDOWSIZE) = center[0];
+        avgwindowY.at(imageCnt % WINDOWSIZE) = center[2];
+        avgwindowZ.at(imageCnt % WINDOWSIZE) = center[1];
+    }
+
+    center[0] = center[2] = center[1] = 0.0;
+
+    for (int i = 0; i < avgwindowX.size(); ++i) {
+        center[0]+= avgwindowX.at(i);
+        center[2]+= avgwindowY.at(i);
+        center[1]+= avgwindowZ.at(i);
+    }
+
+    center[0]/= avgwindowX.size();
+    center[2]/= avgwindowY.size();
+    center[1]/= avgwindowZ.size();
+#endif
+
+
+
 #ifdef KALMAN
+
+            if(imageCnt == 0){
+                LocalizationKf->statePre.at<float>(0) = 0;
+                LocalizationKf->statePre.at<float>(1) = 0;
+                LocalizationKf->statePre.at<float>(2) = 0;
+                LocalizationKf->statePre.at<float>(3) = 0;
+            }
             LocalizationKf->predict();
 
             cv::Mat_<float> locationMeasurement(2,1); locationMeasurement.setTo(cv::Scalar(0));
@@ -312,6 +346,8 @@ public:
             center[1] = heightEstimate.at<float>(0);
 #endif
 
+       imageCnt++;
+
        double lat, lon;
        GeographicLib::UTMUPS::Reverse(r->utmZone, r->utmNorth,
                                       r->utmCenterEast + center[0], r->utmCenterNorth + center[2],
@@ -319,7 +355,7 @@ public:
 
 
         //passing the matrix like that is correct...
-        buffer[0] = lat; buffer[1] = lon; buffer[2] = -center[1];
+        buffer[0] = center[0]/*lat*/; buffer[1] = center[2]/*lon*/; buffer[2] = -center[1];
         buffer[3] = openglRotation.matrix()(0,0); buffer[4] = openglRotation.matrix()(1,0); buffer[5] = openglRotation.matrix()(2,0);
         buffer[6] = openglRotation.matrix()(0,1); buffer[7] = openglRotation.matrix()(1,1); buffer[8] = openglRotation.matrix()(2,1);
         buffer[9] = openglRotation.matrix()(0,2); buffer[10] = openglRotation.matrix()(1,2); buffer[11] = openglRotation.matrix()(2,2);
@@ -489,6 +525,12 @@ public:
     int bpp;
 
     int imageCnt;
+
+#ifdef AVERAGING
+    std::vector<double> avgwindowX;
+    std::vector<double> avgwindowY;
+    std::vector<double> avgwindowZ;
+#endif
 
 #ifdef KALMAN
     cv::KalmanFilter *LocalizationKf;
