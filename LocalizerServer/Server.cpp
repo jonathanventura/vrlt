@@ -38,7 +38,7 @@ using namespace vrlt;
 #define BUFFER_SIZE 131072
 //#define KALMAN
 
-#define AVERAGING
+//#define AVERAGING
 static const int WINDOWSIZE = 5;
 
 
@@ -275,15 +275,6 @@ public:
             Sophus::SO3d vrlt2opengl(t);
 
             Sophus::SO3d openglRotation = vrlt2opengl.inverse() * pose.so3().inverse() * rotAr2Pointing * vrlt2opengl;
-
-            std::cout << "my test rot: " << openglRotation.matrix() << std::endl;
-            //std::cout << "my test data: " << openglRotation.matrix().data() << std::endl;
-            //std::cout << "test log: " << pose.log() << std::endl;
-            //std::cout << "test rot: " << pose.so3().matrix() << std::endl;
-            //Sophus::SO3d test(pose.so3().log()[0],pose.so3().log()[1],pose.so3().log()[2]);
-            //std::cout << "my test log: " << test.log() << std::endl;
-            //std::cout << "my test rot: " << test.matrix() << std::endl;
-            //std::cout << "sophus so3:  " << pose.so3() << std::endl;
 
             //according to Hartley and Zissermann
             //P = [R|t]

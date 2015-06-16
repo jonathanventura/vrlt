@@ -41,7 +41,7 @@ int main( int argc, char **argv )
             success = true;
             break;
         }
-        if(success) printf("%.10f, %.10f, %.10f; ",pose[0], pose[1], pose[2]);
+        if(success) printf("%.10f, %.10f, %.10f;\n ",pose[0], pose[1], pose[2]);
 
         stream.str("");
         imgcnt++;
