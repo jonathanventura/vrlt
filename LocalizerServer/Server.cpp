@@ -11,7 +11,8 @@
 #include <MultiView/multiview.h>
 #include <MultiView/multiview_io_xml.h>
 #include <FeatureExtraction/features.h>
-#include <FeatureMatcher/bruteforce.h>
+//#include <FeatureMatcher/bruteforce.h>
+#include <FeatureMatcher/approxnn.h>
 #include <PatchTracker/tracker.h>
 #include <Localizer/nnlocalizer.h>
 
@@ -32,6 +33,10 @@
 #include <opencv2/video.hpp>
 
 #include <iostream>
+
+#if USE_DISPATCH
+#include <dispatch/dispatch.h>
+#endif
 
 using namespace vrlt;
 
@@ -57,7 +62,7 @@ public:
     ServerThread(const Reconstruction *_r, Node *_root, Calibration *_calibration, cv::Size _imsize, int _clntSock )
     : r(_r), root( _root ), imsize( _imsize ), clntSock( _clntSock )
     {
-        index = new BruteForceNN;
+        index = new ApproxNN;
         
         localizer = new NNLocalizer( root, index );
         localizer->verbose = true;
@@ -543,7 +548,10 @@ int CreateTCPServerSocket(unsigned short port)
     
     /* Create socket for incoming connections */
     if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
-        DieWithError("socket() failed");
+    {
+        printf("socket() failed");
+        return -1;
+    }
     
     /* Construct local address structure */
     memset(&echoServAddr, 0, sizeof(echoServAddr));   /* Zero out structure */
@@ -553,11 +561,17 @@ int CreateTCPServerSocket(unsigned short port)
     
     /* Bind to the local address */
     if (bind(sock, (struct sockaddr *) &echoServAddr, sizeof(echoServAddr)) < 0)
-        DieWithError("bind() failed");
+    {
+        printf("bind() failed");
+        return -1;
+    }
     
     /* Mark the socket so it will listen for incoming connections */
     if (listen(sock, 5) < 0)
-        DieWithError("listen() failed");
+    {
+        printf("listen() failed");
+        return -1;
+    }
     
     return sock;
 }
@@ -665,7 +679,15 @@ int main( int argc, char **argv )
     //    calibration->focal *= levelScale;
     //    calibration->center *= levelScale;
     
-    int servSock = CreateTCPServerSocket(portno);
+    int servSock = -1;
+    for ( int i = 0; i < 100; i++ )
+    {
+        servSock = CreateTCPServerSocket(portno+i);
+        if ( servSock != -1 ) {
+            printf("opened port %d\n",portno+i);
+            break;
+        }
+    }
     
     std::cout << "server ready.\n";
     

@@ -4,20 +4,30 @@
 
 int main( int argc, char **argv )
 {
-    if ( argc != 2 ) {
-        fprintf( stderr, "usage: %s <seq> \n", argv[0] );
+    if ( argc != 2 && argc != 3 ) {
+        fprintf( stderr, "usage: %s <seq> [imagenum]\n", argv[0] );
         exit(1);
     }
 
+    int portno = 12345;
+    
     vrlt::LocalizationClient loc(1,0);
-    if (!loc.connectToServer("127.0.0.1",12345)){
-        fprintf( stderr, "connection failed \n" );
-        exit(1);
+    for ( int i = 0; i != 100; i++ )
+    {
+        if (loc.connectToServer("127.0.0.1",portno+i)) break;
+//        fprintf( stderr, "connection failed \n" );
+//        exit(1);
     }
 
     //std::cout << "connected...\n";
 
     int imgcnt = 1;
+    
+    if ( argc == 3 )
+    {
+        imgcnt = atoi(argv[2]);
+    }
+    
     std::stringstream stream;
     stream << argv[1] << "/" << imgcnt << ".jpg";
     cv::Mat img = cv::imread(stream.str().c_str(),cv::IMREAD_GRAYSCALE);
@@ -25,7 +35,7 @@ int main( int argc, char **argv )
     std::vector<uchar> transmissionBuffer;
     std::vector<int> compression_params;
     compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
-    compression_params.push_back(0);
+    compression_params.push_back(100);
 
     std::cout << "pose = [";
 
@@ -42,6 +52,8 @@ int main( int argc, char **argv )
             break;
         }
         if(success) printf("%.10f, %.10f, %.10f;\n ",pose[0], pose[1], pose[2]);
+        
+        if ( argc == 3 ) break;
 
         stream.str("");
         imgcnt++;
@@ -49,6 +61,6 @@ int main( int argc, char **argv )
 
         img = cv::imread(stream.str().c_str(),cv::IMREAD_GRAYSCALE);
     }
-    std::cout << " ];";
+    std::cout << " ];\n";
 
 }
