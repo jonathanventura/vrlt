@@ -87,6 +87,8 @@ namespace vrlt {
 //                    if ( features[i]->track->point != point ) continue;
                     Feature *myfeature = (Feature*)featureit->second;
                     if ( myfeature->descriptor == NULL ) continue;
+                    feature->camera = myfeature->camera;
+                    feature->location = myfeature->location;
                     for ( int j = 0; j < 128; j++ ) sum[j] += myfeature->descriptor[j];
                     count++;
                 }
