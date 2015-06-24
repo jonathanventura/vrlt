@@ -395,8 +395,26 @@ void renderPoints( cv::Mat &image )
         cv::Point2i pt( size/2 + round(metersToPixels*XYZ[0]), size/2 - round(metersToPixels*XYZ[2]) );
         double score = point_scores[point];
         
-        if ( score < 4. ) cv::circle( image, pt, 0, cv::Scalar(0) );
-        else cv::circle( image, pt, 0, cv::Scalar(128) );
+        if ( score < 4. ) cv::circle( image, pt, 0, cv::Scalar(220) );
+        else cv::circle( image, pt, 0, cv::Scalar(220) );
+    }
+
+    for ( ElementList::iterator it = r.cameras.begin(); it != r.cameras.end(); it++ )
+    {
+        Camera *camera = (Camera *)it->second;
+        if ( camera->node == NULL ) continue;
+        if ( root != NULL && camera->node->root() != root ) continue;
+        Sophus::SE3d pose = camera->node->globalPose();
+        Eigen::Vector3d c = - (pose.so3().inverse() * pose.translation());
+
+        Eigen::Vector4d XYZ;
+        XYZ << c[0],0,c[2],1;
+
+        XYZ = pointTransformation.matrix() * XYZ;
+
+        cv::Point2i pt( size/2 + round(metersToPixels*XYZ[0]), size/2 - round(metersToPixels*XYZ[2]) );
+
+        cv::circle( image, pt, 0, cv::Scalar(16) );
     }
 }
 

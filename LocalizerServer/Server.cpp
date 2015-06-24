@@ -41,7 +41,7 @@
 using namespace vrlt;
 
 #define BUFFER_SIZE 131072
-//#define KALMAN
+#define KALMAN
 
 //#define AVERAGING
 static const int WINDOWSIZE = 5;
@@ -100,9 +100,11 @@ public:
         cv::setIdentity(LocalizationKf->measurementMatrix);
         cv::setIdentity(LocalizationKf->processNoiseCov, cv::Scalar::all(1e-6));
         cv::setIdentity(LocalizationKf->measurementNoiseCov, cv::Scalar::all(1e-6));
-        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.0525;//0.1089;
-        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.1548;//0.3420;
+        LocalizationKf->measurementNoiseCov.at<float>(0,0) = 0.01;
+        LocalizationKf->measurementNoiseCov.at<float>(1,1) = 0.01;
         cv::setIdentity(LocalizationKf->errorCovPost, cv::Scalar::all(.1));
+        LocalizationKf->errorCovPost.at<float>(0,0) = 0.1471;//-0.1471;
+        LocalizationKf->errorCovPost.at<float>(1,1) = 0.6012;//-0.6012;
 
 
         AltitudeKf = new cv::KalmanFilter(1,1);
@@ -110,8 +112,8 @@ public:
         AltitudeKf->statePre.at<float>(0) = 1.5;
         cv::setIdentity(AltitudeKf->measurementMatrix);
         cv::setIdentity(AltitudeKf->processNoiseCov, cv::Scalar::all(1e-6));
-        cv::setIdentity(AltitudeKf->measurementNoiseCov, cv::Scalar::all(0.0727));
-        cv::setIdentity(AltitudeKf->errorCovPost, cv::Scalar::all(.1));
+        cv::setIdentity(AltitudeKf->measurementNoiseCov, cv::Scalar::all(0.0227));
+        cv::setIdentity(AltitudeKf->errorCovPost, cv::Scalar::all(0.3771));//1.4std
 #endif
     }
     
@@ -319,8 +321,8 @@ public:
 #ifdef KALMAN
 
             if(imageCnt == 0){
-                LocalizationKf->statePre.at<float>(0) = 0;
-                LocalizationKf->statePre.at<float>(1) = 0;
+                LocalizationKf->statePre.at<float>(0) = center[0];
+                LocalizationKf->statePre.at<float>(1) = center[2];
                 LocalizationKf->statePre.at<float>(2) = 0;
                 LocalizationKf->statePre.at<float>(3) = 0;
             }
@@ -690,6 +692,8 @@ int main( int argc, char **argv )
     }
     
     std::cout << "server ready.\n";
+
+    printf("%i %i %f %f\n", r.utmZone, r.utmNorth, r.utmCenterNorth, r.utmCenterEast);
     
 #if USE_DISPATCH
     dispatch_queue_t myCustomQueue = dispatch_queue_create("com.example.MyCustomQueue", NULL);

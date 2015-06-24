@@ -37,7 +37,7 @@ int main( int argc, char **argv )
     compression_params.push_back(cv::IMWRITE_JPEG_QUALITY);
     compression_params.push_back(100);
 
-    std::cout << "pose = [";
+    //std::cout << "pose = [";
 
     double pose[12] = { 0., 0., 0., 0., 0., 0.,
                         0., 0., 0., 0., 0., 0.};
@@ -51,7 +51,7 @@ int main( int argc, char **argv )
             success = true;
             break;
         }
-        if(success) printf("%.10f, %.10f, %.10f;\n ",pose[0], pose[1], pose[2]);
+        if(success) printf("%.10f, %.10f, %.10f; ",pose[0], pose[1], pose[2]);
         
         if ( argc == 3 ) break;
 
@@ -61,6 +61,6 @@ int main( int argc, char **argv )
 
         img = cv::imread(stream.str().c_str(),cv::IMREAD_GRAYSCALE);
     }
-    std::cout << " ];\n";
+    std::cout << "\n";
 
 }
