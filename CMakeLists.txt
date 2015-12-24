@@ -33,7 +33,7 @@ include_directories( ${SOPHUS_INCLUDE_DIR} )
 find_package( GeographicLib REQUIRED )
 include_directories( ${GEOGRAPHICLIB_INCLUDE_DIR} )
 
-find_package( OpenCV REQUIRED )
+find_package( OpenCV REQUIRED HINTS /usr/local/opt/opencv3/share )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 if( USE_ACCELERATE )
