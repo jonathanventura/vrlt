@@ -5,3 +5,7 @@ if( USE_ACCELERATE )
 target_link_libraries( vrlt_estimator ${ACCELERATE} )
 endif()
 
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    target_link_libraries( vrlt_estimator dispatch)
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fblocks")
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

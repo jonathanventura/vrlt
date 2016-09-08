@@ -17,8 +17,13 @@
 #include <GLUtils/GLSLHelpers.h>
 #include <GLUtils/GLSLPrograms.h>
 
+#ifdef __linux__
+#include <GL/gl.h>
+#include <GL/glut.h>
+#else
 #include <OpenGL/OpenGL.h>
 #include <GLUT/GLUT.h>
+#endif
 
 #include <iostream>
 

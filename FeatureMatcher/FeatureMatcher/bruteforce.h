@@ -13,7 +13,11 @@
 
 #include "nn.h"
 
+#ifdef __linux__
+#include <CL/opencl.h>
+#else
 #include <OpenCL/opencl.h>
+#endif
 
 namespace vrlt {
 /**

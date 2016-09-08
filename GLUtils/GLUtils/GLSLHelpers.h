@@ -9,7 +9,11 @@
  */
 
 #include <Eigen/Core>
+#ifdef __linux__
+#include <sophus/se3.hpp>
+#else
 #include <Sophus/se3.hpp>
+#endif
 
 /**
  * @params: fx, fy, cx, cy

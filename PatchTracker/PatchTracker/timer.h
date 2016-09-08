@@ -17,11 +17,12 @@
 
 struct Timer
 {
-    Timer() : nsamples( 0 ), total( 0 ) { mach_timebase_info(&info); }
 #ifdef __APPLE__
+    Timer() : nsamples( 0 ), total( 0 ) { mach_timebase_info(&info); }
     uint64_t getTime() { return mach_absolute_time(); }
     double convertToNanoseconds( uint64_t duration ) { return (duration * info.numer) / info.denom; }
 #else
+    Timer() : nsamples( 0 ), total( 0 ) {}
     uint64_t getTime() { return 0; }
     double convertToNanonseconds( uint64_t duration ) { return 0.; }
 #endif
@@ -32,7 +33,9 @@ struct Timer
 private:
     size_t nsamples;
     uint64_t total;
+#ifdef __APPLE__
     mach_timebase_info_data_t info;
+#endif
     uint64_t start_time;
 };
 

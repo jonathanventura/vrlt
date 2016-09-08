@@ -10,7 +10,11 @@
 
 #include <FeatureExtraction/features.h>
 
+#ifdef __linux__
+#include <opencv2/imgproc/imgproc.hpp>
+#else
 #include <opencv2/imgproc.hpp>
+#endif
 #include <opencv2/xfeatures2d.hpp>
 
 #include <iostream>

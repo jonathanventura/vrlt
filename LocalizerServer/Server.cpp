@@ -18,6 +18,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#ifdef USE_DISPATCH
+#include <dispatch/dispatch.h>
+#endif
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
