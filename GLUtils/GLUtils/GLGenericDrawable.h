@@ -11,7 +11,7 @@
 #ifndef GLDRAWABLE_H
 #define GLDRAWABLE_H
 
-#if defined( __NOKIA__ )
+#if defined( __NOKIA__) || defined ( __linux__ )
 #include <GLES2/gl2.h>
 #elif defined( __IPHONE__ )
 #include <OpenGLES/ES2/gl.h>

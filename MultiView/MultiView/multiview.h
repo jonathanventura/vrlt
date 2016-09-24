@@ -14,6 +14,7 @@
 #include <vector>
 #include <map>
 #include <string>
+#include <stdio.h>
 
 #include <Eigen/Eigen>
 #include <sophus/so3.hpp>

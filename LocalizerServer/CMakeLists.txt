@@ -5,6 +5,8 @@ target_link_libraries( vrlt_server vrlt_features )
 target_link_libraries( vrlt_server vrlt_featurematcher )
 target_link_libraries( vrlt_server vrlt_estimator )
 target_link_libraries( vrlt_server vrlt_localizer )
-
-
-
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    target_link_libraries( vrlt_server dispatch)
+    target_link_libraries( vrlt_server BlocksRuntime)
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -fblocks")
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

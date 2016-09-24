@@ -11,7 +11,8 @@
 #ifndef GL_MODEL_H
 #define GL_MODEL_H
 
-#if defined( __NOKIA__ )
+#if defined( __NOKIA__ ) || defined ( __linux__ )
+#include <GL/gl.h>	/* GL_BGR definition used in LoadOBJ.cpp */
 #include <GLES2/gl2.h>
 #elif defined( __IPHONE__ )
 #include <OpenGLES/ES2/gl.h>

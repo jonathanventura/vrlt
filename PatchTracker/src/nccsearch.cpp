@@ -159,7 +159,7 @@ namespace vrlt
             targetPtr = searcher->targets + index*64;
             targetRowStep = 8;
         } else {
-            targetPtr = NULL;
+            targetPtr = new uchar[1];
             targetRowStep = w;
         }
         

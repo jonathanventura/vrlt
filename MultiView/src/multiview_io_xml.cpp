@@ -733,7 +733,7 @@ namespace vrlt {
 				fread( feature->color, 1, 3, f );
 				camera->features[ feature->name ] = feature;
 				r.features[ feature->name ] = feature;
-				delete name;
+				delete[] name;
 			}
 			
 			fclose( f );
@@ -783,7 +783,7 @@ namespace vrlt {
 				Feature *feature = (Feature*)camera->features[std::string(name)];
 				feature->descriptor = new unsigned char[128];
 				fread( feature->descriptor, 1, 128, f );
-				delete name;
+				delete[] name;
 			}
 			
 			fclose( f );
