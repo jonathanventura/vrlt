@@ -12,4 +12,4 @@ Dependencies:
 - OpenCV 3.0 beta: (openCV 3.0 is required since the LineSegmentDescriptor used in VRLT is not implemented in the stable openCV 2.4 version; openCV 3.0 needs to be build form sources WITH the module extension xfeatures2d form the contribution repo: https://github.com/itseez/opencv_contrib/ , because the SIFT feature extraction moved in version 3.0 from the nonfree to the external xfeatrues2d module)
 
 ===
-Test dataset <a href="http://jventura.net/sites/default/files/VillageDataset.tgz">available here</a> (about 400 MB).
+Test dataset <a href="https://www.dropbox.com/s/368ggcc65dk0yx6/VillageDataset.tgz?dl=0">available here</a> (about 400 MB).
