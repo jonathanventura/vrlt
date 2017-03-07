@@ -1,5 +1,6 @@
 
 add_executable( vrlt_server Server.cpp )
+target_compile_features( vrlt_server PRIVATE cxx_auto_type )
 target_link_libraries( vrlt_server vrlt_multiview )
 target_link_libraries( vrlt_server vrlt_features )
 target_link_libraries( vrlt_server vrlt_featurematcher )
