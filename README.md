@@ -4,12 +4,15 @@ vrlt
 Visual Reconstruction and Localization Toolkit
 
 ====
+Under OS X, we recommend installing dependencies with Homebrew.
+
 Dependencies:
-- Eigen3 (can be installed with the macports package manager, the same Eigen3 version for all dependencies is recomanded)
+- Eigen (brew install eigen)
 - Sophus (build from the current github master: https://github.com/strasdat/Sophus ; requires Eigen3)
-- ceres-solver 1.10 (using the installation of macports fails, due to a known issue of the ceres-solver and Eigen3: https://groups.google.com/forum/#!msg/ceres-solver/o8W95uEjOGQ/JqLlxaPTpjoJ ; the solution is to install it using the macports libs: port install -s ceres-solver)
-- geographiclib 1.36 (macports installation does the job)
-- OpenCV 3.0 beta: (openCV 3.0 is required since the LineSegmentDescriptor used in VRLT is not implemented in the stable openCV 2.4 version; openCV 3.0 needs to be build form sources WITH the module extension xfeatures2d form the contribution repo: https://github.com/itseez/opencv_contrib/ , because the SIFT feature extraction moved in version 3.0 from the nonfree to the external xfeatrues2d module)
+- Ceres (brew install ceres-solver)
+- geographiclib (brew install geographiclib)
+- OpenCV 3 (brew install opencv3 --with-nonfree --with-contrib --without-eigen)
+OpenCV version 3 is needed for the LSD line detector. The `--without-eigen` flag is necessary to avoid a conflict with Ceres.  The flags `--with-non-free` and `--with-contrib` are needed for SIFT.  Homebrew refuses to link opencv3, but the CMakeLists.txt is setup to find it at the Homebrew installation location `/usr/local/opt/opencv3/share/OpenCV`.
 
 ===
 Test dataset <a href="https://www.dropbox.com/s/368ggcc65dk0yx6/VillageDataset.tgz?dl=0">available here</a> (about 400 MB).
