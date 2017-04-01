@@ -3,11 +3,8 @@
 Visual Reconstruction and Localization Toolkit
 
 Jonathan Ventura
-
 Assistant Professor
-
 University of Colorado Colorado Springs
-
 http://jventura.net/
 
 This software was developed for my 2012 Ph.D. dissertation and later extended and improved.  If you use it, please cite the following work:
