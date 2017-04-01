@@ -9,7 +9,7 @@ http://jventura.net/
 
 This software was developed for my 2012 Ph.D. dissertation and later extended and improved.  If you use it, please cite the following work:
 
-Ventura, J., and T. Höllerer, "Wide-Area Scene Mapping for Mobile Visual Tracking", IEEE International Symposium on Mixed and Augmented Reality.
+Ventura, J., and T. Höllerer, "Wide-Area Scene Mapping for Mobile Visual Tracking", IEEE International Symposium on Mixed and Augmented Reality, 2012.
 
 ## Dependencies ##
 
