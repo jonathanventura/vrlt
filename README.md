@@ -35,4 +35,4 @@ Follow the typical process for building with CMake:
 
 The wiki contains tutorial documents for how to run the reconstruction pipeline and tracker.
 
-A test dataset <a href="https://www.dropbox.com/s/368ggcc65dk0yx6/VillageDataset.tgz?dl=0">available here</a> (about 400 MB).
+A test dataset is [available here](https://www.dropbox.com/s/368ggcc65dk0yx6/VillageDataset.tgz?dl=0) (about 400 MB).
