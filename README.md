@@ -1,6 +1,6 @@
 # vrlt #
 
-Visual Reconstruction and Localization Toolkit
+[Visual Reconstruction and Localization Toolkit](https://vimeo.com/56765447)
 
 Jonathan Ventura  
 Assistant Professor  
